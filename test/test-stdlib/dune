@@ -1,0 +1,3 @@
+(test
+ (name muho_stdlib_test)
+ (libraries alcotest muho_stdlib muho_test_util))

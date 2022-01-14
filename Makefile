@@ -1,10 +1,14 @@
-.PHONY: all build clean check-lint lint doc utop dev-deps deps init-database
+.PHONY: all build clean check-lint lint doc utop dev-deps deps init-database test
 
 all: build
 
 # Compiles the libraries and binaries needed to start the server.
 build:
 	dune build
+
+# Run tests
+test:
+	dune runtest --no-buffer -j 1
 
 # Cleans up compilation artefacts
 clean:
