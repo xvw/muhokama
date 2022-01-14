@@ -1,0 +1,43 @@
+opam-version: "2.0"
+
+version: "dev"
+synopsis: "A minimalist forum"
+maintainer: "Xavier Van de Woestyne <xaviervdw@gmail.com"
+authors: [ "Xavier Van de Woestyne <xaviervdw@gmail.com" ]
+license: "MIT"
+tags: ["web" "forum" "server"]
+
+description: """
+Muhokama is a web application that powers a rudimentary forum
+because Slack, Discord and IRC are, in our opinion, not very
+suitable for long conversations and message tracking.
+"""
+
+homepage: "https://github.com/xvw/muhokama"
+dev-repo: "git://github.com/xvw/muhokama.git"
+bug-reports: "https://github.com/xvw/muhokama/issues"
+
+depends: [
+  "ocaml" { >= "4.13.1" }
+  "dune" { >= "2.9" }
+  "lwt" { >= "5.3.0" }
+  "caqti" { >= "1.6.0" }
+  "caqti-lwt" { >= "1.6.0" }
+  "caqti-driver-postgresql" { >= "1.6.0" }
+  "logs" {>= "0.7.0" }
+  "cmdliner" { >= "1.0.0"}
+  "odoc" {with-doc}
+  "alcotest" {with-test}
+  "preface" { pinned }
+]
+
+build: [
+  [ "dune" "subst" ]
+  [ "dune" "build" "-p" name "-j" jobs ]
+  [ "dune" "runtest" "-p" name ] {with-test}
+  [ "dune" "build" "@doc" "-p" name ] {with-doc}
+]
+
+pin-depends: [
+  ["preface.dev" "git://github.com/xvw/preface.git"]
+]
