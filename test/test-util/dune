@@ -1,0 +1,4 @@
+(library
+ (name muho_test_util)
+ (package muhokama)
+ (libraries preface alcotest muho_stdlib))
