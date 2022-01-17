@@ -13,14 +13,11 @@ val same : 'a Alcotest.testable -> expected:'a -> computed:'a -> unit
 val nel : 'a -> 'a list -> 'a Preface.Nonempty_list.t
 
 (** Helper for creating error side of validation. *)
-val errors
-  :  Muho_stdlib.Exn.t
-  -> Muho_stdlib.Exn.t list
-  -> 'a Preface.Validate.t
+val errors : Muhokama.Exn.t -> Muhokama.Exn.t list -> 'a Preface.Validate.t
 
 (** {1 Testables}*)
 
-val exn_testable : Muho_stdlib.Exn.t Alcotest.testable
+val exn_testable : Muhokama.Exn.t Alcotest.testable
 
 val validate_testable
   :  'a Alcotest.testable

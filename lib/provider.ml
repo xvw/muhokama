@@ -17,6 +17,10 @@ module Run = To_applicative (Preface.Validate.Applicative)
 
 let ( & ) f g = Preface.Validate.Monad.(f >=> g)
 
+let ( |? ) previous_computation default =
+  previous_computation <&> Option.value ~default
+;;
+
 let handle_errors key = function
   | Preface.Validation.Valid x -> Preface.Validation.Valid x
   | Preface.Validation.Invalid errors ->

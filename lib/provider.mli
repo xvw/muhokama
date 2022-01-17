@@ -28,6 +28,7 @@ val run : (string -> string option) -> 'a t -> 'a Preface.Validate.t
 
 val optional : (string -> 'a Preface.Validate.t) -> string -> 'a option t
 val required : (string -> 'a Preface.Validate.t) -> string -> 'a t
+val ( |? ) : 'a option t -> 'a -> 'a t
 
 (** {1 Validator} *)
 

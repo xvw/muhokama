@@ -2,7 +2,7 @@ type t = exn
 
 exception Unknown
 exception Unknown_with_message of string
-exception List of t list
+exception List of t Preface.Nonempty_list.t
 exception Required_field of string
 
 exception
@@ -32,10 +32,13 @@ exception
     ; errors : t Preface.Nonempty_list.t
     }
 
+exception Database of string
+exception Invalid_log_level of string
+
 let rec equal a b =
   match a, b with
   | Unknown, Unknown -> true
-  | List list_a, List list_b -> List.equal equal list_a list_b
+  | List list_a, List list_b -> Preface.Nonempty_list.equal equal list_a list_b
   | Unknown_with_message msg_a, Unknown_with_message msg_b ->
     String.equal msg_a msg_b
   | Required_field field_a, Required_field field_b ->
@@ -52,6 +55,8 @@ let rec equal a b =
   | Invalid_field a, Invalid_field b ->
     String.equal a.key b.key
     && Preface.Nonempty_list.equal equal a.errors b.errors
+  | Database a, Database b -> String.equal a b
+  | Invalid_log_level a, Invalid_log_level b -> String.equal a b
   | a, b -> Preface.Exn.equal a b
 ;;
 
@@ -60,7 +65,7 @@ let rec pp ppf =
   function
   | Unknown_with_message message ->
     branch_with (double_quoted string) message ppf "Unknown_with_message"
-  | List l -> branch_with (list pp) l ppf "List"
+  | List l -> branch_with (list pp) (Preface.Nonempty_list.to_list l) ppf "List"
   | Required_field f ->
     branch_with (double_quoted string) f ppf "Required_field"
   | Unexpected_value { given_value; expected_type } ->
@@ -94,6 +99,9 @@ let rec pp ppf =
       ]
       ppf
       "Invalid_field"
+  | Database _message -> branch ppf "Database"
+  | Invalid_log_level message ->
+    branch_with (double_quoted string) message ppf "Invalid_log_level"
   | Unknown | _ -> branch ppf "Unknown"
 ;;
 
@@ -121,6 +129,14 @@ let pp_desc ppf = function
   | String_is_empty -> Format.fprintf ppf "A given string is empty"
   | Invalid_field { key; errors = _ } ->
     Format.fprintf ppf "The field [%s] is invalid" key
+  | Database message ->
+    Format.fprintf
+      ppf
+      "An error occurred on the database side: %a"
+      Pp.(double_quoted string)
+      message
+  | Invalid_log_level level ->
+    Format.fprintf ppf "[%s] is not a known level" level
   | Unknown -> Format.fprintf ppf "An unknown error appeared"
   | e -> Preface.Exn.pp ppf e
 ;;
