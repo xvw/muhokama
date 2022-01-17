@@ -1,5 +1,0 @@
-(library
- (name muho_stdlib)
- (package muhokama)
- (synopsis "Standard library for Muhokama")
- (libraries preface))

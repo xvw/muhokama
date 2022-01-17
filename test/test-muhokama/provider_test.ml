@@ -1,5 +1,5 @@
 open Muho_test_util
-open Muho_stdlib
+open Muhokama
 open Alcotest
 
 let test_int_validation_valid =

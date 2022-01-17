@@ -16,7 +16,7 @@ exception Unknown
 exception Unknown_with_message of string
 
 (** An error list (mainly to project Validation in Try).*)
-exception List of t list
+exception List of t Preface.Nonempty_list.t
 
 (** Error propagated when a required field is missing. *)
 exception Required_field of string
@@ -54,6 +54,12 @@ exception String_is_empty
 
 (** Propagated when a string is blank.*)
 exception String_is_blank of string
+
+(** Propagated when an error occurs on the Database side. *)
+exception Database of string
+
+(** Propagated when the log level is invalid.*)
+exception Invalid_log_level of string
 
 (** {1 Helpers} *)
 
