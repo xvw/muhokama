@@ -3,6 +3,20 @@
 (** {1 Types and exceptions} *)
 
 type t =
+  | Invalid_field of
+      { key : string
+      ; errors : t Preface.Nonempty_list.t
+      }
+  | Invalid_provider of
+      { provider : string
+      ; errors : t Preface.Nonempty_list.t
+      }
+  | Invalid_projection of
+      { given_value : string
+      ; target : string
+      }
+  | Missing_field of string
+  | Invalid_predicate of string
   | With_message of string
   | Unknown
 

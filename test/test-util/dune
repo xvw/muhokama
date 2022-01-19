@@ -1,4 +1,4 @@
 (library
- (name muho_test_util)
+ (name muhokama_test_util)
  (package muhokama)
  (libraries preface alcotest muhokama))

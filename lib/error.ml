@@ -1,18 +1,65 @@
 type t =
+  | Invalid_field of
+      { key : string
+      ; errors : t Preface.Nonempty_list.t
+      }
+  | Invalid_provider of
+      { provider : string
+      ; errors : t Preface.Nonempty_list.t
+      }
+  | Invalid_projection of
+      { given_value : string
+      ; target : string
+      }
+  | Missing_field of string
+  | Invalid_predicate of string
   | With_message of string
   | Unknown
 
 exception From_error of t
 
-let pp f error =
+let rec pp f error =
   let ppf x = Format.fprintf f x in
   match error with
+  | Invalid_field { key; errors } ->
+    ppf
+      "Invalid_field {key = %a; errors = %a}"
+      Fmt.(quote string)
+      key
+      (Preface.Nonempty_list.pp pp)
+      errors
+  | Invalid_provider { provider; errors } ->
+    ppf
+      "Invalid_provider {provider = %a; errors = %a}"
+      Fmt.(quote string)
+      provider
+      (Preface.Nonempty_list.pp pp)
+      errors
+  | Invalid_projection { given_value; target } ->
+    ppf
+      "Invalid_projection { given_value = %a; target = %a}"
+      Fmt.(quote string)
+      given_value
+      Fmt.(quote string)
+      target
+  | Invalid_predicate msg -> ppf "Invalid_predicate %a" Fmt.(quote string) msg
+  | Missing_field field -> ppf "Missing_field %a" Fmt.(quote string) field
   | With_message msg -> ppf "With_message (%a)" Fmt.(quote string) msg
   | Unknown -> ppf "Unknown"
 ;;
 
-let equal a b =
+let rec equal a b =
   match a, b with
+  | Invalid_field a, Invalid_field b ->
+    String.equal a.key b.key
+    && Preface.Nonempty_list.equal equal a.errors b.errors
+  | Invalid_provider a, Invalid_provider b ->
+    String.equal a.provider b.provider
+    && Preface.Nonempty_list.equal equal a.errors b.errors
+  | Missing_field a, Missing_field b -> String.equal a b
+  | Invalid_predicate a, Invalid_predicate b -> String.equal a b
+  | Invalid_projection a, Invalid_projection b ->
+    String.equal a.given_value b.given_value && String.equal a.target b.target
   | With_message a, With_message b -> String.equal a b
   | Unknown, Unknown -> true
   | _ -> false

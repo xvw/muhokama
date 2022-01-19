@@ -20,3 +20,7 @@ val try_testable : 'a Alcotest.testable -> 'a Muhokama.Try.t Alcotest.testable
 val validate_testable
   :  'a Alcotest.testable
   -> 'a Muhokama.Validate.t Alcotest.testable
+
+(** {1 diverses Helpers} *)
+
+val nel : 'a -> 'a list -> 'a Preface.Nonempty_list.t

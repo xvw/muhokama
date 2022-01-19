@@ -17,3 +17,10 @@ let validate_testable t =
   and eqx = Alcotest.equal t in
   Alcotest.testable (Validate.pp ppx) (Validate.equal eqx)
 ;;
+
+let nel x xs =
+  let open Preface.Nonempty_list in
+  match from_list xs with
+  | None -> Last x
+  | Some xs -> x :: xs
+;;
