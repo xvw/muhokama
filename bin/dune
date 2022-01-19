@@ -1,0 +1,16 @@
+(executable
+ (name muho)
+ (public_name muho)
+ (package muhokama)
+ (promote (until-clean))
+ (libraries
+  lwt
+  caqti
+  caqti-lwt
+  caqti-driver-postgresql
+  fmt
+  logs
+  logs.fmt
+  cmdliner
+  preface
+  muhokama))

@@ -18,6 +18,8 @@ type t =
   | Missing_field of string
   | Invalid_predicate of string
   | With_message of string
+  | Invalid_log_level of string
+  | Database of string
   | Unknown
 
 exception From_error of t

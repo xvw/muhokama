@@ -14,6 +14,8 @@ type t =
   | Missing_field of string
   | Invalid_predicate of string
   | With_message of string
+  | Invalid_log_level of string
+  | Database of string
   | Unknown
 
 exception From_error of t
@@ -44,7 +46,10 @@ let rec pp f error =
       target
   | Invalid_predicate msg -> ppf "Invalid_predicate %a" Fmt.(quote string) msg
   | Missing_field field -> ppf "Missing_field %a" Fmt.(quote string) field
-  | With_message msg -> ppf "With_message (%a)" Fmt.(quote string) msg
+  | With_message msg -> ppf "With_message %a" Fmt.(quote string) msg
+  | Invalid_log_level level ->
+    ppf "Invalid_log_level %a" Fmt.(quote string) level
+  | Database msg -> ppf "Database %a" Fmt.(quote string) msg
   | Unknown -> ppf "Unknown"
 ;;
 
@@ -61,6 +66,8 @@ let rec equal a b =
   | Invalid_projection a, Invalid_projection b ->
     String.equal a.given_value b.given_value && String.equal a.target b.target
   | With_message a, With_message b -> String.equal a b
+  | Invalid_log_level a, Invalid_log_level b -> String.equal a b
+  | Database a, Database b -> String.equal a b
   | Unknown, Unknown -> true
   | _ -> false
 ;;

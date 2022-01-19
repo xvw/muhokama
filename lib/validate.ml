@@ -80,7 +80,7 @@ module Free = struct
   ;;
 
   let or_ prev default = prev <&> Option.value ~default
-  let ( ?> ) = or_
+  let ( >? ) = or_
 
   let collapse_errors key = function
     | Preface.Validation.Valid x -> valid x

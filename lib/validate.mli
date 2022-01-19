@@ -57,7 +57,7 @@ module Free : sig
   val optional : (value -> 'a validation) -> key -> 'a option t
   val required : (value -> 'a validation) -> key -> 'a t
   val or_ : 'a option t -> 'a -> 'a t
-  val ( ?> ) : 'a option t -> 'a -> 'a t
+  val ( >? ) : 'a option t -> 'a -> 'a t
 
   (** Predefined validators *)
 
