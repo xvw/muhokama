@@ -1,5 +1,7 @@
 (** {1 Test definition} *)
 
+open Lib_common
+
 (** An helper for test definition.*)
 val test
   :  ?speed:Alcotest.speed_level
@@ -13,13 +15,10 @@ val same : 'a Alcotest.testable -> expected:'a -> computed:'a -> unit
 
 (** {1 Testables} *)
 
-val error_testable : Muhokama.Error.t Alcotest.testable
-val error_set_testable : Muhokama.Error.Set.t Alcotest.testable
-val try_testable : 'a Alcotest.testable -> 'a Muhokama.Try.t Alcotest.testable
-
-val validate_testable
-  :  'a Alcotest.testable
-  -> 'a Muhokama.Validate.t Alcotest.testable
+val error_testable : Error.t Alcotest.testable
+val error_set_testable : Error.Set.t Alcotest.testable
+val try_testable : 'a Alcotest.testable -> 'a Try.t Alcotest.testable
+val validate_testable : 'a Alcotest.testable -> 'a Validate.t Alcotest.testable
 
 (** {1 diverses Helpers} *)
 

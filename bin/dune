@@ -1,6 +1,6 @@
 (executable
- (name muho)
- (public_name muho)
+ (name muhokama)
+ (public_name muhokama)
  (package muhokama)
  (promote (until-clean))
  (libraries
@@ -13,4 +13,5 @@
   logs.fmt
   cmdliner
   preface
-  muhokama))
+  lib_common
+  lib_db))

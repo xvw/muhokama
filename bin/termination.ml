@@ -1,4 +1,4 @@
-open Muhokama
+open Lib_common
 
 let invalid_environment_i = 78
 let database_error_i = 126

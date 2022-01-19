@@ -1,4 +1,4 @@
-open Muhokama
+open Lib_common
 
 let test ?(speed = `Quick) ~about ~desc f =
   Alcotest.test_case (Format.asprintf "%-42s%s" about desc) speed f

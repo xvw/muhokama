@@ -1,4 +1,5 @@
-open Muhokama
+open Lib_common
+module Db = Lib_db
 
 let table = "muhokama_migrations"
 

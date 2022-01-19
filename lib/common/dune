@@ -1,0 +1,4 @@
+(library
+ (name lib_common)
+ (package muhokama)
+ (libraries lwt fmt logs preface))

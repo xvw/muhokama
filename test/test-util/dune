@@ -1,4 +1,0 @@
-(library
- (name muhokama_test_util)
- (package muhokama)
- (libraries preface alcotest muhokama))
