@@ -1,3 +1,5 @@
+(** {1 Test definition} *)
+
 (** An helper for test definition.*)
 val test
   :  ?speed:Alcotest.speed_level
@@ -9,16 +11,12 @@ val test
 (** An helper for checking equalities.*)
 val same : 'a Alcotest.testable -> expected:'a -> computed:'a -> unit
 
-(** Helper for creating Nonempty list. *)
-val nel : 'a -> 'a list -> 'a Preface.Nonempty_list.t
+(** {1 Testables} *)
 
-(** Helper for creating error side of validation. *)
-val errors : Muhokama.Exn.t -> Muhokama.Exn.t list -> 'a Preface.Validate.t
-
-(** {1 Testables}*)
-
-val exn_testable : Muhokama.Exn.t Alcotest.testable
+val error_testable : Muhokama.Error.t Alcotest.testable
+val error_set_testable : Muhokama.Error.Set.t Alcotest.testable
+val try_testable : 'a Alcotest.testable -> 'a Muhokama.Try.t Alcotest.testable
 
 val validate_testable
   :  'a Alcotest.testable
-  -> 'a Preface.Validate.t Alcotest.testable
+  -> 'a Muhokama.Validate.t Alcotest.testable

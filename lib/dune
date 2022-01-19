@@ -6,5 +6,6 @@
   caqti
   caqti-lwt
   caqti-driver-postgresql
+  fmt
   logs
   preface))
