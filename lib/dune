@@ -1,10 +1,4 @@
 (library
  (name muhokama)
  (package muhokama)
- (libraries
-  lwt
-  caqti
-  caqti-lwt
-  caqti-driver-postgresql
-  logs
-  preface))
+ (libraries lwt caqti caqti-lwt caqti-driver-postgresql fmt logs preface))

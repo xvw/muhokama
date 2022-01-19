@@ -52,5 +52,6 @@ export PGSQL_DB_TEST=muhokama_test
 export PGSQL_USER=muhokama
 export PGSQL_PASS=muhokama
 export LOG_LEVEL=debug
+export PGSQL_CONNECTION_POOL=20
 ```
 

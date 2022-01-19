@@ -1,3 +1,0 @@
-(test
- (name test_muhokama)
- (libraries alcotest muhokama muho_test_util))

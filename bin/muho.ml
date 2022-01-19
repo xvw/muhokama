@@ -10,8 +10,10 @@ let program =
   , Term.info call ~version ~doc ~sdocs ~exits )
 ;;
 
+let subprograms = [ Db_migrate.action ]
+
 let () =
   let () = Logs.set_reporter (Logs_fmt.reporter ()) in
   let () = Logs.set_level (Some Logs.Debug) in
-  Cmdliner.(Term.exit @@ Term.eval_choice program [ Db_init.action ])
+  Cmdliner.(Term.exit @@ Term.eval_choice program subprograms)
 ;;

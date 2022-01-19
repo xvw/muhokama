@@ -3,4 +3,14 @@
  (public_name muho)
  (package muhokama)
  (promote (until-clean))
- (libraries logs logs.fmt cmdliner preface muhokama))
+ (libraries
+  lwt
+  caqti
+  caqti-lwt
+  caqti-driver-postgresql
+  fmt
+  logs
+  logs.fmt
+  cmdliner
+  preface
+  muhokama))
