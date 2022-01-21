@@ -1,4 +1,4 @@
 (library
  (name lib_migration)
  (package muhokama)
- (libraries lwt fmt preface))
+ (libraries lwt fmt preface lib_crypto))

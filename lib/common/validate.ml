@@ -35,6 +35,8 @@ let bind = Monad.bind
 module Infix = struct
   include Applicative.Infix
   include Monad.Infix
+
+  let ( & ) = ( >=> )
 end
 
 module Syntax = struct
@@ -44,6 +46,44 @@ end
 
 include (Infix : module type of Infix with type 'a t := 'a t)
 include (Syntax : module type of Syntax with type 'a t := 'a t)
+
+let from_predicate ?(message = "The predicate is not validated") p x =
+  if p x then valid x else error @@ Invalid_predicate message
+;;
+
+let greater_than min_bound x =
+  let message = Fmt.str "[%d] is smaller or equal to [%d]" x min_bound in
+  from_predicate ~message (fun x -> x > min_bound) x
+;;
+
+let smaller_than max_bound x =
+  let message = Fmt.str "[%d] is greater or equal to [%d]" x max_bound in
+  from_predicate ~message (fun x -> x < max_bound) x
+;;
+
+let bounded_to min_bound max_bound =
+  let min = Int.min min_bound max_bound
+  and max = Int.max min_bound max_bound in
+  greater_than (pred min) & smaller_than (succ max)
+;;
+
+let not_empty =
+  let message = "The given string is empty" in
+  from_predicate ~message (function
+      | "" -> false
+      | _ -> true)
+;;
+
+let not_blank x =
+  let message = Fmt.str "The given string, %a, is blank" Fmt.(quote string) x in
+  from_predicate
+    ~message
+    (fun x ->
+      match String.trim x with
+      | "" -> false
+      | _ -> true)
+    x
+;;
 
 type key = string
 type value = string
@@ -82,18 +122,13 @@ module Free = struct
   let or_ prev default = prev <&> Option.value ~default
   let ( >? ) = or_
 
-  let collapse_errors key = function
-    | Preface.Validation.Valid x -> valid x
-    | Invalid err ->
-      let errors = Error.Set.to_nonempty_list err in
-      error @@ Invalid_field { key; errors }
-  ;;
-
   let optional validator key =
     let validation = function
       | None -> valid None
       | Some value ->
-        map_validation Option.some (validator value |> collapse_errors key)
+        map_validation
+          Option.some
+          (validator value |> Error.collapse_for_field key)
     in
     promote { key; validation }
   ;;
@@ -101,57 +136,16 @@ module Free = struct
   let required validator key =
     let validation = function
       | None -> error @@ Missing_field key
-      | Some value -> validator value |> collapse_errors key
+      | Some value -> validator value |> Error.collapse_for_field key
     in
     promote { key; validation }
   ;;
 
-  let ( & ) = ( >=> )
   let string = valid
 
   let int given_value =
     match int_of_string_opt given_value with
     | None -> error @@ Error.Invalid_projection { given_value; target = "int" }
     | Some x -> valid x
-  ;;
-
-  let from_predicate ?(message = "The predicate is not validated") p x =
-    if p x then valid x else error @@ Invalid_predicate message
-  ;;
-
-  let greater_than min_bound x =
-    let message = Fmt.str "[%d] is smaller or equal to [%d]" x min_bound in
-    from_predicate ~message (fun x -> x > min_bound) x
-  ;;
-
-  let smaller_than max_bound x =
-    let message = Fmt.str "[%d] is greater or equal to [%d]" x max_bound in
-    from_predicate ~message (fun x -> x < max_bound) x
-  ;;
-
-  let bounded_to min_bound max_bound =
-    let min = Int.min min_bound max_bound
-    and max = Int.max min_bound max_bound in
-    greater_than (pred min) & smaller_than (succ max)
-  ;;
-
-  let not_empty =
-    let message = "The given string is empty" in
-    from_predicate ~message (function
-        | "" -> false
-        | _ -> true)
-  ;;
-
-  let not_blank x =
-    let message =
-      Fmt.str "The given string, %a, is blank" Fmt.(quote string) x
-    in
-    from_predicate
-      ~message
-      (fun x ->
-        match String.trim x with
-        | "" -> false
-        | _ -> true)
-      x
   ;;
 end

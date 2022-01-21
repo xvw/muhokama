@@ -84,7 +84,8 @@ let make_environment
 ;;
 
 let validate =
-  let open Validate.Free in
+  let open Validate in
+  let open Free in
   make_environment
   <$> required string "PGSQL_HOST"
   <*> required (int & bounded_to 1 65535) "PGSQL_PORT"

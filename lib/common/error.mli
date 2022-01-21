@@ -15,6 +15,7 @@ type t =
       { given_value : string
       ; target : string
       }
+  | Unexpected_repr of { expected_repr : string }
   | Missing_field of string
   | Invalid_predicate of string
   | With_message of string
@@ -45,3 +46,8 @@ val equal : t -> t -> bool
 val to_exn : t -> exn
 val to_try : t -> ('a, t) Preface.Result.t
 val to_validate : t -> ('a, Set.t) Preface.Validation.t
+
+val collapse_for_field
+  :  string
+  -> ('a, Set.t) Preface.Validation.t
+  -> ('a, Set.t) Preface.Validation.t

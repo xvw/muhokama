@@ -8,6 +8,13 @@ let same testable ~expected ~computed =
   Alcotest.check testable "should be same" expected computed
 ;;
 
+let nel x xs =
+  let open Preface.Nonempty_list in
+  match from_list xs with
+  | None -> Last x
+  | Some xs -> x :: xs
+;;
+
 let error_testable = Alcotest.testable Error.pp Error.equal
 let error_set_testable = Alcotest.testable Error.Set.pp Error.Set.equal
 let try_testable t = Alcotest.result t error_testable
@@ -18,9 +25,38 @@ let validate_testable t =
   Alcotest.testable (Validate.pp ppx) (Validate.equal eqx)
 ;;
 
-let nel x xs =
-  let open Preface.Nonempty_list in
-  match from_list xs with
-  | None -> Last x
-  | Some xs -> x :: xs
+let sha256_testable =
+  let open Lib_crypto in
+  Alcotest.testable Sha256.pp Sha256.equal
 ;;
+
+module User = struct
+  type t =
+    { id : string
+    ; age : int option
+    ; name : string option
+    ; email : string
+    }
+
+  let pp ppf { id; age; name; email } =
+    Format.fprintf
+      ppf
+      "%s;%a;%a;%s"
+      id
+      Fmt.(option int)
+      age
+      Fmt.(option string)
+      name
+      email
+  ;;
+
+  let equal a b =
+    String.equal a.id b.id
+    && Option.equal Int.equal a.age b.age
+    && Option.equal String.equal a.name b.name
+    && String.equal a.email b.email
+  ;;
+
+  let testable = Alcotest.testable pp equal
+  let make id age name email = { id; age; name; email }
+end
