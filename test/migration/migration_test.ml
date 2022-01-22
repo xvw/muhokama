@@ -1,4 +1,5 @@
 open Lib_test
+open Lib_crypto
 open Lib_migration
 open Alcotest
 
@@ -41,8 +42,8 @@ let test_is_valid_filename_when_it_is_invalid_with_a_negative_int =
 
 let test_ensure_hash_is_idempotent =
   test
-    ~desc:"hash"
-    ~about:
+    ~about:"hash"
+    ~desc:
       "Application of hash on the same migration should return the same hash"
     (fun () ->
       let open Migration in
@@ -53,7 +54,7 @@ let test_ensure_hash_is_idempotent =
           "55-a_migration_example.yml"
           [ ""; "1"; "2" ]
           [ "2"; "1"; "0" ]
-          None
+          Sha256.neutral
         |> hash
       and computed =
         make
@@ -62,7 +63,7 @@ let test_ensure_hash_is_idempotent =
           "55-a_migration_example.yml"
           [ ""; "1"; "2" ]
           [ "2"; "1"; "0" ]
-          None
+          Sha256.neutral
         |> hash
       in
       same sha256_testable ~expected ~computed)

@@ -12,6 +12,8 @@
   logs
   logs.fmt
   cmdliner
+  yaml
   preface
   lib_common
-  lib_db))
+  lib_db
+  lib_migration))

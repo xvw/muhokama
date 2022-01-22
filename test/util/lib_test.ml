@@ -30,6 +30,11 @@ let sha256_testable =
   Alcotest.testable Sha256.pp Sha256.equal
 ;;
 
+let migration_testable =
+  let open Lib_migration in
+  Alcotest.testable Migration.pp Migration.equal
+;;
+
 module User = struct
   type t =
     { id : string

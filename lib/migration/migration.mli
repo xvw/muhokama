@@ -9,20 +9,16 @@ val make
   -> string
   -> string list
   -> string list
-  -> Sha256.t option
+  -> Sha256.t
   -> t
 
 val hash : t -> Sha256.t
+val equal : t -> t -> bool
+val pp : t Fmt.t
 
 (** [is_valid_filename f] will check if the filename has the scheme
     [id-name.yml] and returns the id, the name and the filename wrapped in an
     option.*)
 val is_valid_filename : string -> (int * string * string) option
 
-val build
-  :  int
-  -> string
-  -> string
-  -> Sha256.t option
-  -> Assoc.Jsonm.t
-  -> t Try.t
+val build : int -> string -> string -> Sha256.t -> Assoc.Jsonm.t -> t Try.t

@@ -1,4 +1,5 @@
 open Lib_common
+module M = Lib_migration
 module Db = Lib_db
 
 let table = "muhokama_migrations"
@@ -20,12 +21,26 @@ let create_migration_table pool =
   Db.use pool request
 ;;
 
+let handle program =
+  let handler : type a. (a -> 'b) -> a M.Effect.f -> 'b =
+   fun resume -> function
+    | Fetch_migrations { migrations_path } ->
+      resume @@ Io.read_dir migrations_path
+    | Warning message ->
+      let () = Logs.warn (fun pp -> pp "%s" message) in
+      resume ()
+    | Error err -> Try.error (Error.Migration_context_error err)
+  in
+  M.Effect.run { handler } program
+;;
+
 let migrate () =
   let promise =
     let open Lwt_util in
     let*? env = Env.init () in
     let*? pool = Db.connect_with_env env in
-    create_migration_table pool
+    let*? () = create_migration_table pool in
+    Lwt.return_ok ()
   in
   Termination.handle promise
 ;;

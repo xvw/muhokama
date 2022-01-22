@@ -17,6 +17,14 @@ type t =
   | With_message of string
   | Invalid_log_level of string
   | Database of string
+  | Invalid_migration_successor of
+      { expected_index : int
+      ; given_index : int
+      }
+  | Migration_context_error of t
+  | Unable_to_read_dir of string
+  | Unable_to_read_file of string
+  | Yaml of string
   | Unknown
 
 exception From_error of t
@@ -56,6 +64,17 @@ let rec pp f error =
       "Unexpected_repr { expected_repr = %a }"
       Fmt.(quote string)
       expected_repr
+  | Invalid_migration_successor { expected_index; given_index } ->
+    ppf
+      "Invalid_migration_successor {expected_index = %d; given_index = %d}"
+      expected_index
+      given_index
+  | Migration_context_error err -> ppf "Migration_context_error (%a)" pp err
+  | Unable_to_read_dir path ->
+    ppf "Unable_to_read_dir %a" Fmt.(quote string) path
+  | Unable_to_read_file path ->
+    ppf "Unable_to_read_file %a" Fmt.(quote string) path
+  | Yaml msg -> ppf "Yaml %a" Fmt.(quote string) msg
   | Unknown -> ppf "Unknown"
 ;;
 
@@ -77,6 +96,13 @@ let rec equal a b =
   | Unexpected_repr { expected_repr = a }, Unexpected_repr { expected_repr = b }
     -> String.equal a b
   | Unknown, Unknown -> true
+  | Invalid_migration_successor a, Invalid_migration_successor b ->
+    Int.equal a.expected_index b.expected_index
+    && Int.equal a.given_index b.given_index
+  | Migration_context_error a, Migration_context_error b -> equal a b
+  | Unable_to_read_dir a, Unable_to_read_dir b -> String.equal a b
+  | Unable_to_read_file a, Unable_to_read_file b -> String.equal a b
+  | Yaml a, Yaml b -> String.equal a b
   | _ -> false
 ;;
 

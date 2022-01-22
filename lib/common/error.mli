@@ -21,6 +21,14 @@ type t =
   | With_message of string
   | Invalid_log_level of string
   | Database of string
+  | Invalid_migration_successor of
+      { expected_index : int
+      ; given_index : int
+      }
+  | Migration_context_error of t
+  | Unable_to_read_dir of string
+  | Unable_to_read_file of string
+  | Yaml of string
   | Unknown
 
 exception From_error of t
