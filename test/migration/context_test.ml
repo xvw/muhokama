@@ -71,8 +71,11 @@ let handle buff program =
    fun resume -> function
     | Fetch_migrations { migrations_path } -> resume @@ read_dir migrations_path
     | Read_migration { filepath } -> resume @@ read_file filepath
+    | Info message ->
+      let () = buff := !buff @ [ "info", message ] in
+      resume ()
     | Warning message ->
-      let () = buff := ("warning", message) :: !buff in
+      let () = buff := !buff @ [ "warning", message ] in
       resume ()
     | Error err -> Try.error err
   in
@@ -93,7 +96,10 @@ let test_init_on_empty_folder =
       let buff = ref [] in
       let expected = Ok []
       and computed = handle_init buff "empty" in
-      same (list (pair string string)) ~expected:[] ~computed:!buff;
+      same
+        (list (pair string string))
+        ~expected:[ "info", "Reading migration path: empty" ]
+        ~computed:!buff;
       same migration_list_testable ~expected ~computed)
 ;;
 
@@ -105,20 +111,30 @@ let test_init_on_inexistant_folder =
       let buff = ref [] in
       let expected = find_failure "non-existing-folder"
       and computed = handle_init buff "non-existing-folder" in
-      same (list (pair string string)) ~expected:[] ~computed:!buff;
+      same
+        (list (pair string string))
+        ~expected:[ "info", "Reading migration path: non-existing-folder" ]
+        ~computed:!buff;
       same migration_list_testable ~expected ~computed)
 ;;
 
 let test_init_on_dir_1_folder =
   test
     ~about:"init"
-    ~desc:"When there is ome migration it should produce a filled context"
+    ~desc:"When there is one migration it should produce a filled context"
     (fun () ->
       let buff = ref [] in
       let expected =
         Ok [ 1, Migration.make 1 "test" "1-test.yml" [] [] Sha256.neutral ]
       and computed = handle_init buff "dir-1" in
-      same (list (pair string string)) ~expected:[] ~computed:!buff;
+      same
+        (list (pair string string))
+        ~expected:
+          [ "info", "Reading migration path: dir-1"
+          ; "info", "Process file: 1-test.yml"
+          ; "info", "Storing file: 1-test.yml in context"
+          ]
+        ~computed:!buff;
       same migration_list_testable ~expected ~computed)
 ;;
 
@@ -136,7 +152,15 @@ let test_init_on_dir_2_folder =
               ; errors = nel (Missing_field "up") []
               })
       and computed = handle_init buff "dir-2" in
-      same (list (pair string string)) ~expected:[] ~computed:!buff;
+      same
+        (list (pair string string))
+        ~expected:
+          [ "info", "Reading migration path: dir-2"
+          ; "info", "Process file: 1-test.yml"
+          ; "info", "Storing file: 1-test.yml in context"
+          ; "info", "Process file: 2-test-2.yml"
+          ]
+        ~computed:!buff;
       same migration_list_testable ~expected ~computed)
 ;;
 
@@ -151,7 +175,19 @@ let test_init_on_dir_3_folder =
           Error.(
             Invalid_migration_successor { expected_index = 4; given_index = 3 })
       and computed = handle_init buff "dir-3" in
-      same (list (pair string string)) ~expected:[] ~computed:!buff;
+      same
+        (list (pair string string))
+        ~expected:
+          [ "info", "Reading migration path: dir-3"
+          ; "info", "Process file: 1-test.yml"
+          ; "info", "Storing file: 1-test.yml in context"
+          ; "info", "Process file: 2-test.yml"
+          ; "info", "Storing file: 2-test.yml in context"
+          ; "info", "Process file: 3-another-test-3.yml"
+          ; "info", "Storing file: 3-another-test-3.yml in context"
+          ; "info", "Process file: 3-test.yml"
+          ]
+        ~computed:!buff;
       same migration_list_testable ~expected ~computed)
 ;;
 
@@ -169,7 +205,17 @@ let test_init_on_dir_4_folder =
       same
         (list (pair string string))
         ~expected:
-          [ "warning", "Invalid name scheme: 0000-should-produce-a-warning" ]
+          [ "info", "Reading migration path: dir-4"
+          ; "info", "Process file: 0000-should-produce-a-warning"
+          ; "warning", "Invalid name scheme: 0000-should-produce-a-warning"
+          ; "info", "Process file: 1-test.yml"
+          ; "info", "Storing file: 1-test.yml in context"
+          ; "info", "Process file: 2-test.yml"
+          ; "info", "Storing file: 2-test.yml in context"
+          ; "info", "Process file: 3-test.yml"
+          ; "info", "Storing file: 3-test.yml in context"
+          ; "info", "Process file: 5-omg-where-is-the-fourth-migration.yml"
+          ]
         ~computed:!buff;
       same migration_list_testable ~expected ~computed)
 ;;
@@ -187,7 +233,22 @@ let test_init_on_dir_5_folder =
       let m5 = Migration.(make 5 "sadlsad" "5-sadlsad.yml" [] [] (hash m4)) in
       let expected = Ok [ 1, m1; 2, m2; 3, m3; 4, m4; 5, m5 ]
       and computed = handle_init buff "dir-5" in
-      same (list (pair string string)) ~expected:[] ~computed:!buff;
+      same
+        (list (pair string string))
+        ~expected:
+          [ "info", "Reading migration path: dir-5"
+          ; "info", "Process file: 1-test.yml"
+          ; "info", "Storing file: 1-test.yml in context"
+          ; "info", "Process file: 2-test.yml"
+          ; "info", "Storing file: 2-test.yml in context"
+          ; "info", "Process file: 3-test.yml"
+          ; "info", "Storing file: 3-test.yml in context"
+          ; "info", "Process file: 4-sadlsad.yml"
+          ; "info", "Storing file: 4-sadlsad.yml in context"
+          ; "info", "Process file: 5-sadlsad.yml"
+          ; "info", "Storing file: 5-sadlsad.yml in context"
+          ]
+        ~computed:!buff;
       same migration_list_testable ~expected ~computed)
 ;;
 

@@ -14,6 +14,12 @@ let create_migration_table_query =
        table
 ;;
 
+let read_migration path =
+  let open Try in
+  let* content = Io.read_file path in
+  Yaml.of_string content |> Result.map_error (function `Msg e -> Error.Yaml e)
+;;
+
 let create_migration_table pool =
   let request (module Q : Caqti_lwt.CONNECTION) =
     Q.exec create_migration_table_query ()
@@ -25,13 +31,22 @@ let handle program =
   let handler : type a. (a -> 'b) -> a M.Effect.f -> 'b =
    fun resume -> function
     | Fetch_migrations { migrations_path } ->
-      resume @@ Io.read_dir migrations_path
+      let files = Io.read_dir migrations_path in
+      resume files
+    | Read_migration { filepath } ->
+      let migration_obj = read_migration filepath in
+      resume migration_obj
+    | Info message ->
+      let () = Logs.info (fun pp -> pp "%s" message) in
+      resume ()
     | Warning message ->
       let () = Logs.warn (fun pp -> pp "%s" message) in
       resume ()
-    | Error err -> Try.error (Error.Migration_context_error err)
+    | Error err ->
+      let x = Error.Migration_context_error err in
+      Try.error x
   in
-  M.Effect.run { handler } program
+  M.Effect.run { handler } program |> Lwt.return
 ;;
 
 let migrate () =
@@ -40,6 +55,9 @@ let migrate () =
     let*? env = Env.init () in
     let*? pool = Db.connect_with_env env in
     let*? () = create_migration_table pool in
+    let*? _migration_ctx =
+      handle @@ M.Context.init ~migrations_path:"./migrations"
+    in
     Lwt.return_ok ()
   in
   Termination.handle promise

@@ -3,6 +3,7 @@ open Lib_common
 type _ effects =
   | Fetch_migrations : { migrations_path : string } -> string list Try.t effects
   | Read_migration : { filepath : string } -> Assoc.Jsonm.t Try.t effects
+  | Info : string -> unit effects
   | Warning : string -> unit effects
   | Error : Error.t -> 'a effects
 
@@ -21,6 +22,7 @@ module Freer = struct
   ;;
 
   let warning message = perform @@ Warning message
+  let info message = perform @@ Info message
   let error err = perform @@ Error err
 end
 
