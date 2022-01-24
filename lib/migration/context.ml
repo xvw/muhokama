@@ -55,4 +55,8 @@ let init ~migrations_path =
   Ok ctx
 ;;
 
+let current_state s =
+  S.max_binding_opt s |> Option.fold ~none:0 ~some:Stdlib.fst
+;;
+
 let to_list = S.bindings

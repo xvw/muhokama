@@ -10,4 +10,5 @@ type filepath = string
 (** {1 API} *)
 
 val read_dir : dirpath -> filename list Try.t
+val list_files : dirpath -> filename list Try.t
 val read_file : filepath -> string Try.t
