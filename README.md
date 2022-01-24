@@ -20,7 +20,7 @@ all dependencies at the root of the project (locally) rather than globally,
 recommended:
 
 ``` shellsession
-opam switch create . ocaml-base-compiler.4.13.1 -y
+opam switch create . ocaml-base-compiler.4.13.1 --deps-only -y
 ```
 
 When the _local switch build procedure_ is complete you can simply run the
