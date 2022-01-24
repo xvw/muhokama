@@ -10,7 +10,9 @@ let program =
   , Term.info call ~version ~doc ~sdocs ~exits )
 ;;
 
-let subprograms = [ Db_migrate.action_migrate; Db_migrate.action_reset ]
+let subprograms =
+  [ Db_migrate.action_migrate; Db_migrate.action_reset; Server.action_launch ]
+;;
 
 let () =
   let () = Logs.set_reporter (Logs_fmt.reporter ()) in
