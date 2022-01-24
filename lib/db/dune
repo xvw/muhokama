@@ -1,0 +1,4 @@
+(library
+ (name lib_db)
+ (package muhokama)
+ (libraries lwt caqti caqti-lwt caqti-driver-postgresql fmt lib_common preface))

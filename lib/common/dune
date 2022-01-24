@@ -1,0 +1,5 @@
+(library
+ (name lib_common)
+ (package muhokama)
+ (modules_without_implementation intf)
+ (libraries lwt fmt logs preface))

@@ -1,3 +1,5 @@
+open Lib_common
+
 type 'a connection =
   (Caqti_lwt.connection, ([> Caqti_error.connect ] as 'a)) Caqti_lwt.Pool.t
 

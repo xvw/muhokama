@@ -8,6 +8,7 @@ type 'a t = ('a, Error.Set.t) Preface.Validation.t
 (** {1 Preface Implementation} *)
 
 module Functor : Preface.Specs.FUNCTOR with type 'a t = 'a t
+module Alt : Preface.Specs.ALT with type 'a t = 'a t
 
 module Applicative :
   Preface.Specs.Traversable.API_OVER_APPLICATIVE with type 'a t = 'a t
@@ -29,8 +30,11 @@ val bind : ('a -> 'b t) -> 'a t -> 'b t
 (** {1 Infix operators} *)
 
 module Infix : sig
+  include Preface.Specs.Alt.INFIX with type 'a t := 'a t
   include Preface.Specs.Applicative.INFIX with type 'a t := 'a t
   include Preface.Specs.Monad.INFIX with type 'a t := 'a t
+
+  val ( & ) : ('a -> 'b t) -> ('b -> 'c t) -> 'a -> 'c t
 end
 
 (** {1 Syntax operators} *)
@@ -42,6 +46,15 @@ end
 
 include module type of Infix
 include module type of Syntax
+
+(** {1 Predefined validators} *)
+
+val from_predicate : ?message:string -> ('a -> bool) -> 'a -> 'a t
+val greater_than : int -> int -> int t
+val smaller_than : int -> int -> int t
+val bounded_to : int -> int -> int -> int t
+val not_empty : string -> string t
+val not_blank : string -> string t
 
 (** {1 Free Validation} *)
 
@@ -58,21 +71,6 @@ module Free : sig
   val required : (value -> 'a validation) -> key -> 'a t
   val or_ : 'a option t -> 'a -> 'a t
   val ( >? ) : 'a option t -> 'a -> 'a t
-
-  (** Predefined validators *)
-
-  val ( & )
-    :  ('a -> 'b validation)
-    -> ('b -> 'c validation)
-    -> 'a
-    -> 'c validation
-
-  val from_predicate : ?message:string -> ('a -> bool) -> 'a -> 'a validation
   val string : string -> string validation
   val int : string -> int validation
-  val greater_than : int -> int -> int validation
-  val smaller_than : int -> int -> int validation
-  val bounded_to : int -> int -> int -> int validation
-  val not_empty : string -> string validation
-  val not_blank : string -> string validation
 end

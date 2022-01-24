@@ -1,3 +1,0 @@
-(test
- (name muhokama_test)
- (libraries alcotest muhokama muhokama_test_util))

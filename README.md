@@ -55,3 +55,18 @@ export LOG_LEVEL=debug
 export PGSQL_CONNECTION_POOL=20
 ```
 
+
+### Interaction using `muhokama.exe`
+
+The main actions are orchestrable via the `muhokama.exe` binary. Once the
+project is compiled (using, for example, `make build`) it is impossible to
+invoke the tool with `./bin/muhokama.exe PARAMS` or `dune exec bin/muhokama.exe
+-- PARAMS`. The second invocation recompiles (if needed) the binary. Each
+subcommand can display its `man` page using the `--help` flag.
+
+| Invocation | Description 
+| -- | -- |
+| `./bin/muhokama.exe` | Displays the `man` page of the binary |
+| `./bin/muhokama.exe db.migrate` | Builds a migration context and performs missing migrations. (For example, if the migration context is 2 and there are migrations 3, 4, and 5, the invocation will execute migration 3, 4, and 5 if migration 2 has the same hash as migration 2 that was executed.) |
+| `./bin/muhokama.exe db.migrate --to N` | Replaces the migration state according to the given parameter `N`. If for example the current state is `5`, `./bin/muhokama.exe db.migrate --to 2` will play `5.down`, `4.down` and `3.down`. If, on the other hand, the current state is `0`, `1.up`, and `2.up` will be played. If no error has occurred, the state must be the argument given to `--to`. |
+| `./bin/muhokama.exe db.migrate.reset` | Removes the migration context (in database). **Warning**, this action only deletes the migration context (and does not play all reverse migrations, so the database must be reset to a valid state). |

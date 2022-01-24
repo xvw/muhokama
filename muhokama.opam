@@ -26,6 +26,8 @@ depends: [
   "caqti-driver-postgresql" { >= "1.6.0" }
   "logs" {>= "0.7.0" }
   "cmdliner" { >= "1.0.0"}
+  "hacl-star" { >= "0.4.4" }
+  "yaml" { >= "2.1.0" }
   "odoc" {with-doc}
   "alcotest" {with-test}
   "preface" { pinned }
