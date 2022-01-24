@@ -1,7 +1,14 @@
 open Lib_common
 open Lib_crypto
 
-type t
+type t = private
+  { index : int
+  ; label : string
+  ; file : string
+  ; up : string list
+  ; down : string list
+  ; previous_hash : Sha256.t
+  }
 
 val make
   :  int

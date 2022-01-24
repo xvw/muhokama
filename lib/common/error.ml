@@ -21,6 +21,8 @@ type t =
       { expected_index : int
       ; given_index : int
       }
+  | Migration_invalid_checksum of int
+  | Migration_invalid_target of int
   | Migration_context_error of t
   | Unable_to_read_dir of string
   | Unable_to_read_file of string
@@ -75,6 +77,9 @@ let rec pp f error =
   | Unable_to_read_file path ->
     ppf "Unable_to_read_file %a" Fmt.(quote string) path
   | Yaml msg -> ppf "Yaml %a" Fmt.(quote string) msg
+  | Migration_invalid_checksum index ->
+    ppf "Migration_invalid_checksum %d" index
+  | Migration_invalid_target index -> ppf "Migration_invalid_target %d" index
   | Unknown -> ppf "Unknown"
 ;;
 
@@ -103,6 +108,8 @@ let rec equal a b =
   | Unable_to_read_dir a, Unable_to_read_dir b -> String.equal a b
   | Unable_to_read_file a, Unable_to_read_file b -> String.equal a b
   | Yaml a, Yaml b -> String.equal a b
+  | Migration_invalid_checksum a, Migration_invalid_checksum b -> Int.equal a b
+  | Migration_invalid_target a, Migration_invalid_target b -> Int.equal a b
   | _ -> false
 ;;
 

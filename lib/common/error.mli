@@ -25,6 +25,8 @@ type t =
       { expected_index : int
       ; given_index : int
       }
+  | Migration_invalid_checksum of int
+  | Migration_invalid_target of int
   | Migration_context_error of t
   | Unable_to_read_dir of string
   | Unable_to_read_file of string

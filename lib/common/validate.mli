@@ -8,6 +8,7 @@ type 'a t = ('a, Error.Set.t) Preface.Validation.t
 (** {1 Preface Implementation} *)
 
 module Functor : Preface.Specs.FUNCTOR with type 'a t = 'a t
+module Alt : Preface.Specs.ALT with type 'a t = 'a t
 
 module Applicative :
   Preface.Specs.Traversable.API_OVER_APPLICATIVE with type 'a t = 'a t
@@ -29,6 +30,7 @@ val bind : ('a -> 'b t) -> 'a t -> 'b t
 (** {1 Infix operators} *)
 
 module Infix : sig
+  include Preface.Specs.Alt.INFIX with type 'a t := 'a t
   include Preface.Specs.Applicative.INFIX with type 'a t := 'a t
   include Preface.Specs.Monad.INFIX with type 'a t := 'a t
 

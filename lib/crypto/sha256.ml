@@ -1,9 +1,15 @@
 let hash_bytes bytes = Hacl_star.Hacl.SHA2_256.hash bytes
 let hash_string string = hash_bytes @@ Bytes.of_string string
-let to_string = Bytes.to_string
+
+let to_string sha =
+  sha
+  |> Bytes.to_string
+  |> Format.asprintf "%a" Fmt.(on_string @@ octets ~sep:nop ())
+;;
+
 let to_bytes x = x
 let equal = Bytes.equal
-let pp = Format.pp_print_bytes
+let pp ppf x = Format.fprintf ppf "%s" (to_string x)
 
 include Preface.Make.Monoid.Via_combine_and_neutral (struct
   type t = Bytes.t

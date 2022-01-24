@@ -26,6 +26,7 @@ let equal eq a b =
 
 module Functor = Preface.Validation.Functor (Error.Set)
 module Applicative = Preface.Validation.Applicative (Error.Set)
+module Alt = Preface.Validation.Alt (Error.Set)
 module Monad = Preface.Validation.Monad (Error.Set)
 
 let map = Functor.map
@@ -33,6 +34,7 @@ let apply = Applicative.apply
 let bind = Monad.bind
 
 module Infix = struct
+  include Alt.Infix
   include Applicative.Infix
   include Monad.Infix
 

@@ -35,6 +35,44 @@ let migration_testable =
   Alcotest.testable Migration.pp Migration.equal
 ;;
 
+let step_eq a b =
+  let open Lib_migration in
+  match a, b with
+  | Context.Up la, Context.Up lb ->
+    List.equal
+      (fun a b -> Int.equal (fst a) (fst b) && Migration.equal (snd a) (snd b))
+      la
+      lb
+  | Context.Down (la, (ax, ay)), Context.Down (lb, (bx, by)) ->
+    List.equal
+      (fun a b -> Int.equal (fst a) (fst b) && Migration.equal (snd a) (snd b))
+      la
+      lb
+    && Int.equal ax bx
+    && Lib_crypto.Sha256.equal ay by
+  | Nothing, Nothing -> true
+  | _ -> false
+;;
+
+let step_pp ppf =
+  let open Lib_migration in
+  function
+  | Context.Nothing -> Format.fprintf ppf "Nothing"
+  | Up li -> Format.fprintf ppf "Up %a" Fmt.(list (pair int Migration.pp)) li
+  | Down (li, (i, h)) ->
+    Format.fprintf
+      ppf
+      "Down %a, (%d, %a)"
+      Fmt.(list (pair int Migration.pp))
+      li
+      i
+      Lib_crypto.Sha256.pp
+      h
+;;
+
+let step_testable = Alcotest.testable step_pp step_eq
+let t_step_testable = try_testable step_testable
+
 module User = struct
   type t =
     { id : string
