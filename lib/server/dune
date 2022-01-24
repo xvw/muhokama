@@ -1,0 +1,4 @@
+(library
+ (name lib_server)
+ (package muhokama)
+ (libraries logs opium fmt preface lib_common lib_db lib_ui))

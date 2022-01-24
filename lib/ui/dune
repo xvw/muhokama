@@ -1,0 +1,4 @@
+(library
+ (name lib_ui)
+ (package muhokama)
+ (libraries tyxml fmt preface lib_common))

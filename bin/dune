@@ -13,7 +13,9 @@
   logs.fmt
   cmdliner
   yaml
+  opium
   preface
   lib_common
   lib_db
-  lib_migration))
+  lib_migration
+  lib_server))

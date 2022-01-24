@@ -5,8 +5,6 @@ open Lib_common
 type 'a connection =
   (Caqti_lwt.connection, ([> Caqti_error.connect ] as 'a)) Caqti_lwt.Pool.t
 
-type ('a, 'b) pool = ('a, ([< Caqti_error.t ] as 'b)) Caqti_lwt.Pool.t
-
 (** Build the [uri] locating the database. *)
 val make_uri
   :  user:string
@@ -35,6 +33,6 @@ val connect_with_env
 val as_try : ('a, [< Caqti_error.t ]) result Lwt.t -> 'a Try.t Lwt.t
 
 val use
-  :  ('a, ([< Caqti_error.t ] as 'b)) pool
-  -> ('a -> ('c, 'b) result Lwt.t)
+  :  ([< Caqti_error.t ] as 'b) connection
+  -> (Caqti_lwt.connection -> ('c, 'b) result Lwt.t)
   -> 'c Try.t Lwt.t

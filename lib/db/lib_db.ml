@@ -3,8 +3,6 @@ open Lib_common
 type 'a connection =
   (Caqti_lwt.connection, ([> Caqti_error.connect ] as 'a)) Caqti_lwt.Pool.t
 
-type ('a, 'b) pool = ('a, ([< Caqti_error.t ] as 'b)) Caqti_lwt.Pool.t
-
 let make_uri ~user ~password ~host ~port ~database =
   Format.asprintf "postgresql://%s:%s@%s:%d/%s" user password host port database
   |> Uri.of_string
