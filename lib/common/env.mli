@@ -1,8 +1,7 @@
 type t =
   { pgsql_host : string
   ; pgsql_port : int
-  ; pgsql_db_dev : string
-  ; pgsql_db_test : string
+  ; pgsql_db : string
   ; pgsql_user : string
   ; pgsql_pass : string
   ; pgsql_connection_pool : int

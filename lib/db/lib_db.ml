@@ -18,16 +18,15 @@ let connect ~max_size ~user ~password ~host ~port ~database =
   |> Lwt.return
 ;;
 
-let connect_with_env ?(test = false) env =
+let connect_with_env env =
   let open Env in
-  let database = if test then env.pgsql_db_test else env.pgsql_db_dev in
   connect
     ~max_size:env.pgsql_connection_pool
     ~host:env.pgsql_host
     ~port:env.pgsql_port
     ~user:env.pgsql_user
     ~password:env.pgsql_pass
-    ~database
+    ~database:env.pgsql_db
 ;;
 
 let as_try obj =

@@ -24,10 +24,7 @@ val connect
   -> database:string
   -> [> Caqti_error.connect ] connection Try.t Lwt.t
 
-val connect_with_env
-  :  ?test:bool
-  -> Env.t
-  -> [> Caqti_error.connect ] connection Try.t Lwt.t
+val connect_with_env : Env.t -> [> Caqti_error.connect ] connection Try.t Lwt.t
 
 (** Lift Caqti result into a [Preface.Try.t]. *)
 val as_try : ('a, [< Caqti_error.t ]) result Lwt.t -> 'a Try.t Lwt.t

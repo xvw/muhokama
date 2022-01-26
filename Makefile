@@ -1,5 +1,8 @@
 .PHONY: all build clean check-lint lint doc utop dev-deps deps init-database test
 
+
+SHELL := /bin/bash
+
 all: build
 
 # Compiles the libraries and binaries needed to start the server.
@@ -7,8 +10,14 @@ build:
 	dune build
 
 # Run tests
-test:
-	dune runtest --no-buffer -j 1
+
+test: test-unit test-integration
+
+test-unit:
+	dune runtest test/unit --no-buffer -j 1
+
+test-integration:
+	source .test_env && dune runtest test/integration --no-buffer -j 1
 
 # Cleans up compilation artefacts
 clean:

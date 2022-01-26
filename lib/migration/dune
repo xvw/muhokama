@@ -1,4 +1,14 @@
 (library
  (name lib_migration)
  (package muhokama)
- (libraries lwt fmt preface lib_common lib_crypto))
+ (libraries
+  lwt
+  caqti
+  caqti-lwt
+  caqti-driver-postgresql
+  fmt
+  yaml
+  preface
+  lib_common
+  lib_crypto
+  lib_db))
