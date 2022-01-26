@@ -55,6 +55,9 @@ val smaller_than : int -> int -> int t
 val bounded_to : int -> int -> int -> int t
 val not_empty : string -> string t
 val not_blank : string -> string t
+val is_email : string -> string t
+val is_true : bool -> unit t
+val is_false : bool -> unit t
 
 (** {1 Free Validation} *)
 
@@ -73,4 +76,5 @@ module Free : sig
   val ( >? ) : 'a option t -> 'a -> 'a t
   val string : string -> string validation
   val int : string -> int validation
+  val bool : string -> bool validation
 end

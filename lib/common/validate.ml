@@ -87,6 +87,30 @@ let not_blank x =
     x
 ;;
 
+(* This a very weak implementation... *)
+let is_email str =
+  let message =
+    Fmt.str "%a does not appear to be an email address" Fmt.(quote string) str
+  in
+  from_predicate
+    ~message
+    (fun x ->
+      match String.split_on_char '@' x with
+      | [ _; _ ] -> true
+      | _ -> false)
+    str
+;;
+
+let is_true x =
+  let message = "The given boolean is false" in
+  x |> from_predicate ~message (fun x -> x) |> Functor.replace ()
+;;
+
+let is_false x =
+  let message = "The given boolean is false" in
+  x |> from_predicate ~message (fun x -> not x) |> Functor.replace ()
+;;
+
 type key = string
 type value = string
 
@@ -148,6 +172,12 @@ module Free = struct
   let int given_value =
     match int_of_string_opt given_value with
     | None -> error @@ Error.Invalid_projection { given_value; target = "int" }
+    | Some x -> valid x
+  ;;
+
+  let bool given_value =
+    match bool_of_string_opt given_value with
+    | None -> error @@ Error.Invalid_projection { given_value; target = "bool" }
     | Some x -> valid x
   ;;
 end

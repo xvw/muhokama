@@ -77,6 +77,68 @@ module Make (A : Intf.AS_ASSOC) = struct
   ;;
 end
 
+module Yojson = struct
+  type t =
+    [ `Null
+    | `Bool of bool
+    | `Int of int
+    | `Intlit of string
+    | `Float of float
+    | `Floatlit of string
+    | `String of string
+    | `Stringlit of string
+    | `Assoc of (string * t) list
+    | `List of t list
+    | `Tuple of t list
+    | `Variant of string * t option
+    ]
+
+  module A = struct
+    type nonrec t = t
+
+    let as_object valid invalid = function
+      | `Assoc kv -> valid kv
+      | _ -> invalid ()
+    ;;
+
+    let as_list valid invalid = function
+      | `List v -> valid v
+      | _ -> invalid ()
+    ;;
+
+    let as_atom _valid invalid _ = invalid ()
+
+    let as_string valid invalid = function
+      | `String s -> valid s
+      | _ -> invalid ()
+    ;;
+
+    let as_bool valid invalid = function
+      | `Bool b -> valid b
+      | _ -> invalid ()
+    ;;
+
+    let as_int valid invalid = function
+      | `Int i -> valid i
+      | _ -> invalid ()
+    ;;
+
+    let as_float valid invalid = function
+      | `Float f -> valid f
+      | _ -> invalid ()
+    ;;
+
+    let as_null valid invalid = function
+      | `Null -> valid ()
+      | _ -> invalid ()
+    ;;
+  end
+
+  module V = Make (A)
+  include (A : Intf.AS_ASSOC with type t := t)
+  include (V : Intf.VALIDABLE_ASSOC with type t := t)
+end
+
 module Jsonm = struct
   type t =
     [ `Null
