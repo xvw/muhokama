@@ -1,8 +1,7 @@
 type t =
   { pgsql_host : string
   ; pgsql_port : int
-  ; pgsql_db_dev : string
-  ; pgsql_db_test : string
+  ; pgsql_db : string
   ; pgsql_user : string
   ; pgsql_pass : string
   ; pgsql_connection_pool : int
@@ -23,8 +22,7 @@ let string_to_log log =
 let equal a b =
   String.equal a.pgsql_host b.pgsql_host
   && Int.equal a.pgsql_port b.pgsql_port
-  && String.equal a.pgsql_db_test b.pgsql_db_test
-  && String.equal a.pgsql_db_dev b.pgsql_db_dev
+  && String.equal a.pgsql_db b.pgsql_db
   && String.equal a.pgsql_user b.pgsql_user
   && String.equal a.pgsql_pass b.pgsql_pass
   && Int.equal a.pgsql_connection_pool b.pgsql_connection_pool
@@ -38,8 +36,7 @@ let pp_aux
     ppf
     { pgsql_host
     ; pgsql_port
-    ; pgsql_db_dev
-    ; pgsql_db_test = _
+    ; pgsql_db
     ; pgsql_connection_pool
     ; pgsql_user
     ; pgsql_pass
@@ -54,7 +51,7 @@ let pp_aux
     pgsql_pass
     pgsql_host
     pgsql_port
-    pgsql_db_dev
+    pgsql_db
     pgsql_connection_pool
     Logs.pp_level
     log_level
@@ -65,8 +62,7 @@ let pp = pp_aux (fun ppf _ -> Format.fprintf ppf "***")
 let make_environment
     pgsql_host
     pgsql_port
-    pgsql_db_dev
-    pgsql_db_test
+    pgsql_db
     pgsql_connection_pool
     pgsql_user
     pgsql_pass
@@ -74,8 +70,7 @@ let make_environment
   =
   { pgsql_host
   ; pgsql_port
-  ; pgsql_db_dev
-  ; pgsql_db_test
+  ; pgsql_db
   ; pgsql_connection_pool
   ; pgsql_user
   ; pgsql_pass
@@ -89,8 +84,7 @@ let validate =
   make_environment
   <$> required string "PGSQL_HOST"
   <*> required (int & bounded_to 1 65535) "PGSQL_PORT"
-  <*> required string "PGSQL_DB_DEV"
-  <*> required string "PGSQL_DB_TEST"
+  <*> required string "PGSQL_DB"
   <*> (optional int "PGSQL_CONNECTION_POOL" >? 20)
   <*> required string "PGSQL_USER"
   <*> required string "PGSQL_PASS"

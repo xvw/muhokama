@@ -30,3 +30,4 @@ module Traverse :
 include module type of Freer
 
 val get_migrations_files : migrations_path:string -> string list t
+val handle : 'a Try.t t -> 'a Try.t Lwt.t

@@ -1,0 +1,61 @@
+name: Muhokama integration-test
+on:
+  pull_request:
+  push:
+
+env:
+  PGSQL_HOST: localhost
+  PGSQL_PORT: 5432
+  PGSQL_DB: postgres
+  PGSQL_USER: postgres
+  PGSQL_PASS: postgres
+  LOG_LEVEL: debug
+  PGSQL_CONNECTION_POOL: 20
+
+jobs:
+  build_opam:
+    name: Test opam build & run integration tests
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+        ocaml-compiler:
+          - 4.13.x
+
+    runs-on: ${{ matrix.os }}
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+
+    steps:
+      - name: Set git to use LF
+        run: |
+          git config --global core.autocrlf false
+          git config --global core.eol lf
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Use OCaml ${{ matrix.ocaml-compiler }}
+        uses: ocaml/setup-ocaml@v2
+        with:
+          ocaml-compiler: ${{ matrix.ocaml-compiler }}
+          opam-depext-flags: --with-test
+
+      - run: opam install . --deps-only --with-test -y
+      - run: opam install preface -y
+      - run: opam exec -- dune build
+      - run: opam exec -- dune exec bin/muhokama.exe -- db.migrate
+      - run: opam exec -- dune exec bin/muhokama.exe -- db.migrate --to 0
+      - run: opam exec -- dune exec bin/muhokama.exe -- db.migrate
+      - run: opam exec -- dune runtest test/integration

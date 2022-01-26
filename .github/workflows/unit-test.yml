@@ -1,0 +1,36 @@
+name: Muhokama unit-test
+on:
+  pull_request:
+  push:
+
+jobs:
+  build_opam:
+    name: Test opam build & run unit tests
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+        ocaml-compiler:
+          - 4.13.x
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Set git to use LF
+        run: |
+          git config --global core.autocrlf false
+          git config --global core.eol lf
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Use OCaml ${{ matrix.ocaml-compiler }}
+        uses: ocaml/setup-ocaml@v2
+        with:
+          ocaml-compiler: ${{ matrix.ocaml-compiler }}
+          opam-depext-flags: --with-test
+
+      - run: opam install . --deps-only --with-test -y
+      - run: opam install preface -y
+      - run: opam exec -- dune build
+      - run: opam exec -- dune runtest test/unit

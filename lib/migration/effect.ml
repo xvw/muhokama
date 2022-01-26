@@ -37,3 +37,31 @@ let get_migrations_files ~migrations_path =
     return sorted_list
   | Error err -> error err
 ;;
+
+let read_migration_yaml path =
+  let open Try in
+  let* content = Io.read_file path in
+  Yaml.of_string content |> Result.map_error (function `Msg e -> Error.Yaml e)
+;;
+
+let handle program =
+  let handler : type a. (a -> 'b) -> a f -> 'b =
+   fun resume -> function
+    | Fetch_migrations { migrations_path } ->
+      let files = Io.list_files migrations_path in
+      resume files
+    | Read_migration { filepath } ->
+      let migration_obj = read_migration_yaml filepath in
+      resume migration_obj
+    | Info message ->
+      let () = Logs.debug (fun pp -> pp "%s" message) in
+      resume ()
+    | Warning message ->
+      let () = Logs.warn (fun pp -> pp "%s" message) in
+      resume ()
+    | Error err ->
+      let x = Error.Migration_context_error err in
+      Try.error x
+  in
+  run { handler } program |> Lwt.return
+;;

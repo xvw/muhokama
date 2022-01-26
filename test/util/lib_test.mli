@@ -10,6 +10,17 @@ val test
   -> ('a -> unit)
   -> 'a Alcotest.test_case
 
+val integration_test
+  :  ?migrations_path:string
+  -> ?speed:Alcotest.speed_level
+  -> about:string
+  -> desc:string
+  -> (Env.t
+      -> Caqti_error.t Lib_db.connection
+      -> (Caqti_error.t Lib_db.connection * 'a) Try.t Lwt.t)
+  -> ('a -> unit)
+  -> unit Alcotest.test_case
+
 (** An helper for checking equalities.*)
 val same : 'a Alcotest.testable -> expected:'a -> computed:'a -> unit
 

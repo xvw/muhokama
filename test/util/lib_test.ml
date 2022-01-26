@@ -1,7 +1,36 @@
 open Lib_common
 
+exception Muho_failure of string
+
 let test ?(speed = `Quick) ~about ~desc f =
   Alcotest.test_case (Format.asprintf "%-42s%s" about desc) speed f
+;;
+
+let integration_test
+    ?(migrations_path = "../../../../migrations")
+    ?(speed = `Slow)
+    ~about
+    ~desc
+    f
+    e
+  =
+  test ~speed ~about ~desc (fun () ->
+      let open Lwt_util in
+      let promise =
+        let*? env = Env.init () in
+        let*? pool = Lib_db.connect_with_env env in
+        let*? () = Lib_migration.Action.migrate pool migrations_path None in
+        f env pool
+      in
+      match Lwt_main.run promise with
+      | Error e ->
+        raise_notrace @@ Muho_failure (Format.asprintf "%a" Error.pp e)
+      | Ok (pool, result) ->
+        let _ =
+          Lwt_main.run
+          @@ Lib_migration.Action.migrate pool migrations_path (Some 0)
+        in
+        e result)
 ;;
 
 let same testable ~expected ~computed =
