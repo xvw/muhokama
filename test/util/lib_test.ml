@@ -19,8 +19,10 @@ let integration_test
       let promise =
         let*? env = Env.init () in
         let*? pool = Lib_db.connect_with_env env in
+        let*? () = Lib_migration.Action.migrate pool migrations_path (Some 0) in
         let*? () = Lib_migration.Action.migrate pool migrations_path None in
-        f env pool
+        let+? result = f env pool in
+        pool, result
       in
       match Lwt_main.run promise with
       | Error e ->
