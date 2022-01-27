@@ -27,6 +27,26 @@ module Make (A : Intf.AS_ASSOC) = struct
   let float = valid float_and
   let null = A.as_null Validate.valid @@ unexpected_repr "null"
 
+  let deep_equal f eq a b =
+    f (fun x -> f (fun y -> eq x y) (Fun.const false) b) (Fun.const false) a
+  ;;
+
+  let rec equal a b =
+    let open A in
+    deep_equal as_null (fun () () -> true) a b
+    || deep_equal as_atom String.equal a b
+    || deep_equal as_string String.equal a b
+    || deep_equal as_bool Bool.equal a b
+    || deep_equal as_int Int.equal a b
+    || deep_equal as_float Float.equal a b
+    || deep_equal as_list (List.equal equal) a b
+    || deep_equal
+         as_object
+         (List.equal (fun (k, y) (k', y') -> String.equal k k' && equal y y'))
+         a
+         b
+  ;;
+
   let list_of k s =
     list_and
       (fun list ->
@@ -59,6 +79,22 @@ module Make (A : Intf.AS_ASSOC) = struct
         (missing_field key)
         (fun () -> f value |> Error.collapse_for_field key)
         value
+  ;;
+
+  let ensure_equality key_a key_b assoc =
+    let message =
+      Fmt.str
+        "fields %a and %a are not equivalent"
+        Fmt.(quote string)
+        key_a
+        Fmt.(quote string)
+        key_b
+    and a = List.assoc_opt key_a assoc
+    and b = List.assoc_opt key_b assoc in
+    (if Option.equal equal a b
+    then Validate.valid ()
+    else Error.(to_validate @@ Invalid_predicate message))
+    |> Error.collapse_for_field key_a
   ;;
 
   let or_ prev default =

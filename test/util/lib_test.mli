@@ -51,4 +51,11 @@ module User : sig
   val equal : t -> t -> bool
   val testable : t Alcotest.testable
   val make : string -> int option -> string option -> string -> t
+
+  val create_pre_saved
+    :  string
+    -> string
+    -> string
+    -> string
+    -> Lib_model.User.Pre_saved.t Try.t
 end

@@ -133,4 +133,14 @@ module User = struct
 
   let testable = Alcotest.testable pp equal
   let make id age name email = { id; age; name; email }
+
+  let create_pre_saved username email password confirm =
+    `Assoc
+      [ "user_name", `String username
+      ; "user_email", `String email
+      ; "user_password", `String password
+      ; "confirm_user_password", `String confirm
+      ]
+    |> Lib_model.User.Pre_saved.create
+  ;;
 end

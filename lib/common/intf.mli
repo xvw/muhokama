@@ -74,6 +74,8 @@ module type VALIDABLE_ASSOC = sig
     -> (string * t) list
     -> 'a Validate.t
 
+  val ensure_equality : string -> string -> (string * t) list -> unit Validate.t
   val or_ : 'a option Validate.t -> 'a -> 'a Validate.t
   val ( >? ) : 'a option Validate.t -> 'a -> 'a Validate.t
+  val equal : t -> t -> bool
 end
