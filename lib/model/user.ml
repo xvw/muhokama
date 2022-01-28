@@ -34,6 +34,13 @@ module Pre_saved = struct
     { user_name; user_email; user_password }
   ;;
 
+  let formlet =
+    ( ("user_name", `Text)
+    , ("user_email", `Email)
+    , ("user_password", `Password)
+    , ("confirm_user_password", `Password) )
+  ;;
+
   let create yojson_obj =
     let open Validate in
     let open Assoc.Yojson in
@@ -45,7 +52,11 @@ module Pre_saved = struct
         <*> required (verify_password & hash_password) "user_password" obj
         <*> ensure_equality "user_password" "confirm_user_password" obj)
       yojson_obj
-    |> run ~provider:"User.Pre_saved"
+    |> run ~name:"User.Pre_saved"
+  ;;
+
+  let from_urlencoded query_string =
+    query_string |> Assoc.Yojson.from_urlencoded |> create
   ;;
 
   let save_query =

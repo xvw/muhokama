@@ -29,5 +29,46 @@ let page
     :: List.map Util.stylesheet additional_css
   in
   let p_head = head p_title @@ p_meta @ p_stylesheet in
-  html ~a:[ a_lang lang ] p_head (body content)
+  html
+    ~a:[ a_lang lang ]
+    p_head
+    (body
+       [ header
+           [ h1 [ txt "muhokama" ]
+           ; h2 [ txt "Ça veut dire 'Discussion' en Ouzbek" ]
+           ; nav
+               [ a ~a:[ a_href "/" ] [ txt "Accueil" ]
+               ; a ~a:[ a_href "/register" ] [ txt "Créer un compte" ]
+               ]
+           ]
+       ; main content
+       ; footer
+           [ p
+               [ strong [ txt "Muhokama " ]
+               ; txt "est un logiciel libre écrit en "
+               ; a ~a:[ a_href "https://ocaml.org" ] [ txt "OCaml" ]
+               ; txt "."
+               ; br ()
+               ; txt "Son code est source est distribué sous licence "
+               ; strong [ txt "MIT" ]
+               ; txt "."
+               ]
+           ; div
+               ~a:[ a_class [ "multi-enumeration" ] ]
+               [ ul
+                   [ li
+                       [ a
+                           ~a:[ a_href "https://github.com/xvw/muhokama" ]
+                           [ txt "Code source" ]
+                       ]
+                   ; li
+                       [ a
+                           ~a:
+                             [ a_href "https://github.com/xvw/muhokama/issues" ]
+                           [ txt "Bug tracker" ]
+                       ]
+                   ]
+               ]
+           ]
+       ])
 ;;
