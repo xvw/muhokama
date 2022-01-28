@@ -1,2 +1,2 @@
-val dummy : Tyxml.Html.doc
-val register : Tyxml.Html.doc
+val dummy : ?notifs:Notif.t -> unit -> Tyxml.Html.doc
+val register : ?notifs:Notif.t -> unit -> Tyxml.Html.doc

@@ -1,14 +1,19 @@
 open Tyxml
 
-let dummy =
-  Template.page ~lang:"en" ~page_title:"A dummy page" Html.[ txt "Hello world" ]
+let dummy ?(notifs = Notif.Nothing) () =
+  Template.page
+    ~notifs
+    ~lang:"en"
+    ~page_title:"A dummy page"
+    Html.[ txt "Hello world" ]
 ;;
 
-let register =
+let register ?(notifs = Notif.Nothing) () =
   let user_name, user_email, user_password, confirm_user_password =
     Lib_model.User.Pre_saved.formlet
   in
   Template.page
+    ~notifs
     ~lang:"fr"
     ~page_title:"Créer un compte"
     Html.

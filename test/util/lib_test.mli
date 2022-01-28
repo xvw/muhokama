@@ -16,7 +16,7 @@ val integration_test
   -> about:string
   -> desc:string
   -> (Env.t -> Caqti_error.t Lib_db.connection -> 'a Try.t Lwt.t)
-  -> ('a -> unit)
+  -> ('a Try.t -> unit)
   -> unit Alcotest.test_case
 
 (** An helper for checking equalities.*)

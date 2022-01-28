@@ -22,7 +22,11 @@ let test_user_valid =
         in
         user.user_name, user.user_email, user.user_password
       and expected =
-        Ok ("xvw", "xavier@mail.com", Sha256.hash_string "foobarfoobar")
+        Ok
+          ( "xvw"
+          , "xavier@mail.com"
+          , Sha256.(
+              hash_string "xavier@mail.com" <|> hash_string "foobarfoobar") )
       in
       same
         (try_testable (triple string string sha256_testable))
@@ -34,9 +38,7 @@ let test_user_invalid_because_confirm =
   let open Lib_model.User.Pre_saved in
   test
     ~about:"Pre_saved.create"
-    ~desc:
-      "When everything is good, it should wrap a pre-saved user into an Ok \
-       result"
+    ~desc:"When there is errors it should wrap it into an error"
     (fun () ->
       let computed =
         let open Try in
@@ -76,9 +78,7 @@ let test_user_invalid_because_confirm_and_email =
   let open Lib_model.User.Pre_saved in
   test
     ~about:"Pre_saved.create"
-    ~desc:
-      "When everything is good, it should wrap a pre-saved user into an Ok \
-       result"
+    ~desc:"When there is errors, it should wrap it into an error"
     (fun () ->
       let computed =
         let open Try in

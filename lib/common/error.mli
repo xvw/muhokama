@@ -57,17 +57,31 @@ module Field : sig
   val pp : 'a Fmt.t -> 'a t Fmt.t
 end
 
+module User : sig
+  type t =
+    | Email_already_taken of string
+    | Username_already_taken of string
+    | Identity_already_taken of
+        { username : string
+        ; email : string
+        }
+
+  val equal : t -> t -> bool
+  val pp : t Fmt.t
+end
+
 type t =
   | Migration of Migration.t
   | IO of IO.t
   | Validation of Validable.t
   | Database of string
   | Field of t Field.t
+  | User of User.t
+  | Yaml of string
   | Invalid_object of
       { name : string
       ; errors : t Preface.Nonempty_list.t
       }
-  | Yaml of string
 
 val equal : t -> t -> bool
 val pp : t Fmt.t
@@ -94,6 +108,9 @@ val validation_is_empty : t
 val validation_unexpected_representation : expected_representation:string -> t
 val field_missing : name:string -> t
 val field_invalid : name:string -> errors:t Preface.Nonempty_list.t -> t
+val user_email_already_taken : string -> t
+val user_name_already_taken : string -> t
+val user_already_taken : username:string -> email:string -> t
 val invalid_object : name:string -> errors:t Preface.Nonempty_list.t -> t
 val to_try : t -> ('a, t) Result.t
 val to_validate : t -> ('a, t Preface.Nonempty_list.t) Preface.Validation.t
@@ -102,3 +119,15 @@ val collapse_for_field
   :  string
   -> ('a, t Preface.Nonempty_list.t) Preface.Validation.t
   -> ('a, t Preface.Nonempty_list.t) Preface.Validation.t
+
+type error_tree =
+  | Leaf of
+      { label : string
+      ; message : string option
+      }
+  | Node of
+      { label : string
+      ; tree : error_tree list
+      }
+
+val normalize : t -> error_tree
