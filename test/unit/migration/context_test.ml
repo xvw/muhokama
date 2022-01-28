@@ -49,20 +49,15 @@ let files =
   ]
 ;;
 
-let find_failure msg =
-  Try.error
-    Error.(With_message Fmt.(str "Unable to find %a" (quote string) msg))
-;;
-
 let read_dir dir =
   match List.assoc_opt dir dirs with
-  | None -> find_failure dir
+  | None -> Error.(to_try @@ io_unreadable_dir ~dirpath:dir)
   | Some x -> Try.ok x
 ;;
 
 let read_file file =
   match List.assoc_opt file files with
-  | None -> find_failure file
+  | None -> Error.(to_try @@ io_unreadable_file ~filepath:file)
   | Some x -> x
 ;;
 
@@ -109,7 +104,8 @@ let test_init_on_inexistant_folder =
     ~desc:"When there is no folder it should produce an error"
     (fun () ->
       let buff = ref [] in
-      let expected = find_failure "non-existing-folder"
+      let expected =
+        Error.(to_try @@ io_unreadable_dir ~dirpath:"non-existing-folder")
       and computed =
         handle_init buff "non-existing-folder" |> Try.map Context.to_list
       in
@@ -149,9 +145,9 @@ let test_init_on_dir_2_folder =
       let expected =
         Error
           Error.(
-            Invalid_provider
-              { provider = "2-test-2.yml"
-              ; errors = nel (Missing_field "up") []
+            Invalid_object
+              { name = "2-test-2.yml"
+              ; errors = nel (Field (Missing { name = "up" })) []
               })
       and computed = handle_init buff "dir-2" |> Try.map Context.to_list in
       same
@@ -174,8 +170,7 @@ let test_init_on_dir_3_folder =
       let buff = ref [] in
       let expected =
         Error
-          Error.(
-            Invalid_migration_successor { expected_index = 4; given_index = 3 })
+          Error.(migration_invalid_successor ~expected_index:4 ~given_index:3)
       and computed = handle_init buff "dir-3" |> Try.map Context.to_list in
       same
         (list (pair string string))
@@ -201,8 +196,7 @@ let test_init_on_dir_4_folder =
       let buff = ref [] in
       let expected =
         Error
-          Error.(
-            Invalid_migration_successor { expected_index = 4; given_index = 5 })
+          Error.(migration_invalid_successor ~expected_index:4 ~given_index:5)
       and computed = handle_init buff "dir-4" |> Try.map Context.to_list in
       same
         (list (pair string string))
@@ -376,7 +370,7 @@ let test_slice_7 =
     (fun () ->
       let buff = ref [] in
       let ctx = handle_init buff "dir-5" in
-      let expected = Error.(to_try @@ Migration_invalid_target 13)
+      let expected = Error.(to_try @@ migration_invalid_target ~given_target:13)
       and computed =
         Try.(ctx >>= fun s -> Context.get_migrations ~current:5 ~target:13 s)
       in
@@ -390,7 +384,7 @@ let test_slice_8 =
     (fun () ->
       let buff = ref [] in
       let ctx = handle_init buff "dir-5" in
-      let expected = Error.(to_try @@ Migration_invalid_target 12)
+      let expected = Error.(to_try @@ migration_invalid_state ~current_state:12)
       and computed =
         Try.(ctx >>= fun s -> Context.get_migrations ~current:12 ~target:3 s)
       in

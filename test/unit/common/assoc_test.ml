@@ -14,7 +14,7 @@ module User = struct
         <*> R.(obj |> optional string "name")
         <*> R.(obj |> required string "email"))
       assoc
-    |> R.run ~provider:"user"
+    |> R.run ~name:"user"
   ;;
 
   let from_jsnonm = create (module Assoc.Jsonm)
@@ -64,9 +64,12 @@ let test_create_an_invalid_user_without_any_values =
       let expected =
         Try.error
           Error.(
-            Invalid_provider
-              { provider = "user"
-              ; errors = nel (Missing_field "id") [ Missing_field "email" ]
+            Invalid_object
+              { name = "user"
+              ; errors =
+                  nel
+                    (Field (Missing { name = "id" }))
+                    [ Field (Missing { name = "email" }) ]
               })
       and computed = User.from_jsnonm json_user in
       same (try_testable User.testable) ~expected ~computed)

@@ -16,7 +16,7 @@ let string_to_log log =
   | "warning" -> valid Logs.Warning
   | "error" -> valid Logs.Error
   | "app" -> valid Logs.App
-  | unknown -> Error.(to_validate @@ Invalid_log_level unknown)
+  | unknown -> Error.(to_validate @@ io_invalid_loglevel unknown)
 ;;
 
 let equal a b =
@@ -92,5 +92,5 @@ let validate =
 ;;
 
 let init () =
-  Lwt.return @@ Validate.Free.run ~provider:"env" Sys.getenv_opt validate
+  Lwt.return @@ Validate.Free.run ~name:"env" Sys.getenv_opt validate
 ;;

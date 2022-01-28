@@ -51,21 +51,20 @@ let test_user_invalid_because_confirm =
       and expected =
         Error.(
           to_try
-            (Invalid_provider
-               { provider = "User.Pre_saved"
-               ; errors =
-                   nel
-                     (Invalid_field
-                        { key = "user_password"
-                        ; errors =
-                            nel
-                              (Invalid_predicate
+            (invalid_object
+               ~name:"User.Pre_saved"
+               ~errors:
+                 (nel
+                    (field_invalid
+                       ~name:"user_password"
+                       ~errors:
+                         (nel
+                            (validation_invalid_predicate
+                               ~with_message:
                                  "fields \"user_password\" and \
                                   \"confirm_user_password\" are not equivalent")
-                              []
-                        })
-                     []
-               }))
+                            []))
+                    [])))
       in
       same
         (try_testable (triple string string sha256_testable))
@@ -88,33 +87,24 @@ let test_user_invalid_because_confirm_and_email =
         in
         user.user_name, user.user_email, user.user_password
       and expected =
-        Error.(
-          to_try
-            (Invalid_provider
-               { provider = "User.Pre_saved"
-               ; errors =
-                   nel
-                     (Invalid_field
-                        { key = "user_email"
-                        ; errors =
-                            nel
-                              (Invalid_predicate
-                                 "\"xaviermail.com\" does not appear to be an \
-                                  email address")
-                              []
-                        })
-                     [ Invalid_field
-                         { key = "user_password"
-                         ; errors =
-                             nel
-                               (Invalid_predicate
-                                  "fields \"user_password\" and \
-                                   \"confirm_user_password\" are not \
-                                   equivalent")
-                               []
-                         }
-                     ]
-               }))
+        let open Error in
+        let predicate_pass =
+          validation_invalid_predicate
+            ~with_message:
+              "fields \"user_password\" and \"confirm_user_password\" are not \
+               equivalent"
+        and predicate_email =
+          validation_invalid_predicate
+            ~with_message:
+              "\"xaviermail.com\" does not appear to be an email address"
+        in
+        let invalid_password =
+          field_invalid ~name:"user_password" ~errors:(nel predicate_pass [])
+        and invalid_email =
+          field_invalid ~name:"user_email" ~errors:(nel predicate_email [])
+        in
+        let errors = nel invalid_email [ invalid_password ] in
+        to_try @@ invalid_object ~name:"User.Pre_saved" ~errors
       in
       same
         (try_testable (triple string string sha256_testable))

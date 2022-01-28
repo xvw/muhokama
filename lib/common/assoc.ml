@@ -2,11 +2,12 @@ module L = Preface_stdlib.List.Applicative.Traversable (Validate.Applicative)
 
 let valid f = f Validate.valid
 
-let unexpected_repr expected_repr () =
-  Validate.error @@ Error.Unexpected_repr { expected_repr }
+let unexpected_repr expected_representation () =
+  Error.(
+    to_validate @@ validation_unexpected_representation ~expected_representation)
 ;;
 
-let missing_field field () = Validate.error @@ Error.Missing_field field
+let missing_field field () = Error.(to_validate @@ field_missing ~name:field)
 
 module Make (A : Intf.AS_ASSOC) = struct
   type t = A.t
@@ -71,9 +72,8 @@ module Make (A : Intf.AS_ASSOC) = struct
   ;;
 
   let required f key assoc =
-    let open Validate in
     match List.assoc_opt key assoc with
-    | None -> error @@ Missing_field key
+    | None -> missing_field key ()
     | Some value ->
       A.as_null
         (missing_field key)
@@ -93,7 +93,8 @@ module Make (A : Intf.AS_ASSOC) = struct
     and b = List.assoc_opt key_b assoc in
     (if Option.equal equal a b
     then Validate.valid ()
-    else Error.(to_validate @@ Invalid_predicate message))
+    else
+      Error.(to_validate @@ validation_invalid_predicate ~with_message:message))
     |> Error.collapse_for_field key_a
   ;;
 
@@ -104,12 +105,24 @@ module Make (A : Intf.AS_ASSOC) = struct
 
   let ( >? ) = or_
 
-  let run ?(provider = "data") validated =
+  let from_urlencoded l =
+    let r =
+      List.map
+        (fun (k, vs) ->
+          ( k
+          , match vs with
+            | [] -> A.to_null (fun _ -> assert false) None
+            | [ x ] -> A.to_string x
+            | xs -> A.to_list (List.map (fun x -> A.to_string x) xs) ))
+        l
+    in
+    A.to_object r
+  ;;
+
+  let run ?(name = "data") validated =
     match validated with
     | Preface.Validation.Valid x -> Ok x
-    | Invalid err ->
-      let errors = Error.Set.to_nonempty_list err in
-      Error Error.(Invalid_provider { provider; errors })
+    | Invalid errors -> Error.(to_try @@ invalid_object ~name ~errors)
   ;;
 end
 
@@ -137,36 +150,53 @@ module Yojson = struct
       | _ -> invalid ()
     ;;
 
+    let to_object l = `Assoc l
+
     let as_list valid invalid = function
       | `List v -> valid v
       | _ -> invalid ()
     ;;
 
+    let to_list l = `List l
     let as_atom _valid invalid _ = invalid ()
+    let to_atom s = `Stringlit s
 
     let as_string valid invalid = function
       | `String s -> valid s
       | _ -> invalid ()
     ;;
 
+    let to_string s = `String s
+
     let as_bool valid invalid = function
       | `Bool b -> valid b
       | _ -> invalid ()
     ;;
+
+    let to_bool b = `Bool b
 
     let as_int valid invalid = function
       | `Int i -> valid i
       | _ -> invalid ()
     ;;
 
+    let to_int i = `Int i
+
     let as_float valid invalid = function
       | `Float f -> valid f
       | _ -> invalid ()
     ;;
 
+    let to_float f = `Float f
+
     let as_null valid invalid = function
       | `Null -> valid ()
       | _ -> invalid ()
+    ;;
+
+    let to_null f = function
+      | Some x -> f x
+      | None -> `Null
     ;;
   end
 
@@ -193,36 +223,53 @@ module Jsonm = struct
       | _ -> invalid ()
     ;;
 
+    let to_object l = `O l
+
     let as_list valid invalid = function
       | `A v -> valid v
       | _ -> invalid ()
     ;;
 
+    let to_list l = `A l
     let as_atom _valid invalid _ = invalid ()
+    let to_atom s = `String s
 
     let as_string valid invalid = function
       | `String s -> valid s
       | _ -> invalid ()
     ;;
 
+    let to_string s = `String s
+
     let as_bool valid invalid = function
       | `Bool b -> valid b
       | _ -> invalid ()
     ;;
+
+    let to_bool b = `Bool b
 
     let as_int valid invalid = function
       | `Float f -> valid @@ int_of_float f
       | _ -> invalid ()
     ;;
 
+    let to_int i = `Float (float_of_int i)
+
     let as_float valid invalid = function
       | `Float f -> valid f
       | _ -> invalid ()
     ;;
 
+    let to_float f = `Float f
+
     let as_null valid invalid = function
       | `Null -> valid ()
       | _ -> invalid ()
+    ;;
+
+    let to_null f = function
+      | Some x -> f x
+      | None -> `Null
     ;;
   end
 

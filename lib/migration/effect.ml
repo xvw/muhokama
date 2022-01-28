@@ -59,9 +59,7 @@ let handle program =
     | Warning message ->
       let () = Logs.warn (fun pp -> pp "%s" message) in
       resume ()
-    | Error err ->
-      let x = Error.Migration_context_error err in
-      Try.error x
+    | Error err -> Try.error err
   in
   run { handler } program |> Lwt.return
 ;;

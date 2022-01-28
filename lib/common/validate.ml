@@ -1,33 +1,35 @@
-type 'a t = ('a, Error.Set.t) Preface.Validation.t
+module Nel = Preface.Nonempty_list
+
+type 'a t = ('a, Error.t Nel.t) Preface.Validation.t
 
 let valid x = Preface.Validation.Valid x
 let invalid x = Preface.Validation.Invalid x
-
-let invalid_from_nel x =
-  Preface.Validation.Invalid (Error.Set.from_nonempty_list x)
-;;
-
-let error x = Preface.Validation.Invalid (Error.Set.singleton x)
+let error x = Error.to_validate x
 
 let pp pp_v ppf = function
   | Preface.Validation.Valid v ->
     Format.fprintf ppf "@[<2>Valid@ @[%a@]@]" pp_v v
   | Preface.Validation.Invalid e ->
-    Format.fprintf ppf "@[<2>Invalid@ @[%a@]@]" Error.Set.pp e
+    Format.fprintf
+      ppf
+      "@[<2>Invalid@ @[%a@]@]"
+      (Fmt.list Error.pp)
+      (Nel.to_list e)
 ;;
 
 let equal eq a b =
   let open Preface.Validation in
   match a, b with
   | Valid x, Valid y -> eq x y
-  | Invalid x, Invalid y -> Error.Set.equal x y
+  | Invalid x, Invalid y -> Nel.equal Error.equal x y
   | _ -> false
 ;;
 
-module Functor = Preface.Validation.Functor (Error.Set)
-module Applicative = Preface.Validation.Applicative (Error.Set)
-module Alt = Preface.Validation.Alt (Error.Set)
-module Monad = Preface.Validation.Monad (Error.Set)
+module E = Preface.Make.Semigroup.From_alt (Nel.Alt) (Error)
+module Functor = Preface.Validation.Functor (E)
+module Applicative = Preface.Validation.Applicative (E)
+module Alt = Preface.Validation.Alt (E)
+module Monad = Preface.Validation.Monad (E)
 
 let map = Functor.map
 let apply = Applicative.apply
@@ -50,17 +52,21 @@ include (Infix : module type of Infix with type 'a t := 'a t)
 include (Syntax : module type of Syntax with type 'a t := 'a t)
 
 let from_predicate ?(message = "The predicate is not validated") p x =
-  if p x then valid x else error @@ Invalid_predicate message
+  if p x
+  then valid x
+  else error @@ Error.validation_invalid_predicate ~with_message:message
 ;;
 
-let greater_than min_bound x =
-  let message = Fmt.str "[%d] is smaller or equal to [%d]" x min_bound in
-  from_predicate ~message (fun x -> x > min_bound) x
+let greater_than min_bound given_value =
+  if given_value <= min_bound
+  then error @@ Error.validation_is_smaller_than ~min_bound ~given_value
+  else valid given_value
 ;;
 
-let smaller_than max_bound x =
-  let message = Fmt.str "[%d] is greater or equal to [%d]" x max_bound in
-  from_predicate ~message (fun x -> x < max_bound) x
+let smaller_than max_bound given_value =
+  if given_value >= max_bound
+  then error @@ Error.validation_is_greater_than ~max_bound ~given_value
+  else valid given_value
 ;;
 
 let bounded_to min_bound max_bound =
@@ -69,22 +75,16 @@ let bounded_to min_bound max_bound =
   greater_than (pred min) & smaller_than (succ max)
 ;;
 
-let not_empty =
-  let message = "The given string is empty" in
-  from_predicate ~message (function
-      | "" -> false
-      | _ -> true)
+let not_empty s =
+  match s with
+  | "" -> Error.(to_validate validation_is_empty)
+  | _ -> valid s
 ;;
 
 let not_blank x =
-  let message = Fmt.str "The given string, %a, is blank" Fmt.(quote string) x in
-  from_predicate
-    ~message
-    (fun x ->
-      match String.trim x with
-      | "" -> false
-      | _ -> true)
-    x
+  match String.trim x with
+  | "" -> Error.(to_validate validation_is_blank)
+  | _ -> valid x
 ;;
 
 (* This a very weak implementation... *)
@@ -132,7 +132,7 @@ module Free = struct
 
   module Run = To_applicative (Applicative)
 
-  let run ?(provider = "data") fetch validate =
+  let run ?(name = "data") fetch validate =
     let transform field =
       let value = fetch field.key in
       field.validation value
@@ -140,9 +140,7 @@ module Free = struct
     Run.run { transform } validate
     |> function
     | Preface.Validation.Valid x -> Ok x
-    | Invalid err ->
-      let errors = Error.Set.to_nonempty_list err in
-      Error Error.(Invalid_provider { provider; errors })
+    | Invalid errors -> Error Error.(Invalid_object { name; errors })
   ;;
 
   let or_ prev default = prev <&> Option.value ~default
@@ -161,7 +159,7 @@ module Free = struct
 
   let required validator key =
     let validation = function
-      | None -> error @@ Missing_field key
+      | None -> error @@ Error.field_missing ~name:key
       | Some value -> validator value |> Error.collapse_for_field key
     in
     promote { key; validation }
@@ -171,13 +169,17 @@ module Free = struct
 
   let int given_value =
     match int_of_string_opt given_value with
-    | None -> error @@ Error.Invalid_projection { given_value; target = "int" }
+    | None ->
+      error
+      @@ Error.validation_unconvertible_string ~given_value ~target_type:"int"
     | Some x -> valid x
   ;;
 
   let bool given_value =
     match bool_of_string_opt given_value with
-    | None -> error @@ Error.Invalid_projection { given_value; target = "bool" }
+    | None ->
+      error
+      @@ Error.validation_unconvertible_string ~given_value ~target_type:"bool"
     | Some x -> valid x
   ;;
 end

@@ -23,6 +23,14 @@ module type AS_ASSOC = sig
   val as_int : (t, int, 'a) visitor
   val as_float : (t, float, 'a) visitor
   val as_null : (t, unit, 'a) visitor
+  val to_object : (string * t) list -> t
+  val to_list : t list -> t
+  val to_atom : string -> t
+  val to_string : string -> t
+  val to_bool : bool -> t
+  val to_float : float -> t
+  val to_int : int -> t
+  val to_null : ('a -> t) -> 'a option -> t
 end
 
 (** This interface describes the complete API of an association structure that
@@ -30,7 +38,7 @@ end
 module type VALIDABLE_ASSOC = sig
   type t
 
-  val run : ?provider:string -> 'a Validate.t -> 'a Try.t
+  val run : ?name:string -> 'a Validate.t -> 'a Try.t
 
   (** {1 Simple validator}
 
@@ -78,4 +86,5 @@ module type VALIDABLE_ASSOC = sig
   val or_ : 'a option Validate.t -> 'a -> 'a Validate.t
   val ( >? ) : 'a option Validate.t -> 'a -> 'a Validate.t
   val equal : t -> t -> bool
+  val from_urlencoded : (string * string list) list -> t
 end

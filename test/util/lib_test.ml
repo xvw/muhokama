@@ -47,7 +47,6 @@ let nel x xs =
 ;;
 
 let error_testable = Alcotest.testable Error.pp Error.equal
-let error_set_testable = Alcotest.testable Error.Set.pp Error.Set.equal
 let try_testable t = Alcotest.result t error_testable
 
 let validate_testable t =
