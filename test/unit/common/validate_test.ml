@@ -24,7 +24,9 @@ let test_int_validation_invalid =
       let given_value = "16-78"
       and target = "int" in
       let expected =
-        Validate.error (Error.Invalid_projection { given_value; target })
+        Error.(
+          to_validate
+          @@ validation_unconvertible_string ~given_value ~target_type:target)
       and computed = F.int given_value in
       same (validate_testable int) ~computed ~expected)
 ;;
@@ -51,8 +53,8 @@ let test_int_with_smaller_bound_invalid =
       let given_value = 9
       and min_bound = 997 in
       let expected =
-        Validate.error
-          (Error.Invalid_predicate "[9] is smaller or equal to [997]")
+        Error.(
+          to_validate @@ validation_is_smaller_than ~given_value ~min_bound)
       and computed =
         V.(F.(int & greater_than min_bound)) @@ string_of_int given_value
       in
@@ -69,7 +71,9 @@ let test_int_with_smaller_bound_invalid_because_of_int =
       let given_value = "16-78"
       and target = "int" in
       let expected =
-        Validate.error (Error.Invalid_projection { given_value; target })
+        Error.(
+          to_validate
+          @@ validation_unconvertible_string ~given_value ~target_type:target)
       and computed = V.(F.(int & greater_than 999)) given_value in
       same (validate_testable int) ~computed ~expected)
 ;;
@@ -84,8 +88,8 @@ let test_int_with_greater_bound_invalid =
       let given_value = 9999
       and max_bound = 997 in
       let expected =
-        Validate.error
-          (Error.Invalid_predicate "[9999] is greater or equal to [997]")
+        Error.(
+          to_validate @@ validation_is_greater_than ~given_value ~max_bound)
       and computed =
         V.(F.(int & smaller_than max_bound)) @@ string_of_int given_value
       in
@@ -102,7 +106,9 @@ let test_int_with_greater_bound_invalid_because_of_int =
       let given_value = "16-78"
       and target = "int" in
       let expected =
-        Validate.error (Error.Invalid_projection { given_value; target })
+        Error.(
+          to_validate
+          @@ validation_unconvertible_string ~given_value ~target_type:target)
       and computed = V.(F.(int & smaller_than 999)) given_value in
       same (validate_testable int) ~computed ~expected)
 ;;
@@ -129,8 +135,9 @@ let test_int_with_bound_invalid =
       let given_value = 9999
       and max_bound = 997 in
       let expected =
-        Validate.error
-          (Error.Invalid_predicate "[9999] is greater or equal to [998]")
+        Error.(
+          to_validate
+          @@ validation_is_greater_than ~given_value ~max_bound:(succ max_bound))
       and computed =
         V.(F.(int & bounded_to max_bound 0)) @@ string_of_int given_value
       in
@@ -147,8 +154,9 @@ let test_int_with_bound_invalid_because_of_smaller =
       let given_value = 100
       and min_bound = 997 in
       let expected =
-        Validate.error
-          (Error.Invalid_predicate "[100] is smaller or equal to [996]")
+        Error.(
+          to_validate
+          @@ validation_is_smaller_than ~given_value ~min_bound:(pred min_bound))
       and computed =
         V.(F.(int & bounded_to min_bound 1000)) @@ string_of_int given_value
       in
@@ -165,7 +173,9 @@ let test_int_with_bound_invalid_because_of_int =
       let given_value = "16-78"
       and target = "int" in
       let expected =
-        Validate.error (Error.Invalid_projection { given_value; target })
+        Error.(
+          to_validate
+          @@ validation_unconvertible_string ~given_value ~target_type:target)
       and computed = V.(F.(int & bounded_to 0 999)) given_value in
       same (validate_testable int) ~computed ~expected)
 ;;
@@ -198,8 +208,7 @@ let test_string_not_empty_invalid =
     ~about:"string & not_empty"
     ~desc:"When the string is empty it should return an error"
     (fun () ->
-      let expected =
-        Validate.error (Error.Invalid_predicate "The given string is empty")
+      let expected = Error.(to_validate @@ validation_is_empty)
       and computed = V.(F.(string & not_empty)) "" in
       same (validate_testable string) ~computed ~expected)
 ;;
@@ -220,9 +229,7 @@ let test_string_not_blank_invalid =
     ~about:"string & not_blank"
     ~desc:"When the string is blank it should return an error"
     (fun () ->
-      let expected =
-        Validate.error
-          (Error.Invalid_predicate "The given string, \"      \", is blank")
+      let expected = Error.(to_validate @@ validation_is_blank)
       and computed = V.(F.(string & not_blank)) "      " in
       same (validate_testable string) ~computed ~expected)
 ;;
@@ -241,8 +248,8 @@ module User = struct
     <*> required (string & not_blank) "email"
   ;;
 
-  let run ?provider store =
-    Validate.Free.run ?provider (fun key -> Store.find_opt key store) validate
+  let run ?name store =
+    Validate.Free.run ?name (fun key -> Store.find_opt key store) validate
   ;;
 
   let store list =
@@ -265,7 +272,7 @@ let test_user_when_every_data_are_filled =
       in
       let expected =
         Ok (User.make "xvw" (Some 32) (Some "Vdw") "xavier@mail.com")
-      and computed = User.run ~provider:"user" store in
+      and computed = User.run ~name:"user" store in
       same (try_testable User.testable) ~expected ~computed)
 ;;
 
@@ -292,11 +299,14 @@ let test_user_when_all_data_are_missing =
       let expected =
         Try.error
           Error.(
-            Invalid_provider
-              { provider = "user"
-              ; errors = nel (Missing_field "email") [ Missing_field "id" ]
+            Invalid_object
+              { name = "user"
+              ; errors =
+                  nel
+                    (Field (Missing { name = "email" }))
+                    [ Field (Missing { name = "id" }) ]
               })
-      and computed = User.run ~provider:"user" store in
+      and computed = User.run ~name:"user" store in
       same (try_testable User.testable) ~expected ~computed)
 ;;
 
@@ -316,31 +326,30 @@ let test_user_when_there_is_some_errors =
       let expected =
         Try.error
           Error.(
-            Invalid_provider
-              { provider = "user"
+            Invalid_object
+              { name = "user"
               ; errors =
                   nel
-                    (Missing_field "email")
-                    [ Invalid_field
-                        { key = "name"
-                        ; errors =
-                            nel
-                              (Invalid_predicate
-                                 {|The given string, "   ", is blank|})
-                              []
-                        }
-                    ; Invalid_field
-                        { key = "age"
-                        ; errors =
-                            nel
-                              (Invalid_predicate
-                                 {|[-12] is smaller or equal to [7]|})
-                              []
-                        }
-                    ; Missing_field "id"
+                    (Field (Missing { name = "email" }))
+                    [ Field
+                        (Invalid
+                           { name = "name"
+                           ; errors = nel (Validation Is_blank) []
+                           })
+                    ; Field
+                        (Invalid
+                           { name = "age"
+                           ; errors =
+                               nel
+                                 (Validation
+                                    (Is_smaller_than
+                                       { min_bound = 7; given_value = -12 }))
+                                 []
+                           })
+                    ; Field (Missing { name = "id" })
                     ]
               })
-      and computed = User.run ~provider:"user" store in
+      and computed = User.run ~name:"user" store in
       same (try_testable User.testable) ~expected ~computed)
 ;;
 

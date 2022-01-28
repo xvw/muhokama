@@ -5,7 +5,7 @@ type filepath = string
 
 let read_dir path =
   try Ok (Sys.readdir path |> Array.to_list) with
-  | _ -> Error.(to_try @@ Unable_to_read_dir path)
+  | _ -> Error.(to_try @@ io_unreadable_dir ~dirpath:path)
 ;;
 
 let read_file path =
@@ -17,7 +17,7 @@ let read_file path =
     let () = close_in channel in
     Ok (Bytes.to_string buffer)
   with
-  | _ -> Error.(to_try @@ Unable_to_read_file path)
+  | _ -> Error.(to_try @@ io_unreadable_file ~filepath:path)
 ;;
 
 let list_files path =

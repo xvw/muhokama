@@ -45,7 +45,7 @@ let build index label file previous_migration json_obj =
       <$> required list_of_string_or_string "up" obj
       <*> required list_of_string_or_string "down" obj)
     json_obj
-  |> run ~provider:file
+  |> run ~name:file
 ;;
 
 let equal a b =

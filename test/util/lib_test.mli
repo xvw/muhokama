@@ -16,7 +16,7 @@ val integration_test
   -> about:string
   -> desc:string
   -> (Env.t -> Caqti_error.t Lib_db.connection -> 'a Try.t Lwt.t)
-  -> ('a -> unit)
+  -> ('a Try.t -> unit)
   -> unit Alcotest.test_case
 
 (** An helper for checking equalities.*)
@@ -25,7 +25,6 @@ val same : 'a Alcotest.testable -> expected:'a -> computed:'a -> unit
 (** {1 Testables} *)
 
 val error_testable : Error.t Alcotest.testable
-val error_set_testable : Error.Set.t Alcotest.testable
 val try_testable : 'a Alcotest.testable -> 'a Try.t Alcotest.testable
 val validate_testable : 'a Alcotest.testable -> 'a Validate.t Alcotest.testable
 val sha256_testable : Lib_crypto.Sha256.t Alcotest.testable
@@ -51,4 +50,11 @@ module User : sig
   val equal : t -> t -> bool
   val testable : t Alcotest.testable
   val make : string -> int option -> string option -> string -> t
+
+  val create_pre_saved
+    :  string
+    -> string
+    -> string
+    -> string
+    -> Lib_model.User.Pre_saved.t Try.t
 end

@@ -7,6 +7,7 @@
   caqti-lwt
   caqti-driver-postgresql
   fmt
+  tyxml
   preface
   lib_common
   lib_crypto

@@ -1,7 +1,5 @@
 open Lib_common
 
-exception Muho_failure of string
-
 let test ?(speed = `Quick) ~about ~desc f =
   Alcotest.test_case (Format.asprintf "%-42s%s" about desc) speed f
 ;;
@@ -25,14 +23,13 @@ let integration_test
         pool, result
       in
       match Lwt_main.run promise with
-      | Error e ->
-        raise_notrace @@ Muho_failure (Format.asprintf "%a" Error.pp e)
+      | Error err -> e (Error err)
       | Ok (pool, result) ->
         let _ =
           Lwt_main.run
           @@ Lib_migration.Action.migrate pool migrations_path (Some 0)
         in
-        e result)
+        e (Ok result))
 ;;
 
 let same testable ~expected ~computed =
@@ -47,7 +44,6 @@ let nel x xs =
 ;;
 
 let error_testable = Alcotest.testable Error.pp Error.equal
-let error_set_testable = Alcotest.testable Error.Set.pp Error.Set.equal
 let try_testable t = Alcotest.result t error_testable
 
 let validate_testable t =
@@ -133,4 +129,14 @@ module User = struct
 
   let testable = Alcotest.testable pp equal
   let make id age name email = { id; age; name; email }
+
+  let create_pre_saved username email password confirm =
+    `Assoc
+      [ "user_name", `String username
+      ; "user_email", `String email
+      ; "user_password", `String password
+      ; "confirm_user_password", `String confirm
+      ]
+    |> Lib_model.User.Pre_saved.create
+  ;;
 end

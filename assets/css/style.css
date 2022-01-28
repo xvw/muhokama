@@ -4,6 +4,181 @@
   box-sizing: border-box;
 }
 
+.void {
+  display: none;
+}
+
+html {
+  font-size: 62.5%;
+}
+
 body {
-    font-family: 'Inter', sans-serif;
+  font-family: 'Inter', sans-serif;
+  padding: 32px;
+  margin: 0 auto;
+  display: flex;
+  min-height: 100vh;
+  max-width: 1280px;
+  flex-direction: column;
+  font-size: 1.8rem;
+  color: #111;
+}
+
+header {
+  margin-bottom: 32px;
+}
+
+header > h1, header > h2 {
+  font-weight: 900;
+  margin: 0;
+}
+
+header > h2 {
+  font-size: 2.5rem;
+}
+
+
+header > h1 {
+  font-size: 6.6rem;
+}
+
+header > h1::first-letter {
+  font-style: italic;
+}
+
+header > nav {
+  margin-top: 16px;
+}
+
+header > nav > a {
+  background-color: #111;
+  color: #fff;
+  text-decoration: none;
+  padding: 4px 8px;
+  font-weight: 600;
+  margin-right: 8px;
+}
+
+header > nav > a:last-child {
+  margin-right: 0;
+}
+
+
+footer {
+  padding-bottom: 8px;
+}
+
+footer > .multi-enumeration {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+footer > .multi-enumeration > ul {
+  margin: 0;
+  padding: 0;
+  padding-right: 64px;
+  list-style-type: none;
+}
+
+footer > .multi-enumeration > ul > li {
+  margin-bottom: 12px;
+}
+
+footer > .multi-enumeration > ul > .li-title {
+  font-weight: 600;
+  font-size: 2.0rem;
+  margin-bottom: 32px;
+}
+
+footer > .multi-enumeration > ul:last-child {
+  padding: 0;
+}
+
+main {
+  background-color: white;
+  flex: 1;
+}
+
+main h1 {
+  font-size: 2.3rem;
+}
+
+
+.registration-form > div {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  border: 2px solid #111;
+}
+
+.registration-form > div > label {
+  flex: 1;
+  background-color: #f4f4f4;
+  padding: 8px;
+  border-right: 2px solid #111;
+  font-weight: 600;
+}
+
+
+.registration-form > div > input {
+  flex: 2;
+  padding: 6px;
+  border: 0px solid black;
+}
+
+.registration-form input[type="submit"] {
+  background-color: #111;
+  color: #fff;
+  font-weight: 900;
+  padding: 8px 12px;
+  border-style: none;
+}
+
+#tooltip-alert, #tooltip-info, #tooltip-action {
+  margin: 8px 0;
+  padding: 8px;
+}
+
+#tooltip-alert {
+  color: #cc0f35;
+  background-color: #feecf0;
+  border: 2px solid #cc0f35;
+}
+
+#tooltip-info {
+  color: rgba(0,0,0,.7);
+  background-color: #ffe08a;
+  border: 2px solid rgba(0,0,0,.7);
+}
+
+#tooltip-action {
+  color: #00947e;
+  background-color: #ebfffc;
+  border: 2px solid #00947e;
+}
+
+@media screen and (max-width: 640px) {
+  .registration-form > div {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .registration-form > div > label {
+    flex: 1;
+    background-color: #f4f4f4;
+    padding: 8px;
+    border: 0px solid black;
+    border-bottom: 2px solid #111;
+  }
+
+
+  .registration-form > div > input {
+    flex: 1;
+    padding: 6px;
+    border: 0px solid black;
+  }
+
 }

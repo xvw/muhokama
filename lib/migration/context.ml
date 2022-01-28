@@ -40,8 +40,7 @@ let collapse_effects migrations_path eff file =
         jsonm_obj
         >>= Migration.build expected_index label filepath previous_hash)
       |> finalize_migration ctx file given_index expected_index
-    else
-      error @@ Error.Invalid_migration_successor { expected_index; given_index }
+    else error @@ Error.migration_invalid_successor ~expected_index ~given_index
   | None ->
     let* _ = warning @@ Fmt.str "Invalid name scheme: %s" file in
     return (ctx, previous)
@@ -88,9 +87,9 @@ let get_migrations ~current ?target s =
   let max_index, _ = current_state s in
   let target = Option.value ~default:max_index target in
   if current > max_index
-  then Error.(to_try @@ Migration_invalid_target current)
+  then Error.(to_try @@ migration_invalid_state ~current_state:current)
   else if target > max_index
-  then Error.(to_try @@ Migration_invalid_target target)
+  then Error.(to_try @@ migration_invalid_target ~given_target:target)
   else if Int.equal current target
   then Ok Nothing
   else
@@ -104,7 +103,9 @@ let check_hash s index hash =
   if index = 0 && String.equal hash Sha256.(to_string neutral)
   then Try.ok ()
   else (
-    let invalid = Error.(to_try @@ Migration_invalid_checksum index) in
+    let invalid =
+      Error.(to_try @@ migration_invalid_checksum ~given_index:index)
+    in
     let r = S.find_opt index s in
     Option.fold
       ~none:invalid

@@ -34,8 +34,8 @@ let handle promise =
   | Error err ->
     let i =
       match err with
-      | Error.Invalid_provider { provider = "env"; _ } -> invalid_environment_i
-      | Error.Migration_context_error _ -> migration_context_i
+      | Error.Invalid_object { name = "env"; _ } -> invalid_environment_i
+      | Error.Migration _ -> migration_context_i
       | Error.Database _ -> database_error_i
       | _ -> unknown_error_i
     in

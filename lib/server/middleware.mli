@@ -3,6 +3,7 @@ open Lib_common
 val static_css : Opium.App.t -> Opium.App.t Try.t Lwt.t
 val static_images : Opium.App.t -> Opium.App.t Try.t Lwt.t
 val database : Lib_common.Env.t -> Opium.App.t -> Opium.App.t Try.t Lwt.t
+val pool : Opium.Request.t -> Caqti_error.t Lib_db.connection
 
 val use_pool
   :  Rock.Request.t

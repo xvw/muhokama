@@ -36,7 +36,5 @@ let database real_world app =
   app |> App.middleware s
 ;;
 
-let use_pool request query =
-  let pool = request.Rock.Request.env |> Rock.Context.get pool_key in
-  Lib_db.use pool query
-;;
+let pool request = request.Rock.Request.env |> Rock.Context.get pool_key
+let use_pool request query = Lib_db.use (pool request) query
