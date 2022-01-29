@@ -47,13 +47,18 @@ The configuration is provisioned by environment variables:
 ``` sh
 export PGSQL_HOST=localhost
 export PGSQL_PORT=5432
-export PGSQL_DB_DEV=muhokama_dev
-export PGSQL_DB_TEST=muhokama_test
+export PGSQL_DB=muhokama_dev
 export PGSQL_USER=muhokama
 export PGSQL_PASS=muhokama
 export LOG_LEVEL=debug
 export PGSQL_CONNECTION_POOL=20
 ```
+
+### Running integration test
+
+Running integration tests (with the `make test-integration` command) requires
+the presence of a `.test_env` file at the root of the project which exports
+environment variables specific to running integration tests.
 
 
 ### Interaction using `muhokama.exe`
