@@ -30,6 +30,7 @@ module Pre_saved = struct
 
   let make user_name user_email user_password () =
     let user_email = user_email |> String.trim |> String.lowercase_ascii in
+    let user_name = user_name |> String.trim |> String.lowercase_ascii in
     { user_name
     ; user_email
     ; user_password =
