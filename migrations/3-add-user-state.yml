@@ -1,0 +1,11 @@
+up:
+  - ALTER TABLE users ADD COLUMN user_state VARCHAR(255) NOT NULL DEFAULT 'inactive'
+  - UPDATE users SET user_state = 'member' WHERE is_activated IS TRUE
+  - ALTER TABLE users DROP COLUMN is_activated
+  - CREATE INDEX users_user_state ON users(user_state)
+
+down:
+  - ALTER TABLE users ADD COLUMN is_activated BOOLEAN DEFAULT FALSE NOT NULL
+  - UPDATE users SET is_activated = TRUE WHERE user_state <> 'inactive'
+  - DROP INDEX users_user_state
+  - ALTER TABLE users DROP COLUMN user_state

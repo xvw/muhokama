@@ -4,6 +4,19 @@ open Lib_crypto
 
 val count : Caqti_error.t connection -> int Try.t Lwt.t
 
+module State : sig
+  type t =
+    | Inactive
+    | Member
+    | Moderator
+    | Admin
+
+  val equal : t -> t -> bool
+  val pp : t Fmt.t
+  val to_string : t -> string
+  val validate_state : string -> t Validate.t
+end
+
 module Pre_saved : sig
   type t = private
     { user_name : string

@@ -11,15 +11,42 @@ let count pool =
   Lib_db.use pool request
 ;;
 
-let verify_password password =
-  let open Validate in
-  let open Assoc.Yojson in
-  let message = "min_password_size : 7" in
-  password
-  |> (string
-     & not_blank
-     & from_predicate ~message (fun x -> String.length x >= 7))
-;;
+let trim value = value |> String.trim |> String.lowercase_ascii
+
+module State = struct
+  type t =
+    | Inactive
+    | Member
+    | Moderator
+    | Admin
+
+  let equal a b =
+    match a, b with
+    | Inactive, Inactive -> true
+    | Member, Member -> true
+    | Moderator, Moderator -> true
+    | Admin, Admin -> true
+    | _ -> false
+  ;;
+
+  let pp ppf = function
+    | Inactive -> Fmt.pf ppf "inactive"
+    | Member -> Fmt.pf ppf "member"
+    | Moderator -> Fmt.pf ppf "moderator"
+    | Admin -> Fmt.pf ppf "admin"
+  ;;
+
+  let to_string = Fmt.str "%a" pp
+
+  let validate_state state =
+    match trim state with
+    | "inactive" -> Validate.valid Inactive
+    | "member" -> Validate.valid Member
+    | "moderator" -> Validate.valid Moderator
+    | "admin" -> Validate.valid Admin
+    | s -> Error.(to_validate @@ user_invalid_state s)
+  ;;
+end
 
 module Pre_saved = struct
   type t =
@@ -29,8 +56,8 @@ module Pre_saved = struct
     }
 
   let make user_name user_email user_password () =
-    let user_email = user_email |> String.trim |> String.lowercase_ascii in
-    let user_name = user_name |> String.trim |> String.lowercase_ascii in
+    let user_email = trim user_email in
+    let user_name = trim user_name in
     { user_name
     ; user_email
     ; user_password =
@@ -43,6 +70,16 @@ module Pre_saved = struct
     , ("user_email", `Email)
     , ("user_password", `Password)
     , ("confirm_user_password", `Password) )
+  ;;
+
+  let verify_password password =
+    let open Validate in
+    let open Assoc.Yojson in
+    let message = "min_password_size : 7" in
+    password
+    |> (string
+       & not_blank
+       & from_predicate ~message (fun x -> String.length x >= 7))
   ;;
 
   let create yojson_obj =
@@ -89,8 +126,8 @@ module Pre_saved = struct
   let save_query =
     Caqti_request.exec
       Caqti_type.(tup3 string string string)
-      "INSERT INTO users (user_name, user_email, user_password) VALUES (?, ?, \
-       ?)"
+      "INSERT INTO users (user_name, user_email, user_password, user_state) \
+       VALUES (?, ?, ?, 'inactive')"
   ;;
 
   let save pool { user_name; user_email; user_password } =

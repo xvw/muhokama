@@ -51,7 +51,7 @@ let main_header =
         [ h1 ~a:[ a_class [ "title" ] ] [ txt "Muhokama" ]
         ; h2
             ~a:[ a_class [ "subtitle" ] ]
-            [ txt "Ça veut dire 'discussion' en Ouzbek" ]
+            [ txt "Ça veut dire "; i [ txt "discussion" ]; txt " en Ouzbek" ]
         ]
     ]
 ;;

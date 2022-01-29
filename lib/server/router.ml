@@ -31,7 +31,7 @@ let register_new_handler request =
   | Error err ->
     let tree = Error.normalize err in
     let page = Page.register ~notifs:(Notif.Error_tree tree) () in
-    Response.of_html ~headers:Headers.empty page
+    Response.of_html page
 ;;
 
 let routes app =
