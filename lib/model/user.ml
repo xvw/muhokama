@@ -11,15 +11,74 @@ let count pool =
   Lib_db.use pool request
 ;;
 
-let verify_password password =
-  let open Validate in
-  let open Assoc.Yojson in
-  let message = "min_password_size : 7" in
-  password
-  |> (string
-     & not_blank
-     & from_predicate ~message (fun x -> String.length x >= 7))
-;;
+let trim value = value |> String.trim |> String.lowercase_ascii
+
+module State = struct
+  type t =
+    | Inactive
+    | Member
+    | Moderator
+    | Admin
+    | Unknown of string
+
+  let equal a b =
+    match a, b with
+    | Inactive, Inactive -> true
+    | Member, Member -> true
+    | Moderator, Moderator -> true
+    | Admin, Admin -> true
+    | Unknown a, Unknown b -> String.equal a b
+    | _ -> false
+  ;;
+
+  let pp ppf = function
+    | Inactive -> Fmt.pf ppf "inactive"
+    | Member -> Fmt.pf ppf "member"
+    | Moderator -> Fmt.pf ppf "moderator"
+    | Admin -> Fmt.pf ppf "admin"
+    | Unknown s -> Fmt.pf ppf "%s" s
+  ;;
+
+  let to_string = Fmt.str "%a" pp
+
+  let try_state state =
+    match trim state with
+    | "inactive" -> Ok Inactive
+    | "member" -> Ok Member
+    | "moderator" -> Ok Moderator
+    | "admin" -> Ok Admin
+    | s -> Error.(to_try @@ user_invalid_state s)
+  ;;
+
+  let validate_state state =
+    match try_state state with
+    | Ok s -> Validate.valid s
+    | Error err -> Error.(to_validate err)
+  ;;
+
+  let from_string state =
+    match trim state with
+    | "inactive" -> Inactive
+    | "member" -> Member
+    | "moderator" -> Moderator
+    | "admin" -> Admin
+    | s -> Unknown s
+  ;;
+
+  let to_int = function
+    | Inactive -> 0
+    | Member -> 1
+    | Moderator -> 2
+    | Admin -> 3
+    | Unknown _ -> -1
+  ;;
+
+  let compare a b =
+    let ia = to_int a
+    and ib = to_int b in
+    Int.compare ia ib
+  ;;
+end
 
 module Pre_saved = struct
   type t =
@@ -29,7 +88,8 @@ module Pre_saved = struct
     }
 
   let make user_name user_email user_password () =
-    let user_email = user_email |> String.trim |> String.lowercase_ascii in
+    let user_email = trim user_email in
+    let user_name = trim user_name in
     { user_name
     ; user_email
     ; user_password =
@@ -42,6 +102,16 @@ module Pre_saved = struct
     , ("user_email", `Email)
     , ("user_password", `Password)
     , ("confirm_user_password", `Password) )
+  ;;
+
+  let verify_password password =
+    let open Validate in
+    let open Assoc.Yojson in
+    let message = "min_password_size : 7" in
+    password
+    |> (string
+       & not_blank
+       & from_predicate ~message (fun x -> String.length x >= 7))
   ;;
 
   let create yojson_obj =
@@ -88,8 +158,8 @@ module Pre_saved = struct
   let save_query =
     Caqti_request.exec
       Caqti_type.(tup3 string string string)
-      "INSERT INTO users (user_name, user_email, user_password) VALUES (?, ?, \
-       ?)"
+      "INSERT INTO users (user_name, user_email, user_password, user_state) \
+       VALUES (?, ?, ?, 'inactive')"
   ;;
 
   let save pool { user_name; user_email; user_password } =
@@ -98,6 +168,57 @@ module Pre_saved = struct
     in
     let open Lwt_util in
     let*? () = count_for pool ~username:user_name ~email:user_email in
+    Lib_db.use pool request
+  ;;
+end
+
+module Saved = struct
+  type t =
+    { user_id : string
+    ; user_name : string
+    ; user_email : string
+    ; user_state : State.t
+    }
+
+  let list_query =
+    Caqti_request.collect
+      Caqti_type.unit
+      Caqti_type.(tup4 string string string string)
+      "SELECT user_id, user_name, user_email, user_state FROM users"
+  ;;
+
+  let chanage_state_query =
+    Caqti_request.exec
+      ~oneshot:true
+      Caqti_type.(tup2 string string)
+      "UPDATE users SET user_state = ? WHERE user_id = ?"
+  ;;
+
+  let change_state pool user_id state =
+    let state_str = State.to_string state in
+    let request (module Q : Caqti_lwt.CONNECTION) =
+      Q.exec chanage_state_query (state_str, user_id)
+    in
+    Lib_db.use pool request
+  ;;
+
+  let activate pool user_id = change_state pool user_id State.Member
+
+  let iter pool callback =
+    let request (module Q : Caqti_lwt.CONNECTION) =
+      Q.iter_s
+        list_query
+        (fun (user_id, user_name, user_email, user_state) ->
+          let saved =
+            { user_id
+            ; user_name
+            ; user_email
+            ; user_state = State.from_string user_state
+            }
+          in
+          Lwt.return_ok @@ callback saved)
+        ()
+    in
     Lib_db.use pool request
   ;;
 end

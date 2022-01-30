@@ -47,13 +47,18 @@ The configuration is provisioned by environment variables:
 ``` sh
 export PGSQL_HOST=localhost
 export PGSQL_PORT=5432
-export PGSQL_DB_DEV=muhokama_dev
-export PGSQL_DB_TEST=muhokama_test
+export PGSQL_DB=muhokama_dev
 export PGSQL_USER=muhokama
 export PGSQL_PASS=muhokama
 export LOG_LEVEL=debug
 export PGSQL_CONNECTION_POOL=20
 ```
+
+### Running integration test
+
+Running integration tests (with the `make test-integration` command) requires
+the presence of a `.test_env` file at the root of the project which exports
+environment variables specific to running integration tests.
 
 
 ### Interaction using `muhokama.exe`
@@ -71,3 +76,5 @@ subcommand can display its `man` page using the `--help` flag.
 | `./bin/muhokama.exe db.migrate --to N` | Replaces the migration state according to the given parameter `N`. If for example the current state is `5`, `./bin/muhokama.exe db.migrate --to 2` will play `5.down`, `4.down` and `3.down`. If, on the other hand, the current state is `0`, `1.up`, and `2.up` will be played. If no error has occurred, the state must be the argument given to `--to`. |
 | `./bin/muhokama.exe db.migrate.reset` | Removes the migration context (in database). **Warning**, this action only deletes the migration context (and does not play all reverse migrations, so the database must be reset to a valid state). |
 | `./bin/muhokama.exe serveur.launch`| Starts the application on the default port (`4000`). It is possible to add the `--port X` flag to change this value. |
+| `.bin/muhokama.exe user.list` | Lists all registered users (regardless of their status) |
+| `.bin/muhokama.exe user.set-state -U USER_ID -S USER_STATE` | Changes the status (`inactive`, ` member`,  `moderator` `admin`) of a user via its ID ( `UUID` ). |

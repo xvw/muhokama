@@ -33,3 +33,21 @@ let launching_port_term =
   let arg = Arg.info ~doc ~docs [ "port"; "P" ] in
   Arg.(value (opt int launching_port_default arg))
 ;;
+
+let user_id_term =
+  let open Cmdliner in
+  let doc = "An user-id (UUID)" in
+  let arg =
+    Arg.info ~doc ~docs [ "user-id"; "user"; "U"; "id" ] ~docv:"USER_ID"
+  in
+  Arg.(required & opt (some string) None & arg)
+;;
+
+let user_state_term =
+  let open Cmdliner in
+  let doc = "The user-state (State.t)" in
+  let arg =
+    Arg.info ~doc ~docs [ "user-state"; "state"; "S" ] ~docv:"USER_STATE"
+  in
+  Arg.(required & opt (some string) None & arg)
+;;

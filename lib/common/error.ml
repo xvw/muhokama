@@ -215,6 +215,7 @@ module User = struct
         { username : string
         ; email : string
         }
+    | Invalid_state of string
 
   let equal a b =
     match a, b with
@@ -222,6 +223,7 @@ module User = struct
     | Username_already_taken a, Username_already_taken b -> String.equal a b
     | Identity_already_taken a, Identity_already_taken b ->
       String.equal a.email b.email && String.equal a.username b.username
+    | Invalid_state a, Invalid_state b -> String.equal a b
     | _ -> false
   ;;
 
@@ -238,6 +240,7 @@ module User = struct
         username
         Fmt.(quote string)
         email
+    | Invalid_state s -> Fmt.pf ppf "Invalid_state %a" Fmt.(quote string) s
   ;;
 
   let rec normalize = function
@@ -246,6 +249,10 @@ module User = struct
       Leaf { label; message }
     | Username_already_taken label ->
       let message = Some "Username is already registered" in
+      Leaf { label; message }
+    | Invalid_state s ->
+      let label = "Unkown user state" in
+      let message = Some Fmt.(str "%a is an unknown state" (quote string) s) in
       Leaf { label; message }
     | Identity_already_taken { username; email } ->
       let label = "Username and email are already registered" in
@@ -330,6 +337,7 @@ let user_already_taken ~username ~email =
   User (User.Identity_already_taken { username; email })
 ;;
 
+let user_invalid_state state = User (User.Invalid_state state)
 let invalid_object ~name ~errors = Invalid_object { name; errors }
 
 let rec equal a b =

@@ -1,6 +1,6 @@
 up:
   - |
-      CREATE TABLE users (
+      CREATE TABLE IF NOT EXISTS users (
         user_id UUID DEFAULT uuid_generate_v4 () PRIMARY KEY,
         user_name VARCHAR(50) NOT NULL,
         user_email VARCHAR(50) NOT NULL,
@@ -8,7 +8,7 @@ up:
         is_activated BOOLEAN DEFAULT FALSE NOT NULL
       )
 
-  -  CREATE UNIQUE INDEX users_user_name ON users(user_name)
-  -  CREATE UNIQUE INDEX users_user_email ON users(user_email)
+  -  CREATE UNIQUE INDEX IF NOT EXISTS users_user_name ON users(user_name)
+  -  CREATE UNIQUE INDEX IF NOT EXISTS users_user_email ON users(user_email)
 down: |
   DROP TABLE users

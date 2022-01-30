@@ -65,6 +65,7 @@ module User : sig
         { username : string
         ; email : string
         }
+    | Invalid_state of string
 
   val equal : t -> t -> bool
   val pp : t Fmt.t
@@ -111,6 +112,7 @@ val field_invalid : name:string -> errors:t Preface.Nonempty_list.t -> t
 val user_email_already_taken : string -> t
 val user_name_already_taken : string -> t
 val user_already_taken : username:string -> email:string -> t
+val user_invalid_state : string -> t
 val invalid_object : name:string -> errors:t Preface.Nonempty_list.t -> t
 val to_try : t -> ('a, t) Result.t
 val to_validate : t -> ('a, t Preface.Nonempty_list.t) Preface.Validation.t

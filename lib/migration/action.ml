@@ -6,6 +6,7 @@ let table = "muhokama_migrations"
 
 let create_migration_table_query =
   Caqti_request.exec
+    ~oneshot:true
     Caqti_type.unit
     ([ "CREATE TABLE IF NOT EXISTS "
      ; table
@@ -24,7 +25,8 @@ let create_migration_table pool =
 ;;
 
 let drop_migration_table_query =
-  Caqti_request.exec Caqti_type.unit @@ Fmt.str "DROP TABLE IF EXISTS %s" table
+  Caqti_request.exec ~oneshot:true Caqti_type.unit
+  @@ Fmt.str "DROP TABLE IF EXISTS %s" table
 ;;
 
 let drop_migration_table pool =
@@ -35,7 +37,7 @@ let drop_migration_table pool =
 ;;
 
 let insert_migration_query =
-  Caqti_request.exec Caqti_type.(tup2 int string)
+  Caqti_request.exec ~oneshot:true Caqti_type.(tup2 int string)
   @@ Fmt.str "INSERT INTO %s (number, checksum) VALUES (?, ?)" table
 ;;
 
@@ -47,7 +49,10 @@ let insert_migration pool index checksum =
 ;;
 
 let current_state_query =
-  Caqti_request.find_opt Caqti_type.unit Caqti_type.(tup2 int string)
+  Caqti_request.find_opt
+    ~oneshot:true
+    Caqti_type.unit
+    Caqti_type.(tup2 int string)
   @@ Fmt.str "SELECT number, checksum FROM %s ORDER BY id DESC LIMIT 1" table
 ;;
 
@@ -72,8 +77,10 @@ let collapse_queries pool q =
     (fun queries query_str ->
       let open Lwt_util in
       let*? () = queries in
-      let query = Caqti_request.exec Caqti_type.unit query_str in
-      let request (module Q : Caqti_lwt.CONNECTION) = Q.exec query () in
+      let query = Caqti_request.exec ~oneshot:true Caqti_type.unit query_str in
+      let request (module Q : Caqti_lwt.CONNECTION) =
+        Q.exec query () >>=? Q.commit
+      in
       Db.use pool request)
     (Lwt.return_ok ())
     q
