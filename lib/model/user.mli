@@ -10,11 +10,14 @@ module State : sig
     | Member
     | Moderator
     | Admin
+    | Unknown of string
 
   val equal : t -> t -> bool
   val pp : t Fmt.t
   val to_string : t -> string
   val validate_state : string -> t Validate.t
+  val from_string : string -> t
+  val compare : t -> t -> int
 end
 
 module Pre_saved : sig
@@ -28,4 +31,15 @@ module Pre_saved : sig
   val create : Assoc.Yojson.t -> t Try.t
   val from_urlencoded : (string * string list) list -> t Try.t
   val save : Caqti_error.t connection -> t -> unit Try.t Lwt.t
+end
+
+module Saved : sig
+  type t = private
+    { user_id : string
+    ; user_name : string
+    ; user_email : string
+    ; user_state : State.t
+    }
+
+  val iter : Caqti_error.t connection -> (t -> unit) -> unit Try.t Lwt.t
 end

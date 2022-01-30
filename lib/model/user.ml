@@ -19,6 +19,7 @@ module State = struct
     | Member
     | Moderator
     | Admin
+    | Unknown of string
 
   let equal a b =
     match a, b with
@@ -26,6 +27,7 @@ module State = struct
     | Member, Member -> true
     | Moderator, Moderator -> true
     | Admin, Admin -> true
+    | Unknown a, Unknown b -> String.equal a b
     | _ -> false
   ;;
 
@@ -34,6 +36,7 @@ module State = struct
     | Member -> Fmt.pf ppf "member"
     | Moderator -> Fmt.pf ppf "moderator"
     | Admin -> Fmt.pf ppf "admin"
+    | Unknown s -> Fmt.pf ppf "%s" s
   ;;
 
   let to_string = Fmt.str "%a" pp
@@ -45,6 +48,29 @@ module State = struct
     | "moderator" -> Validate.valid Moderator
     | "admin" -> Validate.valid Admin
     | s -> Error.(to_validate @@ user_invalid_state s)
+  ;;
+
+  let from_string state =
+    match trim state with
+    | "inactive" -> Inactive
+    | "member" -> Member
+    | "moderator" -> Moderator
+    | "admin" -> Admin
+    | s -> Unknown s
+  ;;
+
+  let to_int = function
+    | Inactive -> 0
+    | Member -> 1
+    | Moderator -> 2
+    | Admin -> 3
+    | Unknown _ -> -1
+  ;;
+
+  let compare a b =
+    let ia = to_int a
+    and ib = to_int b in
+    Int.compare ia ib
   ;;
 end
 
@@ -136,6 +162,40 @@ module Pre_saved = struct
     in
     let open Lwt_util in
     let*? () = count_for pool ~username:user_name ~email:user_email in
+    Lib_db.use pool request
+  ;;
+end
+
+module Saved = struct
+  type t =
+    { user_id : string
+    ; user_name : string
+    ; user_email : string
+    ; user_state : State.t
+    }
+
+  let list_query =
+    Caqti_request.collect
+      Caqti_type.unit
+      Caqti_type.(tup4 string string string string)
+      "SELECT user_id, user_name, user_email, user_state FROM users"
+  ;;
+
+  let iter pool callback =
+    let request (module Q : Caqti_lwt.CONNECTION) =
+      Q.iter_s
+        list_query
+        (fun (user_id, user_name, user_email, user_state) ->
+          let saved =
+            { user_id
+            ; user_name
+            ; user_email
+            ; user_state = State.from_string user_state
+            }
+          in
+          Lwt.return_ok @@ callback saved)
+        ()
+    in
     Lib_db.use pool request
   ;;
 end
