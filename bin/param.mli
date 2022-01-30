@@ -5,3 +5,5 @@ val launching_port_default : int
 val migrations_path_term : string Cmdliner.Term.t
 val migrate_to_term : int option Cmdliner.Term.t
 val launching_port_term : int Cmdliner.Term.t
+val user_id_term : string Cmdliner.Term.t
+val user_state_term : string Cmdliner.Term.t

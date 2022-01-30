@@ -16,6 +16,7 @@ module State : sig
   val pp : t Fmt.t
   val to_string : t -> string
   val validate_state : string -> t Validate.t
+  val try_state : string -> t Try.t
   val from_string : string -> t
   val compare : t -> t -> int
 end
@@ -42,4 +43,12 @@ module Saved : sig
     }
 
   val iter : Caqti_error.t connection -> (t -> unit) -> unit Try.t Lwt.t
+
+  val change_state
+    :  Caqti_error.t connection
+    -> string
+    -> State.t
+    -> unit Try.t Lwt.t
+
+  val activate : Caqti_error.t connection -> string -> unit Try.t Lwt.t
 end

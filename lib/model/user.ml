@@ -41,13 +41,19 @@ module State = struct
 
   let to_string = Fmt.str "%a" pp
 
-  let validate_state state =
+  let try_state state =
     match trim state with
-    | "inactive" -> Validate.valid Inactive
-    | "member" -> Validate.valid Member
-    | "moderator" -> Validate.valid Moderator
-    | "admin" -> Validate.valid Admin
-    | s -> Error.(to_validate @@ user_invalid_state s)
+    | "inactive" -> Ok Inactive
+    | "member" -> Ok Member
+    | "moderator" -> Ok Moderator
+    | "admin" -> Ok Admin
+    | s -> Error.(to_try @@ user_invalid_state s)
+  ;;
+
+  let validate_state state =
+    match try_state state with
+    | Ok s -> Validate.valid s
+    | Error err -> Error.(to_validate err)
   ;;
 
   let from_string state =
@@ -180,6 +186,23 @@ module Saved = struct
       Caqti_type.(tup4 string string string string)
       "SELECT user_id, user_name, user_email, user_state FROM users"
   ;;
+
+  let chanage_state_query =
+    Caqti_request.exec
+      ~oneshot:true
+      Caqti_type.(tup2 string string)
+      "UPDATE users SET user_state = ? WHERE user_id = ?"
+  ;;
+
+  let change_state pool user_id state =
+    let state_str = State.to_string state in
+    let request (module Q : Caqti_lwt.CONNECTION) =
+      Q.exec chanage_state_query (state_str, user_id)
+    in
+    Lib_db.use pool request
+  ;;
+
+  let activate pool user_id = change_state pool user_id State.Member
 
   let iter pool callback =
     let request (module Q : Caqti_lwt.CONNECTION) =

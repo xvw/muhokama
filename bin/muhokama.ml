@@ -15,6 +15,7 @@ let subprograms =
   ; Db_migrate.action_reset
   ; Server.action_launch
   ; User.action_list
+  ; User.action_set_user_state
   ]
 ;;
 
