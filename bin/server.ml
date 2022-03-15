@@ -1,10 +1,12 @@
 open Lib_common
 
-let launch port =
+let launch _port =
   let promise =
     let open Lwt_util in
-    let*? env = Env.init () in
-    Lib_server.run ~port env
+    let+? _env = Env.init () in
+    while true do
+      ()
+    done
   in
   Termination.handle promise
 ;;
