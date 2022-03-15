@@ -17,4 +17,5 @@
   lib_common
   lib_db
   lib_migration
-  lib_model))
+  lib_model
+  lib_server))
