@@ -13,6 +13,6 @@ let action_launch =
   let open Cmdliner in
   let doc = "Start the muhokama forum" in
   let exits = Termination.exits in
-  Term.(
-    const launch $ Param.launching_port_term, info "server.launch" ~doc ~exits)
+  let info = Cmd.info "server.launch" ~doc ~exits in
+  Cmd.v info Term.(const launch $ Param.launching_port_term)
 ;;

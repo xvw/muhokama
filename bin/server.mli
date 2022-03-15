@@ -1,1 +1,1 @@
-val action_launch : unit Cmdliner.Term.t * Cmdliner.Term.info
+val action_launch : unit Cmdliner.Cmd.t
