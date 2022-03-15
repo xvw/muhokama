@@ -1,4 +1,11 @@
 (library
  (name lib_test)
  (package muhokama)
- (libraries preface alcotest lib_common lib_crypto lib_db lib_migration lib_model))
+ (libraries
+  preface
+  alcotest
+  lib_common
+  lib_crypto
+  lib_db
+  lib_migration
+  lib_model))

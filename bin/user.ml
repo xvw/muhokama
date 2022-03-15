@@ -44,5 +44,7 @@ let action_set_user_state =
   let doc = "Change the state of an user" in
   let exits = Termination.exits in
   let info = Cmd.info "user.set-state" ~doc ~exits in
-  Cmd.v info Term.(const set_user_state $ Param.user_id_term $ Param.user_state_term)
+  Cmd.v
+    info
+    Term.(const set_user_state $ Param.user_id_term $ Param.user_state_term)
 ;;

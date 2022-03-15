@@ -27,7 +27,9 @@ let action_migrate =
   let doc = "Migrations are used to modify your database schema over time" in
   let exits = Termination.exits in
   let info = Cmd.info "db.migrate" ~doc ~exits in
-  Cmd.v info Term.(const migrate $ Param.migrations_path_term $ Param.migrate_to_term)
+  Cmd.v
+    info
+    Term.(const migrate $ Param.migrations_path_term $ Param.migrate_to_term)
 ;;
 
 let action_reset =
