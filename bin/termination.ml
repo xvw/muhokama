@@ -6,19 +6,19 @@ let database_error_i = 126
 let unknown_error_i = 1
 
 let invalid_environment =
-  Cmdliner.Term.exit_info ~doc:"Environment error" invalid_environment_i
+  Cmdliner.Cmd.Exit.info ~doc:"Environment error" invalid_environment_i
 ;;
 
 let migration_context =
-  Cmdliner.Term.exit_info ~doc:"Environment error" migration_context_i
+  Cmdliner.Cmd.Exit.info ~doc:"Environment error" migration_context_i
 ;;
 
 let database_error =
-  Cmdliner.Term.exit_info ~doc:"Database error" database_error_i
+  Cmdliner.Cmd.Exit.info ~doc:"Database error" database_error_i
 ;;
 
 let unknown_error =
-  Cmdliner.Term.exit_info ~doc:"Unregistered error" unknown_error_i
+  Cmdliner.Cmd.Exit.info ~doc:"Unregistered error" unknown_error_i
 ;;
 
 let exits =
@@ -26,7 +26,7 @@ let exits =
   :: migration_context
   :: database_error
   :: unknown_error
-  :: Cmdliner.Term.default_exits
+  :: Cmdliner.Cmd.Exit.defaults
 ;;
 
 let handle promise =

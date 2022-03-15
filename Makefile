@@ -1,6 +1,5 @@
 .PHONY: all build clean check-lint lint doc utop dev-deps deps init-database test
 
-
 SHELL := /bin/bash
 
 all: build

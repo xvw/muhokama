@@ -26,16 +26,14 @@ let action_migrate =
   let open Cmdliner in
   let doc = "Migrations are used to modify your database schema over time" in
   let exits = Termination.exits in
-  Term.(
-    ( const migrate $ Param.migrations_path_term $ Param.migrate_to_term
-    , info "db.migrate" ~doc ~exits ))
+  let info = Cmd.info "db.migrate" ~doc ~exits in
+  Cmd.v info Term.(const migrate $ Param.migrations_path_term $ Param.migrate_to_term)
 ;;
 
 let action_reset =
   let open Cmdliner in
   let doc = "Reset the migration state" in
   let exits = Termination.exits in
-  Term.(
-    ( const reset $ Param.migrations_path_term
-    , info "db.migrate.reset" ~doc ~exits ))
+  let info = Cmd.info "db.migrate.reset" ~doc ~exits in
+  Cmd.v info Term.(const reset $ Param.migrations_path_term)
 ;;

@@ -35,14 +35,14 @@ let action_list =
   let open Cmdliner in
   let doc = "List all user" in
   let exits = Termination.exits in
-  Term.(const list $ const (), info "user.list" ~doc ~exits)
+  let info = Cmd.info "user.list" ~doc ~exits in
+  Cmd.v info Term.(const list $ const ())
 ;;
 
 let action_set_user_state =
   let open Cmdliner in
   let doc = "Change the state of an user" in
   let exits = Termination.exits in
-  Term.(
-    ( const set_user_state $ Param.user_id_term $ Param.user_state_term
-    , info "user.set-state" ~doc ~exits ))
+  let info = Cmd.info "user.set-state" ~doc ~exits in
+  Cmd.v info Term.(const set_user_state $ Param.user_id_term $ Param.user_state_term)
 ;;
