@@ -12,6 +12,6 @@ let run ~port env =
   @@ Dream.logger
   @@ sql_pool env
   @@ Dream.sql_sessions
-  @@ Dream.memory_sessions
+  @@ Dream.flash
   @@ Dream.router Router.routes
 ;;

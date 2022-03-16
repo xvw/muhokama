@@ -155,5 +155,6 @@ type error_tree =
       { label : string
       ; tree : error_tree list
       }
+[@@deriving yojson]
 
 val normalize : t -> error_tree

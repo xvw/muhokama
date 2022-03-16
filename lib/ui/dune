@@ -1,5 +1,6 @@
 (library
  (name lib_ui)
  (package muhokama)
- (modules_without_implementation notif)
- (libraries tyxml fmt preface lib_common lib_model))
+ (libraries tyxml fmt preface yojson lib_common lib_model)
+ (preprocess
+  (pps ppx_yojson_conv)))

@@ -7,6 +7,7 @@ type error_tree =
       { label : string
       ; tree : error_tree list
       }
+[@@deriving yojson]
 
 module IO = struct
   type t =
