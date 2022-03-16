@@ -1,26 +1,43 @@
 open Lib_common
 
-type 'a connection =
-  (Caqti_lwt.connection, ([> Caqti_error.connect ] as 'a)) Caqti_lwt.Pool.t
+let try_ request_expr =
+  let open Lwt_util in
+  request_expr
+  >>= function
+  | Ok result -> return_ok result
+  | Error err ->
+    let message = Caqti_error.show err in
+    return Error.(to_try @@ Database message)
+;;
 
-let make_uri ~user ~password ~host ~port ~database =
+let make_uri_with ~user ~password ~host ~port ~database =
   Format.asprintf "postgresql://%s:%s@%s:%d/%s" user password host port database
   |> Uri.of_string
 ;;
 
-let connect ~max_size ~user ~password ~host ~port ~database =
-  let uri = make_uri ~user ~password ~host ~port ~database in
+let connect_with ~max_size ~user ~password ~host ~port ~database =
+  let uri = make_uri_with ~user ~password ~host ~port ~database in
   (match Caqti_lwt.connect_pool ~max_size uri with
   | Ok pool -> Try.ok pool
   | Error err ->
     let message = Caqti_error.show err in
-    Try.error @@ Error.Database message)
+    Error.to_try @@ Database message)
   |> Lwt.return
 ;;
 
-let connect_with_env env =
+let make_uri env =
   let open Env in
-  connect
+  make_uri_with
+    ~host:env.pgsql_host
+    ~port:env.pgsql_port
+    ~user:env.pgsql_user
+    ~password:env.pgsql_pass
+    ~database:env.pgsql_db
+;;
+
+let connect env =
+  let open Env in
+  connect_with
     ~max_size:env.pgsql_connection_pool
     ~host:env.pgsql_host
     ~port:env.pgsql_port
@@ -29,14 +46,27 @@ let connect_with_env env =
     ~database:env.pgsql_db
 ;;
 
-let as_try obj =
+let use pool callback =
+  let exception Capturable_failure of Error.t in
   let open Lwt_util in
-  obj
-  >>= function
-  | Ok result -> return @@ Try.ok result
-  | Error err ->
-    let message = Caqti_error.show err in
-    return (Try.error @@ Error.Database message)
+  let promise () =
+    try_
+      (Caqti_lwt.Pool.use
+         (fun db ->
+           let* result = callback db in
+           (* It's a bit of a sad hack but at the moment I can't think of
+              a better approach (unless you create a [Lib_db.Try] that
+              extends a [`Execution_error of Error.t] variant but
+              I'm not sure that's better...  *)
+           match result with
+           | Ok x -> return_ok x
+           | Error err -> raise (Capturable_failure err))
+         pool)
+  in
+  let catch_handler = function
+    | Capturable_failure err -> return @@ Error.to_try err
+    | _ -> return @@ Error.(to_try @@ Database "Unknown error")
+    (* Should not happen. *)
+  in
+  Lwt.catch promise catch_handler
 ;;
-
-let use pool f = Caqti_lwt.Pool.use f pool |> as_try

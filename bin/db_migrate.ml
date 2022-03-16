@@ -6,8 +6,8 @@ let reset migrations_path =
   let promise =
     let open Lwt_util in
     let*? env = Env.init () in
-    let*? pool = Db.connect_with_env env in
-    Lib_migration.Action.reset pool migrations_path
+    let*? pool = Db.connect env in
+    Lib_db.use pool (fun db -> Lib_migration.Action.reset db migrations_path)
   in
   Termination.handle promise
 ;;
@@ -16,8 +16,9 @@ let migrate migrations_path target =
   let promise =
     let open Lwt_util in
     let*? env = Env.init () in
-    let*? pool = Db.connect_with_env env in
-    Lib_migration.Action.migrate pool migrations_path target
+    let*? pool = Db.connect env in
+    Lib_db.use pool (fun db ->
+        Lib_migration.Action.migrate db migrations_path target)
   in
   Termination.handle promise
 ;;

@@ -11,6 +11,18 @@ let equal eq a b =
   | _ -> false
 ;;
 
+let form = function
+  | `Ok fields -> Ok fields
+  | ( `Expired _
+    | `Wrong_session _
+    | `Invalid_token _
+    | `Missing_token _
+    | `Many_tokens _
+    | `Wrong_content_type ) as err ->
+    let e = Error.form_error err in
+    Error.to_try e
+;;
+
 module Functor = Preface.Result.Functor (Error)
 module Applicative = Preface.Result.Applicative (Error)
 module Monad = Preface.Result.Monad (Error)

@@ -1,1 +1,1 @@
-val to_raw_html : Tyxml.Html.doc -> [ `Html of string ]
+val to_raw_html : Tyxml.Html.doc -> string

@@ -87,4 +87,5 @@ module type VALIDABLE_ASSOC = sig
   val ( >? ) : 'a option Validate.t -> 'a -> 'a Validate.t
   val equal : t -> t -> bool
   val from_urlencoded : (string * string list) list -> t
+  val from_assoc_list : (string * string) list -> t
 end

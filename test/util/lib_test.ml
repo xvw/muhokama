@@ -13,14 +13,16 @@ let integration_test
     e
   =
   test ~speed ~about ~desc (fun () ->
-      let open Lwt_util in
       let promise =
+        let open Lwt_util in
         let*? env = Env.init () in
-        let*? pool = Lib_db.connect_with_env env in
-        let*? () = Lib_migration.Action.migrate pool migrations_path (Some 0) in
-        let*? () = Lib_migration.Action.migrate pool migrations_path None in
-        let+? result = f env pool in
-        pool, result
+        let*? pool = Lib_db.connect env in
+        Lib_db.use pool (fun db ->
+            let open Lib_migration in
+            let*? () = Action.migrate db migrations_path (Some 0) in
+            let*? () = Action.migrate db migrations_path None in
+            let+? result = f env db in
+            db, result)
       in
       match Lwt_main.run promise with
       | Error err -> e (Error err)

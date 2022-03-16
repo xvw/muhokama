@@ -119,6 +119,10 @@ module Make (A : Intf.AS_ASSOC) = struct
     A.to_object r
   ;;
 
+  let from_assoc_list l =
+    A.to_object @@ List.map (fun (key, value) -> key, A.to_string value) l
+  ;;
+
   let run ?(name = "data") validated =
     match validated with
     | Preface.Validation.Valid x -> Ok x

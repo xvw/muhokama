@@ -71,6 +71,19 @@ module User : sig
   val pp : t Fmt.t
 end
 
+module Form : sig
+  type t =
+    | Expired of (string * string) list * float
+    | Wrong_session of (string * string) list
+    | Invalid_token of (string * string) list
+    | Missing_token of (string * string) list
+    | Many_tokens of (string * string) list
+    | Wrong_content_type
+
+  val equal : t -> t -> bool
+  val pp : t Fmt.t
+end
+
 type t =
   | Migration of Migration.t
   | IO of IO.t
@@ -78,6 +91,7 @@ type t =
   | Database of string
   | Field of t Field.t
   | User of User.t
+  | Form of Form.t
   | Yaml of string
   | Invalid_object of
       { name : string
@@ -95,6 +109,16 @@ val migration_invalid_checksum : given_index:int -> t
 val io_unreadable_dir : dirpath:string -> t
 val io_unreadable_file : filepath:string -> t
 val io_invalid_loglevel : string -> t
+
+val form_error
+  :  [ `Expired of (string * string) list * float
+     | `Wrong_session of (string * string) list
+     | `Invalid_token of (string * string) list
+     | `Missing_token of (string * string) list
+     | `Many_tokens of (string * string) list
+     | `Wrong_content_type
+     ]
+  -> t
 
 val validation_unconvertible_string
   :  given_value:string

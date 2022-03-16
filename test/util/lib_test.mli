@@ -15,7 +15,7 @@ val integration_test
   -> ?speed:Alcotest.speed_level
   -> about:string
   -> desc:string
-  -> (Env.t -> Caqti_error.t Lib_db.connection -> 'a Try.t Lwt.t)
+  -> (Env.t -> Caqti_lwt.connection -> 'a Try.t Lwt.t)
   -> ('a Try.t -> unit)
   -> unit Alcotest.test_case
 
