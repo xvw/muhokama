@@ -6,6 +6,6 @@
   alcotest
   lib_common
   lib_crypto
-  lib_db
   lib_migration
-  lib_model))
+  lib_model
+  lib_db))

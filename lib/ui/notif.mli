@@ -4,3 +4,6 @@ type t =
   | Alert of string
   | Error_tree of Lib_common.Error.error_tree
   | Nothing
+
+val serialize : t -> string
+val unserialize : string -> t

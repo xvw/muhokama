@@ -90,7 +90,7 @@ let unconnected_navbar =
             ~a:[ a_class [ "navbar-start" ] ]
             [ a ~a:[ a_href "/"; a_class [ "navbar-item" ] ] [ txt "Home" ]
             ; a
-                ~a:[ a_href "/register"; a_class [ "navbar-item" ] ]
+                ~a:[ a_href "/register/"; a_class [ "navbar-item" ] ]
                 [ txt "Créer un compte" ]
             ]
         ]
@@ -103,10 +103,11 @@ let page
     ?(charset = "utf-8")
     ?(additional_meta = [])
     ?(additional_css = [])
-    ?(notifs = Notif.Nothing)
+    ?flash
     content
   =
   let open Html in
+  let notifs = Option.value ~default:Notif.Nothing flash in
   let p_title = title (txt page_title) in
   let p_meta =
     meta ~a:[ a_charset charset ] ()

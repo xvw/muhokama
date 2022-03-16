@@ -3,7 +3,7 @@ open Lib_common
 let launch port =
   let promise =
     let open Lwt_util in
-    let*? env = Env.init () in
+    let+? env = Env.init () in
     Lib_server.run ~port env
   in
   Termination.handle promise

@@ -1,8 +1,7 @@
 open Lib_common
-open Lib_db
 open Lib_crypto
 
-val count : Caqti_error.t connection -> int Try.t Lwt.t
+val count : Caqti_lwt.connection -> int Try.t Lwt.t
 
 module State : sig
   type t =
@@ -31,7 +30,8 @@ module Pre_saved : sig
   val formlet : Formlet.t4
   val create : Assoc.Yojson.t -> t Try.t
   val from_urlencoded : (string * string list) list -> t Try.t
-  val save : Caqti_error.t connection -> t -> unit Try.t Lwt.t
+  val from_assoc_list : (string * string) list -> t Try.t
+  val save : Caqti_lwt.connection -> t -> unit Try.t Lwt.t
 end
 
 module Saved : sig
@@ -42,13 +42,13 @@ module Saved : sig
     ; user_state : State.t
     }
 
-  val iter : Caqti_error.t connection -> (t -> unit) -> unit Try.t Lwt.t
+  val iter : Caqti_lwt.connection -> (t -> unit) -> unit Try.t Lwt.t
 
   val change_state
-    :  Caqti_error.t connection
+    :  Caqti_lwt.connection
     -> string
     -> State.t
     -> unit Try.t Lwt.t
 
-  val activate : Caqti_error.t connection -> string -> unit Try.t Lwt.t
+  val activate : Caqti_lwt.connection -> string -> unit Try.t Lwt.t
 end

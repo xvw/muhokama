@@ -7,6 +7,7 @@ type error_tree =
       { label : string
       ; tree : error_tree list
       }
+[@@deriving yojson]
 
 module IO = struct
   type t =
@@ -265,6 +266,74 @@ module User = struct
   ;;
 end
 
+module Form = struct
+  type t =
+    | Expired of (string * string) list * float
+    | Wrong_session of (string * string) list
+    | Invalid_token of (string * string) list
+    | Missing_token of (string * string) list
+    | Many_tokens of (string * string) list
+    | Wrong_content_type
+
+  let eq_list = List.equal (Preface.Pair.equal String.equal String.equal)
+
+  let equal a b =
+    match a, b with
+    | Expired (la, ea), Expired (lb, eb) -> eq_list la lb && Float.equal ea eb
+    | Wrong_session a, Wrong_session b
+    | Missing_token a, Missing_token b
+    | Invalid_token a, Invalid_token b
+    | Many_tokens a, Many_tokens b -> eq_list a b
+    | Wrong_content_type, Wrong_content_type -> true
+    | _, _ -> false
+  ;;
+
+  let pp ppf = function
+    | Expired (f, expiration) ->
+      Fmt.pf
+        ppf
+        "Expired %a, %a"
+        Fmt.(list @@ pair (quote string) (quote string))
+        f
+        Fmt.float
+        expiration
+    | Wrong_session f ->
+      Fmt.pf
+        ppf
+        "Wrong_session %a"
+        Fmt.(list @@ pair (quote string) (quote string))
+        f
+    | Invalid_token f ->
+      Fmt.pf
+        ppf
+        "Invalid_token %a"
+        Fmt.(list @@ pair (quote string) (quote string))
+        f
+    | Missing_token f ->
+      Fmt.pf
+        ppf
+        "Missing_token %a"
+        Fmt.(list @@ pair (quote string) (quote string))
+        f
+    | Many_tokens f ->
+      Fmt.pf
+        ppf
+        "Many_token %a"
+        Fmt.(list @@ pair (quote string) (quote string))
+        f
+    | Wrong_content_type -> Fmt.pf ppf "Wrong_content_type"
+  ;;
+
+  let normalize = function
+    | Expired _ -> Leaf { label = "POST session expired"; message = None }
+    | Wrong_session _ -> Leaf { label = "Wrong session"; message = None }
+    | Invalid_token _ | Missing_token _ | Many_tokens _ ->
+      Leaf { label = "Invalid CSRF token"; message = None }
+    | Wrong_content_type ->
+      Leaf { label = "Wrong content type"; message = None }
+  ;;
+end
+
 type t =
   | Migration of Migration.t
   | IO of IO.t
@@ -272,6 +341,7 @@ type t =
   | Database of string
   | Field of t Field.t
   | User of User.t
+  | Form of Form.t
   | Yaml of string
   | Invalid_object of
       { name : string
@@ -340,6 +410,17 @@ let user_already_taken ~username ~email =
 let user_invalid_state state = User (User.Invalid_state state)
 let invalid_object ~name ~errors = Invalid_object { name; errors }
 
+let form_error err =
+  Form
+    (match err with
+    | `Expired (f, e) -> Form.Expired (f, e)
+    | `Wrong_session f -> Form.Wrong_session f
+    | `Invalid_token f -> Form.Invalid_token f
+    | `Missing_token f -> Form.Missing_token f
+    | `Many_tokens f -> Form.Many_tokens f
+    | `Wrong_content_type -> Form.Wrong_content_type)
+;;
+
 let rec equal a b =
   match a, b with
   | Migration a, Migration b -> Migration.equal a b
@@ -352,6 +433,7 @@ let rec equal a b =
     String.equal a.name b.name
     && Preface.Nonempty_list.equal equal a.errors b.errors
   | User a, User b -> User.equal a b
+  | Form a, Form b -> Form.equal a b
   | _ -> false
 ;;
 
@@ -363,6 +445,7 @@ let rec pp ppf = function
   | Yaml err -> Fmt.pf ppf "Error.Yaml (%a)" Fmt.(quote string) err
   | Field f -> Fmt.pf ppf "Error.Field (%a)" (Field.pp pp) f
   | User u -> Fmt.pf ppf "Error.User (%a)" User.pp u
+  | Form f -> Fmt.pf ppf "Error.Form (%a)" Form.pp f
   | Invalid_object { name; errors } ->
     Fmt.pf
       ppf
@@ -393,6 +476,7 @@ let rec normalize = function
   | Validation err -> Validable.normalize err
   | Migration err -> Migration.normalize err
   | Field f -> Field.normalize normalize f
+  | Form f -> Form.normalize f
   | User u -> User.normalize u
   | Invalid_object { name; errors } ->
     let label = "Object <" ^ name ^ "> is invalid"

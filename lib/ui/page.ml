@@ -1,19 +1,19 @@
 open Tyxml
 
-let dummy ?(notifs = Notif.Nothing) () =
+let dummy ?flash () =
   Template.page
-    ~notifs
+    ?flash
     ~lang:"en"
     ~page_title:"A dummy page"
     Html.[ txt "Hello world" ]
 ;;
 
-let register ?(notifs = Notif.Nothing) () =
+let register ?flash ~csrf_token () =
   let user_name, user_email, user_password, confirm_user_password =
     Lib_model.User.Pre_saved.formlet
   in
   Template.page
-    ~notifs
+    ?flash
     ~lang:"fr"
     ~page_title:"Créer un compte"
     Html.
@@ -24,7 +24,8 @@ let register ?(notifs = Notif.Nothing) () =
               [ h1 ~a:[ a_class [ "title" ] ] [ txt "Se créer un compte" ]
               ; form
                   ~a:[ a_method `Post; a_action "/register/new" ]
-                  [ div
+                  [ Util.csrf_input csrf_token
+                  ; div
                       ~a:[ a_class [ "field" ] ]
                       [ label
                           ~a:

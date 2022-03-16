@@ -8,3 +8,8 @@ let preconnect ?(crossorigin = false) href =
 ;;
 
 let stylesheet href = Html.(link ~rel:[ `Stylesheet ] ~href ())
+
+let csrf_input value =
+  Html.(
+    input ~a:[ a_input_type `Hidden; a_name "dream.csrf"; a_value value ] ())
+;;

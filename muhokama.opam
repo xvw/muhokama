@@ -28,9 +28,10 @@ depends: [
   "cmdliner" { >= "1.0.0"}
   "hacl-star" { >= "0.4.4" }
   "yaml" { >= "2.1.0" }
-  "opium" { >= "0.20.0" }
-  "rock" { >= "0.20.0" }
+  "dream" { >= "1.0.0~alpha4" }
   "tyxml" { >= "4.5.0" }
+  "yojson" { >= "1.7.0" }
+  "ppx_yojson_conv" { >= "0.14.0" }
   "odoc" {with-doc}
   "alcotest" {with-test}
   "preface" { pinned }
@@ -44,5 +45,5 @@ build: [
 ]
 
 pin-depends: [
-  ["preface.dev" "git://github.com/xvw/preface.git"]
+  ["preface.dev" "git+https://github.com/xvw/preface.git"]
 ]

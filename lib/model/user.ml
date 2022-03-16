@@ -1,14 +1,13 @@
 open Lib_common
 open Lib_crypto
+module Db = Lib_db
 
-let count_query =
-  Caqti_request.find Caqti_type.unit Caqti_type.int
-  @@ "SELECT COUNT(*) FROM users"
-;;
-
-let count pool =
-  let request (module Q : Caqti_lwt.CONNECTION) = Q.find count_query () in
-  Lib_db.use pool request
+let count =
+  let query =
+    Caqti_request.find Caqti_type.unit Caqti_type.int
+    @@ "SELECT COUNT(*) FROM users"
+  in
+  fun (module Q : Caqti_lwt.CONNECTION) -> Db.try_ @@ Q.find query ()
 ;;
 
 let trim value = value |> String.trim |> String.lowercase_ascii
@@ -132,43 +131,43 @@ module Pre_saved = struct
     query_string |> Assoc.Yojson.from_urlencoded |> create
   ;;
 
-  let count_query =
-    Caqti_request.find
-      Caqti_type.(tup2 string string)
-      Caqti_type.(tup2 int int)
-      "SELECT (SELECT COUNT(*) FROM users WHERE user_name = ?), (SELECT \
-       COUNT(*) FROM users WHERE user_email = ?)"
+  let from_assoc_list query_string =
+    query_string |> Assoc.Yojson.from_assoc_list |> create
   ;;
 
-  let count_for pool ~username ~email =
-    let request (module Q : Caqti_lwt.CONNECTION) =
-      Q.find count_query (username, email)
+  let count_for =
+    let query =
+      Caqti_request.find
+        Caqti_type.(tup2 string string)
+        Caqti_type.(tup2 int int)
+        "SELECT (SELECT COUNT(*) FROM users WHERE user_name = ?), (SELECT \
+         COUNT(*) FROM users WHERE user_email = ?)"
     in
-    let open Lwt_util in
-    let*? names, mails = Lib_db.use pool request in
-    if names > 0 && mails > 0
-    then Lwt.return_error @@ Error.user_already_taken ~username ~email
-    else if names > 0
-    then Lwt.return_error @@ Error.user_name_already_taken username
-    else if mails > 0
-    then Lwt.return_error @@ Error.user_email_already_taken email
-    else Lwt.return_ok ()
+    fun (module Q : Caqti_lwt.CONNECTION) ~username ~email ->
+      let open Lwt_util in
+      let*? names, mails = Db.try_ @@ Q.find query (username, email) in
+      if names > 0 && mails > 0
+      then return Error.(to_try @@ user_already_taken ~username ~email)
+      else if names > 0
+      then return Error.(to_try @@ user_name_already_taken username)
+      else if mails > 0
+      then return Error.(to_try @@ user_email_already_taken email)
+      else return_ok ()
   ;;
 
-  let save_query =
-    Caqti_request.exec
-      Caqti_type.(tup3 string string string)
-      "INSERT INTO users (user_name, user_email, user_password, user_state) \
-       VALUES (?, ?, ?, 'inactive')"
-  ;;
-
-  let save pool { user_name; user_email; user_password } =
-    let request (module Q : Caqti_lwt.CONNECTION) =
-      Q.exec save_query (user_name, user_email, Sha256.to_string user_password)
+  let save =
+    let query =
+      Caqti_request.exec
+        Caqti_type.(tup3 string string string)
+        "INSERT INTO users (user_name, user_email, user_password, user_state) \
+         VALUES (?, ?, ?, 'inactive')"
     in
-    let open Lwt_util in
-    let*? () = count_for pool ~username:user_name ~email:user_email in
-    Lib_db.use pool request
+    fun (module Q : Caqti_lwt.CONNECTION)
+        { user_name; user_email; user_password } ->
+      let open Lwt_util in
+      let*? () = count_for (module Q) ~username:user_name ~email:user_email in
+      Db.try_
+      @@ Q.exec query (user_name, user_email, Sha256.to_string user_password)
   ;;
 end
 
@@ -180,34 +179,30 @@ module Saved = struct
     ; user_state : State.t
     }
 
-  let list_query =
-    Caqti_request.collect
-      Caqti_type.unit
-      Caqti_type.(tup4 string string string string)
-      "SELECT user_id, user_name, user_email, user_state FROM users"
-  ;;
-
-  let chanage_state_query =
-    Caqti_request.exec
-      ~oneshot:true
-      Caqti_type.(tup2 string string)
-      "UPDATE users SET user_state = ? WHERE user_id = ?"
-  ;;
-
-  let change_state pool user_id state =
-    let state_str = State.to_string state in
-    let request (module Q : Caqti_lwt.CONNECTION) =
-      Q.exec chanage_state_query (state_str, user_id)
+  let change_state =
+    let query =
+      Caqti_request.exec
+        ~oneshot:true
+        Caqti_type.(tup2 string string)
+        "UPDATE users SET user_state = ? WHERE user_id = ?"
     in
-    Lib_db.use pool request
+    fun (module Q : Caqti_lwt.CONNECTION) user_id state ->
+      let state_str = State.to_string state in
+      Db.try_ @@ Q.exec query (state_str, user_id)
   ;;
 
   let activate pool user_id = change_state pool user_id State.Member
 
-  let iter pool callback =
-    let request (module Q : Caqti_lwt.CONNECTION) =
+  let iter =
+    let query =
+      Caqti_request.collect
+        Caqti_type.unit
+        Caqti_type.(tup4 string string string string)
+        "SELECT user_id, user_name, user_email, user_state FROM users"
+    in
+    fun (module Q : Caqti_lwt.CONNECTION) callback ->
       Q.iter_s
-        list_query
+        query
         (fun (user_id, user_name, user_email, user_state) ->
           let saved =
             { user_id
@@ -218,7 +213,6 @@ module Saved = struct
           in
           Lwt.return_ok @@ callback saved)
         ()
-    in
-    Lib_db.use pool request
+      |> Db.try_
   ;;
 end
