@@ -4,7 +4,7 @@ let launch port =
   let promise =
     let open Lwt_util in
     let+? env = Env.init () in
-    Lib_server.run ~port env
+    App.run ~port env
   in
   Termination.handle promise
 ;;

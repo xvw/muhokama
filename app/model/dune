@@ -1,0 +1,5 @@
+(library
+ (name model)
+ (package muhokama)
+ (libraries fmt preface yojson lib_common)
+ (preprocess (pps ppx_yojson_conv)))
