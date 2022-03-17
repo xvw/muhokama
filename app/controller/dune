@@ -1,4 +1,5 @@
 (library
  (name controller)
  (package muhokama)
+ (modules_without_implementation controller)
  (libraries logs dream tyxml fmt preface lib_common model view))

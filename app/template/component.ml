@@ -46,7 +46,7 @@ let unconnected_navbar =
             ~a:[ a_class [ "navbar-start" ] ]
             [ a ~a:[ a_href "/"; a_class [ "navbar-item" ] ] [ txt "Home" ]
             ; a
-                ~a:[ a_href "/register/"; a_class [ "navbar-item" ] ]
+                ~a:[ a_href "/user/new"; a_class [ "navbar-item" ] ]
                 [ txt "Créer un compte" ]
             ]
         ]

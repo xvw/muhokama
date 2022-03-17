@@ -36,9 +36,18 @@ val t_step_testable : Lib_migration.Context.step Try.t Alcotest.testable
 
 val nel : 'a -> 'a list -> 'a Preface.Nonempty_list.t
 
+(** {1 model helpers} *)
+
+val user_for_registration
+  :  string
+  -> string
+  -> string
+  -> string
+  -> Model.User.For_registration.t Try.t
+
 (** {1 Some data} *)
 
-module User : sig
+module Individual : sig
   type t =
     { id : string
     ; age : int option
@@ -50,11 +59,4 @@ module User : sig
   val equal : t -> t -> bool
   val testable : t Alcotest.testable
   val make : string -> int option -> string option -> string -> t
-
-  val create_pre_saved
-    :  string
-    -> string
-    -> string
-    -> string
-    -> Lib_model.User.Pre_saved.t Try.t
 end
