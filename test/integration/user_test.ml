@@ -6,7 +6,7 @@ let test_ensure_there_is_no_user_at_starting =
   integration_test
     ~about:"count"
     ~desc:"when there is no user, it should return 0"
-    (fun _env db -> Lib_model.User.count db)
+    (fun _env db -> Model.User.Saved.count db)
     (fun computed ->
       let expected = Ok 0 in
       same (try_testable int) ~expected ~computed)
@@ -32,7 +32,7 @@ let test_try_to_add_users =
              "foobarfoo"
       in
       let*? () = Model.User.For_registration.save user db in
-      Lib_model.User.count db)
+      Model.User.Saved.count db)
     (fun computed ->
       let expected = Ok 2 in
       same (try_testable int) ~expected ~computed)
