@@ -22,7 +22,7 @@ let test_try_to_add_users =
         Lwt.return
         @@ user_for_registration "xvw" "xvw@github.com" "foobarfoo" "foobarfoo"
       in
-      let*? () = Model.User.For_registration.save db user in
+      let*? () = Model.User.For_registration.save user db in
       let*? user =
         Lwt.return
         @@ user_for_registration
@@ -31,7 +31,7 @@ let test_try_to_add_users =
              "foobarfoo"
              "foobarfoo"
       in
-      let*? () = Model.User.For_registration.save db user in
+      let*? () = Model.User.For_registration.save user db in
       Lib_model.User.count db)
     (fun computed ->
       let expected = Ok 2 in
@@ -49,11 +49,11 @@ let test_add_user_with_username_and_email_not_free =
       let*? u =
         return (user_for_registration "xvw" "x@g.com" "1234567" "1234567")
       in
-      let*? () = Model.User.For_registration.save db u in
+      let*? () = Model.User.For_registration.save u db in
       let*? u =
         return (user_for_registration "xvw" "x@g.com" "1234567" "1234567")
       in
-      Model.User.For_registration.save db u)
+      Model.User.For_registration.save u db)
     (fun computed ->
       let expected =
         Error.(to_try @@ user_already_taken ~username:"xvw" ~email:"x@g.com")
@@ -70,11 +70,11 @@ let test_add_user_with_username_not_free =
       let*? u =
         return (user_for_registration "xvw" "x@g.com" "1234567" "1234567")
       in
-      let*? () = Model.User.For_registration.save db u in
+      let*? () = Model.User.For_registration.save u db in
       let*? u =
         return (user_for_registration "xvw" "q@g.com" "1234567" "1234567")
       in
-      Model.User.For_registration.save db u)
+      Model.User.For_registration.save u db)
     (fun computed ->
       let expected = Error.(to_try @@ user_name_already_taken "xvw") in
       same (try_testable unit) ~expected ~computed)
@@ -89,11 +89,11 @@ let test_add_user_with_email_not_free =
       let*? u =
         return (user_for_registration "x" "q@g.com" "1234567" "1234567")
       in
-      let*? () = Model.User.For_registration.save db u in
+      let*? () = Model.User.For_registration.save u db in
       let*? u =
         return (user_for_registration "xvw" "q@g.com" "1234567" "1234567")
       in
-      Model.User.For_registration.save db u)
+      Model.User.For_registration.save u db)
     (fun computed ->
       let expected = Error.(to_try @@ user_email_already_taken "q@g.com") in
       same (try_testable unit) ~expected ~computed)

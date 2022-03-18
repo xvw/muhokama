@@ -1,22 +1,20 @@
 open Lib_common
-open Lib_model
-module Db = Lib_db
 
 let list () =
   let promise =
     let open Lwt_util in
     let*? env = Env.init () in
-    let*? pool = Db.connect env in
-    Lib_db.use pool (fun db ->
-        User.Saved.iter db (fun user ->
-            Logs.info (fun pp ->
-                pp
-                  "%s\t|%s\t|%s\t|%a"
-                  user.user_id
-                  user.user_name
-                  user.user_email
-                  User.State.pp
-                  user.user_state)))
+    let*? pool = Lib_db.connect env in
+    Lib_db.use pool
+    @@ Model.User.Saved.iter (fun user ->
+           Logs.info (fun pp ->
+               pp
+                 "%s\t|%s\t|%s\t|%a"
+                 user.user_id
+                 user.user_name
+                 user.user_email
+                 Model.User.State.pp
+                 user.user_state))
   in
   Termination.handle promise
 ;;
@@ -25,9 +23,9 @@ let set_user_state user_id user_state =
   let promise =
     let open Lwt_util in
     let*? env = Env.init () in
-    let*? pool = Db.connect env in
-    let*? state = Lwt.return (User.State.try_state user_state) in
-    Lib_db.use pool (fun db -> User.Saved.change_state db user_id state)
+    let*? pool = Lib_db.connect env in
+    let*? state = Lwt.return (Model.User.State.try_state user_state) in
+    Lib_db.use pool @@ Model.User.Saved.change_state ~user_id state
   in
   Termination.handle promise
 ;;

@@ -172,11 +172,65 @@ module For_registration = struct
         "INSERT INTO users (user_name, user_email, user_password, user_state) \
          VALUES (?, ?, ?, 'inactive')"
     in
-    fun (module Q : Caqti_lwt.CONNECTION)
-        { user_name; user_email; user_password } ->
+    fun { user_name; user_email; user_password }
+        (module Q : Caqti_lwt.CONNECTION) ->
       let open Lwt_util in
       let*? () = ensure_unicity (module Q) ~user_name ~user_email in
       Q.exec query (user_name, user_email, Sha256.to_string user_password)
       |> Lib_db.try_
   ;;
+end
+
+module Saved = struct
+  type t =
+    { user_id : string
+    ; user_name : string
+    ; user_email : string
+    ; user_state : State.t
+    }
+
+  let count =
+    let query =
+      Caqti_request.find Caqti_type.unit Caqti_type.int
+      @@ "SELECT COUNT(*) FROM users"
+    in
+    fun (module Q : Caqti_lwt.CONNECTION) -> Lib_db.try_ @@ Q.find query ()
+  ;;
+
+  let iter =
+    let query =
+      Caqti_request.collect
+        Caqti_type.unit
+        Caqti_type.(tup4 string string string string)
+        "SELECT user_id, user_name, user_email, user_state FROM users"
+    in
+    fun callback (module Q : Caqti_lwt.CONNECTION) ->
+      Q.iter_s
+        query
+        (fun (user_id, user_name, user_email, user_state) ->
+          let saved =
+            { user_id
+            ; user_name
+            ; user_email
+            ; user_state = State.from_string user_state
+            }
+          in
+          Lwt.return_ok @@ callback saved)
+        ()
+      |> Lib_db.try_
+  ;;
+
+  let change_state =
+    let query =
+      Caqti_request.exec
+        ~oneshot:true
+        Caqti_type.(tup2 string string)
+        "UPDATE users SET user_state = ? WHERE user_id = ?"
+    in
+    fun ~user_id state (module Q : Caqti_lwt.CONNECTION) ->
+      let state_str = State.to_string state in
+      Lib_db.try_ @@ Q.exec query (state_str, user_id)
+  ;;
+
+  let activate ~user_id = change_state ~user_id State.Member
 end

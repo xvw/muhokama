@@ -15,7 +15,7 @@ let save request =
     let*? post_params = Dream.form ~csrf:true request >|= Try.ok in
     let*? fields = return @@ Try.form post_params in
     let*? user = return @@ from_assoc_list fields in
-    Dream.sql request (fun db -> save db user)
+    Dream.sql request @@ save user
   in
   let* result = promise in
   match result with

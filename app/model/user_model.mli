@@ -57,8 +57,34 @@ module For_registration : sig
   val from_assoc_list : (string * string) list -> t Try.t
 
   (** Save it in database*)
-  val save : Caqti_lwt.connection -> t -> unit Try.t Lwt.t
+  val save : t -> Caqti_lwt.connection -> unit Try.t Lwt.t
 
   val pp : t Fmt.t
   val equal : t -> t -> bool
+end
+
+(** A model that describe a saved user. *)
+module Saved : sig
+  type t = private
+    { user_id : string
+    ; user_name : string
+    ; user_email : string
+    ; user_state : State.t
+    }
+
+  (** [count db] try to get the number of saved users. *)
+  val count : Caqti_lwt.connection -> int Try.t Lwt.t
+
+  (** [iter f db] apply [f] on each saved users. *)
+  val iter : (t -> unit) -> Caqti_lwt.connection -> unit Try.t Lwt.t
+
+  (** [change_state ~user_id new_state db] try to change the state of an user. *)
+  val change_state
+    :  user_id:string
+    -> State.t
+    -> Caqti_lwt.connection
+    -> unit Try.t Lwt.t
+
+  (** [activate ~user_id] activate an user. *)
+  val activate : user_id:string -> Caqti_lwt.connection -> unit Try.t Lwt.t
 end
