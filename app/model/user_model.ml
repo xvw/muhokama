@@ -148,7 +148,7 @@ module For_registration = struct
         "SELECT (SELECT COUNT(*) FROM users WHERE user_name = ?), (SELECT \
          COUNT(*) FROM users WHERE user_email = ?)"
     in
-    fun (module Q : Caqti_lwt.CONNECTION) ~user_name ~user_email ->
+    fun ~user_name ~user_email (module Q : Caqti_lwt.CONNECTION) ->
       let open Lwt_util in
       let*? names, mails =
         Lib_db.try_ @@ Q.find query (user_name, user_email)
@@ -175,7 +175,7 @@ module For_registration = struct
     fun { user_name; user_email; user_password }
         (module Q : Caqti_lwt.CONNECTION) ->
       let open Lwt_util in
-      let*? () = ensure_unicity (module Q) ~user_name ~user_email in
+      let*? () = ensure_unicity ~user_name ~user_email (module Q) in
       Q.exec query (user_name, user_email, Sha256.to_string user_password)
       |> Lib_db.try_
   ;;
