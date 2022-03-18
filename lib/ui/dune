@@ -1,6 +1,0 @@
-(library
- (name lib_ui)
- (package muhokama)
- (libraries tyxml fmt preface yojson lib_common lib_model)
- (preprocess
-  (pps ppx_yojson_conv)))

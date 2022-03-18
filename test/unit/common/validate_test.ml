@@ -234,8 +234,8 @@ let test_string_not_blank_invalid =
       same (validate_testable string) ~computed ~expected)
 ;;
 
-module User = struct
-  include User
+module Individual = struct
+  include Individual
   module Store = Map.Make (String)
 
   let validate =
@@ -263,7 +263,7 @@ let test_user_when_every_data_are_filled =
     ~desc:"When all data are given, it should wrap an user into [valid]"
     (fun () ->
       let store =
-        User.store
+        Individual.store
           [ "id", "xvw"
           ; "age", "32"
           ; "name", "Vdw"
@@ -271,9 +271,9 @@ let test_user_when_every_data_are_filled =
           ]
       in
       let expected =
-        Ok (User.make "xvw" (Some 32) (Some "Vdw") "xavier@mail.com")
-      and computed = User.run ~name:"user" store in
-      same (try_testable User.testable) ~expected ~computed)
+        Ok (Individual.make "xvw" (Some 32) (Some "Vdw") "xavier@mail.com")
+      and computed = Individual.run ~name:"user" store in
+      same (try_testable Individual.testable) ~expected ~computed)
 ;;
 
 let test_user_when_some_data_are_filled =
@@ -282,10 +282,12 @@ let test_user_when_some_data_are_filled =
     ~desc:
       "When all required data are given, it should wrap an user into [valid]"
     (fun () ->
-      let store = User.store [ "id", "xvw"; "email", "xavier@mail.com" ] in
-      let expected = Ok (User.make "xvw" None None "xavier@mail.com")
-      and computed = User.run store in
-      same (try_testable User.testable) ~expected ~computed)
+      let store =
+        Individual.store [ "id", "xvw"; "email", "xavier@mail.com" ]
+      in
+      let expected = Ok (Individual.make "xvw" None None "xavier@mail.com")
+      and computed = Individual.run store in
+      same (try_testable Individual.testable) ~expected ~computed)
 ;;
 
 let test_user_when_all_data_are_missing =
@@ -294,7 +296,7 @@ let test_user_when_all_data_are_missing =
     ~desc:"When all required data are missing, it should return an error"
     (fun () ->
       let store =
-        User.store [ "an_id", "xvw"; "an_email", "xavier@mail.com" ]
+        Individual.store [ "an_id", "xvw"; "an_email", "xavier@mail.com" ]
       in
       let expected =
         Try.error
@@ -306,8 +308,8 @@ let test_user_when_all_data_are_missing =
                     (Field (Missing { name = "email" }))
                     [ Field (Missing { name = "id" }) ]
               })
-      and computed = User.run ~name:"user" store in
-      same (try_testable User.testable) ~expected ~computed)
+      and computed = Individual.run ~name:"user" store in
+      same (try_testable Individual.testable) ~expected ~computed)
 ;;
 
 let test_user_when_there_is_some_errors =
@@ -316,7 +318,7 @@ let test_user_when_there_is_some_errors =
     ~desc:"When there is errors, it should return an error"
     (fun () ->
       let store =
-        User.store
+        Individual.store
           [ "an_id", "xvw"
           ; "an_email", "xavier@mail.com"
           ; "age", "-12"
@@ -349,8 +351,8 @@ let test_user_when_there_is_some_errors =
                     ; Field (Missing { name = "id" })
                     ]
               })
-      and computed = User.run ~name:"user" store in
-      same (try_testable User.testable) ~expected ~computed)
+      and computed = Individual.run ~name:"user" store in
+      same (try_testable Individual.testable) ~expected ~computed)
 ;;
 
 let cases =

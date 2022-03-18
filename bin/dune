@@ -16,5 +16,5 @@
   preface
   lib_common
   lib_migration
-  lib_model
-  lib_server))
+  model
+  app))

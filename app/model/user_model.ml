@@ -1,14 +1,4 @@
 open Lib_common
-open Lib_crypto
-module Db = Lib_db
-
-let count =
-  let query =
-    Caqti_request.find Caqti_type.unit Caqti_type.int
-    @@ "SELECT COUNT(*) FROM users"
-  in
-  fun (module Q : Caqti_lwt.CONNECTION) -> Db.try_ @@ Q.find query ()
-;;
 
 let trim value = value |> String.trim |> String.lowercase_ascii
 
@@ -79,28 +69,47 @@ module State = struct
   ;;
 end
 
-module Pre_saved = struct
+module For_registration = struct
+  open Lib_crypto
+
   type t =
     { user_name : string
     ; user_email : string
     ; user_password : Sha256.t
     }
 
-  let make user_name user_email user_password () =
-    let user_email = trim user_email in
-    let user_name = trim user_name in
-    { user_name
-    ; user_email
-    ; user_password =
-        Sha256.(hash_string user_email <|> hash_string user_password)
-    }
+  let user_name_key = "user_name"
+  let user_email_key = "user_email"
+  let user_password_key = "user_password"
+  let confirm_user_password_key = "confirm_user_password"
+
+  let pp ppf { user_name; user_email; user_password = _ } =
+    Fmt.pf
+      ppf
+      "User.For_registration.{ user_name = %a; user_email = %a; user_password \
+       = ***  }"
+      Fmt.(quote string)
+      user_name
+      Fmt.(quote string)
+      user_email
   ;;
 
-  let formlet =
-    ( ("user_name", `Text)
-    , ("user_email", `Email)
-    , ("user_password", `Password)
-    , ("confirm_user_password", `Password) )
+  let equal
+      { user_name = a_name; user_email = a_email; user_password = a_password }
+      { user_name = b_name; user_email = b_email; user_password = b_password }
+    =
+    String.equal a_name b_name
+    && String.equal a_email b_email
+    && Sha256.equal a_password b_password
+  ;;
+
+  let make user_name user_email user_password () =
+    let user_email = trim user_email
+    and user_name = trim user_name
+    and user_password =
+      Sha256.(hash_string user_email <|> hash_string user_password)
+    in
+    { user_email; user_name; user_password }
   ;;
 
   let verify_password password =
@@ -113,29 +122,25 @@ module Pre_saved = struct
        & from_predicate ~message (fun x -> String.length x >= 7))
   ;;
 
-  let create yojson_obj =
+  let from_yojson yojson_obj =
     let open Validate in
     let open Assoc.Yojson in
     object_and
       (fun obj ->
         make
-        <$> required (string & not_blank) "user_name" obj
-        <*> required (string & is_email) "user_email" obj
-        <*> required verify_password "user_password" obj
-        <*> ensure_equality "user_password" "confirm_user_password" obj)
+        <$> required (string & not_blank) user_name_key obj
+        <*> required (string & is_email) user_email_key obj
+        <*> required verify_password user_password_key obj
+        <*> ensure_equality user_password_key confirm_user_password_key obj)
       yojson_obj
-    |> run ~name:"User.Pre_saved"
-  ;;
-
-  let from_urlencoded query_string =
-    query_string |> Assoc.Yojson.from_urlencoded |> create
+    |> run ~name:"User.For_registration"
   ;;
 
   let from_assoc_list query_string =
-    query_string |> Assoc.Yojson.from_assoc_list |> create
+    query_string |> Assoc.Yojson.from_assoc_list |> from_yojson
   ;;
 
-  let count_for =
+  let ensure_unicity =
     let query =
       Caqti_request.find
         Caqti_type.(tup2 string string)
@@ -143,15 +148,20 @@ module Pre_saved = struct
         "SELECT (SELECT COUNT(*) FROM users WHERE user_name = ?), (SELECT \
          COUNT(*) FROM users WHERE user_email = ?)"
     in
-    fun (module Q : Caqti_lwt.CONNECTION) ~username ~email ->
+    fun ~user_name ~user_email (module Q : Caqti_lwt.CONNECTION) ->
       let open Lwt_util in
-      let*? names, mails = Db.try_ @@ Q.find query (username, email) in
+      let*? names, mails =
+        Lib_db.try_ @@ Q.find query (user_name, user_email)
+      in
       if names > 0 && mails > 0
-      then return Error.(to_try @@ user_already_taken ~username ~email)
+      then
+        return
+          Error.(
+            to_try @@ user_already_taken ~username:user_name ~email:user_email)
       else if names > 0
-      then return Error.(to_try @@ user_name_already_taken username)
+      then return Error.(to_try @@ user_name_already_taken user_name)
       else if mails > 0
-      then return Error.(to_try @@ user_email_already_taken email)
+      then return Error.(to_try @@ user_email_already_taken user_email)
       else return_ok ()
   ;;
 
@@ -162,12 +172,12 @@ module Pre_saved = struct
         "INSERT INTO users (user_name, user_email, user_password, user_state) \
          VALUES (?, ?, ?, 'inactive')"
     in
-    fun (module Q : Caqti_lwt.CONNECTION)
-        { user_name; user_email; user_password } ->
+    fun { user_name; user_email; user_password }
+        (module Q : Caqti_lwt.CONNECTION) ->
       let open Lwt_util in
-      let*? () = count_for (module Q) ~username:user_name ~email:user_email in
-      Db.try_
-      @@ Q.exec query (user_name, user_email, Sha256.to_string user_password)
+      let*? () = ensure_unicity ~user_name ~user_email (module Q) in
+      Q.exec query (user_name, user_email, Sha256.to_string user_password)
+      |> Lib_db.try_
   ;;
 end
 
@@ -179,19 +189,13 @@ module Saved = struct
     ; user_state : State.t
     }
 
-  let change_state =
+  let count =
     let query =
-      Caqti_request.exec
-        ~oneshot:true
-        Caqti_type.(tup2 string string)
-        "UPDATE users SET user_state = ? WHERE user_id = ?"
+      Caqti_request.find Caqti_type.unit Caqti_type.int
+      @@ "SELECT COUNT(*) FROM users"
     in
-    fun (module Q : Caqti_lwt.CONNECTION) user_id state ->
-      let state_str = State.to_string state in
-      Db.try_ @@ Q.exec query (state_str, user_id)
+    fun (module Q : Caqti_lwt.CONNECTION) -> Lib_db.try_ @@ Q.find query ()
   ;;
-
-  let activate pool user_id = change_state pool user_id State.Member
 
   let iter =
     let query =
@@ -200,7 +204,7 @@ module Saved = struct
         Caqti_type.(tup4 string string string string)
         "SELECT user_id, user_name, user_email, user_state FROM users"
     in
-    fun (module Q : Caqti_lwt.CONNECTION) callback ->
+    fun callback (module Q : Caqti_lwt.CONNECTION) ->
       Q.iter_s
         query
         (fun (user_id, user_name, user_email, user_state) ->
@@ -213,6 +217,20 @@ module Saved = struct
           in
           Lwt.return_ok @@ callback saved)
         ()
-      |> Db.try_
+      |> Lib_db.try_
   ;;
+
+  let change_state =
+    let query =
+      Caqti_request.exec
+        ~oneshot:true
+        Caqti_type.(tup2 string string)
+        "UPDATE users SET user_state = ? WHERE user_id = ?"
+    in
+    fun ~user_id state (module Q : Caqti_lwt.CONNECTION) ->
+      let state_str = State.to_string state in
+      Lib_db.try_ @@ Q.exec query (state_str, user_id)
+  ;;
+
+  let activate ~user_id = change_state ~user_id State.Member
 end

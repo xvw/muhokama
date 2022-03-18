@@ -7,5 +7,5 @@
   lib_common
   lib_crypto
   lib_migration
-  lib_model
-  lib_db))
+  lib_db
+  model))

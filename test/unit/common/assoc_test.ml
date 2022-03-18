@@ -1,8 +1,8 @@
 open Lib_common
 open Lib_test
 
-module User = struct
-  include User
+module Individual = struct
+  include Individual
 
   let create (type t) (module R : Intf.VALIDABLE_ASSOC with type t = t) assoc =
     let open Validate in
@@ -36,12 +36,17 @@ let test_create_a_valid_user =
     ~desc:"When all data are given, the result should be valid"
     (fun () ->
       let json_user =
-        User.json ~id:"xvw" ~age:32 ~name:"Vdw" ~email:"xavier@mail.com" ()
+        Individual.json
+          ~id:"xvw"
+          ~age:32
+          ~name:"Vdw"
+          ~email:"xavier@mail.com"
+          ()
       in
       let expected =
-        Ok (User.make "xvw" (Some 32) (Some "Vdw") "xavier@mail.com")
-      and computed = User.from_jsnonm json_user in
-      same (try_testable User.testable) ~expected ~computed)
+        Ok (Individual.make "xvw" (Some 32) (Some "Vdw") "xavier@mail.com")
+      and computed = Individual.from_jsnonm json_user in
+      same (try_testable Individual.testable) ~expected ~computed)
 ;;
 
 let test_create_a_valid_user_without_optional_values =
@@ -49,10 +54,10 @@ let test_create_a_valid_user_without_optional_values =
     ~about:"run"
     ~desc:"When all data required are given, the result should be valid"
     (fun () ->
-      let json_user = User.json ~id:"xvw" ~email:"xavier@mail.com" () in
-      let expected = Ok (User.make "xvw" None None "xavier@mail.com")
-      and computed = User.from_jsnonm json_user in
-      same (try_testable User.testable) ~expected ~computed)
+      let json_user = Individual.json ~id:"xvw" ~email:"xavier@mail.com" () in
+      let expected = Ok (Individual.make "xvw" None None "xavier@mail.com")
+      and computed = Individual.from_jsnonm json_user in
+      same (try_testable Individual.testable) ~expected ~computed)
 ;;
 
 let test_create_an_invalid_user_without_any_values =
@@ -60,7 +65,7 @@ let test_create_an_invalid_user_without_any_values =
     ~about:"run"
     ~desc:"When no data is given, the result should be invalid"
     (fun () ->
-      let json_user = User.json () in
+      let json_user = Individual.json () in
       let expected =
         Try.error
           Error.(
@@ -71,8 +76,8 @@ let test_create_an_invalid_user_without_any_values =
                     (Field (Missing { name = "id" }))
                     [ Field (Missing { name = "email" }) ]
               })
-      and computed = User.from_jsnonm json_user in
-      same (try_testable User.testable) ~expected ~computed)
+      and computed = Individual.from_jsnonm json_user in
+      same (try_testable Individual.testable) ~expected ~computed)
 ;;
 
 let cases =

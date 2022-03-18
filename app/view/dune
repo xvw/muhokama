@@ -1,0 +1,5 @@
+(library
+ (name view)
+ (package muhokama)
+ (modules_without_implementation view)
+ (libraries dream fmt preface lib_common model template))

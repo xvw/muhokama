@@ -1,14 +1,17 @@
 (library
- (name lib_model)
+ (name model)
  (package muhokama)
+ (modules_without_implementation model)
  (libraries
   lwt
   caqti
   caqti-lwt
   caqti-driver-postgresql
   fmt
-  tyxml
   preface
+  yojson
   lib_common
   lib_crypto
-  lib_db))
+  lib_db)
+ (preprocess
+  (pps ppx_yojson_conv)))

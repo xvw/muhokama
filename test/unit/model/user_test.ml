@@ -4,9 +4,8 @@ open Lib_crypto
 open Alcotest
 
 let test_user_valid =
-  let open Lib_model.User.Pre_saved in
   test
-    ~about:"Pre_saved.create"
+    ~about:"User.For_registration validation"
     ~desc:
       "When everything is good, it should wrap a pre-saved user into an Ok \
        result"
@@ -14,7 +13,7 @@ let test_user_valid =
       let computed =
         let open Try in
         let+ user =
-          User.create_pre_saved
+          user_for_registration
             "xvw"
             "xavier@mail.com"
             "foobarfoobar"
@@ -35,15 +34,14 @@ let test_user_valid =
 ;;
 
 let test_user_invalid_because_confirm =
-  let open Lib_model.User.Pre_saved in
   test
-    ~about:"Pre_saved.create"
+    ~about:"User.For_registration validation"
     ~desc:"When there is errors it should wrap it into an error"
     (fun () ->
       let computed =
         let open Try in
         let+ user =
-          User.create_pre_saved
+          user_for_registration
             "xvw"
             "xavier@mail.com"
             "foobarfoobar"
@@ -54,7 +52,7 @@ let test_user_invalid_because_confirm =
         Error.(
           to_try
             (invalid_object
-               ~name:"User.Pre_saved"
+               ~name:"User.For_registration"
                ~errors:
                  (nel
                     (field_invalid
@@ -75,15 +73,14 @@ let test_user_invalid_because_confirm =
 ;;
 
 let test_user_invalid_because_confirm_and_email =
-  let open Lib_model.User.Pre_saved in
   test
-    ~about:"Pre_saved.create"
+    ~about:"User.For_registration validation"
     ~desc:"When there is errors, it should wrap it into an error"
     (fun () ->
       let computed =
         let open Try in
         let+ user =
-          User.create_pre_saved "xvw" "xaviermail.com" "foobarfoobar" "foooobar"
+          user_for_registration "xvw" "xaviermail.com" "foobarfoobar" "foooobar"
         in
         user.user_name, user.user_email, user.user_password
       and expected =
@@ -104,7 +101,7 @@ let test_user_invalid_because_confirm_and_email =
           field_invalid ~name:"user_email" ~errors:(nel predicate_email [])
         in
         let errors = nel invalid_email [ invalid_password ] in
-        to_try @@ invalid_object ~name:"User.Pre_saved" ~errors
+        to_try @@ invalid_object ~name:"User.For_registration" ~errors
       in
       same
         (try_testable (triple string string sha256_testable))

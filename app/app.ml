@@ -1,10 +1,10 @@
 open Lib_common
 
 let sql_pool env =
-  let size = env.Env.pgsql_connection_pool in
-  let uri = Lib_db.make_uri env in
-  let str = Uri.to_string uri in
-  Dream.sql_pool ~size str
+  env
+  |> Lib_db.make_uri
+  |> Uri.to_string
+  |> Dream.sql_pool ~size:env.Env.pgsql_connection_pool
 ;;
 
 let run ~port env =

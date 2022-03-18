@@ -102,7 +102,7 @@ let step_pp ppf =
 let step_testable = Alcotest.testable step_pp step_eq
 let t_step_testable = try_testable step_testable
 
-module User = struct
+module Individual = struct
   type t =
     { id : string
     ; age : int option
@@ -131,14 +131,14 @@ module User = struct
 
   let testable = Alcotest.testable pp equal
   let make id age name email = { id; age; name; email }
-
-  let create_pre_saved username email password confirm =
-    `Assoc
-      [ "user_name", `String username
-      ; "user_email", `String email
-      ; "user_password", `String password
-      ; "confirm_user_password", `String confirm
-      ]
-    |> Lib_model.User.Pre_saved.create
-  ;;
 end
+
+let user_for_registration name mail pass confirm =
+  Model.User.For_registration.(
+    from_assoc_list
+      [ user_name_key, name
+      ; user_email_key, mail
+      ; user_password_key, pass
+      ; confirm_user_password_key, confirm
+      ])
+;;

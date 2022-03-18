@@ -1,0 +1,14 @@
+(library
+ (name app)
+ (package muhokama)
+ (libraries
+  logs
+  dream
+  fmt
+  preface
+  lib_common
+  lib_db
+  template
+  view
+  model
+  controller))
