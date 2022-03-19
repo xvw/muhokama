@@ -46,7 +46,7 @@ let test_create_a_valid_user =
       let expected =
         Ok (Individual.make "xvw" (Some 32) (Some "Vdw") "xavier@mail.com")
       and computed = Individual.from_jsnonm json_user in
-      same (try_testable Individual.testable) ~expected ~computed)
+      same (Testable.try_ Individual.testable) ~expected ~computed)
 ;;
 
 let test_create_a_valid_user_without_optional_values =
@@ -57,7 +57,7 @@ let test_create_a_valid_user_without_optional_values =
       let json_user = Individual.json ~id:"xvw" ~email:"xavier@mail.com" () in
       let expected = Ok (Individual.make "xvw" None None "xavier@mail.com")
       and computed = Individual.from_jsnonm json_user in
-      same (try_testable Individual.testable) ~expected ~computed)
+      same (Testable.try_ Individual.testable) ~expected ~computed)
 ;;
 
 let test_create_an_invalid_user_without_any_values =
@@ -77,7 +77,7 @@ let test_create_an_invalid_user_without_any_values =
                     [ Field (Missing { name = "email" }) ]
               })
       and computed = Individual.from_jsnonm json_user in
-      same (try_testable Individual.testable) ~expected ~computed)
+      same (Testable.try_ Individual.testable) ~expected ~computed)
 ;;
 
 let cases =

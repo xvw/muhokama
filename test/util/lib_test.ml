@@ -1,4 +1,5 @@
 open Lib_common
+module Testable = Testable
 
 let test ?(speed = `Quick) ~about ~desc f =
   Alcotest.test_case (Format.asprintf "%-42s%s" about desc) speed f
@@ -19,17 +20,16 @@ let integration_test
         let*? pool = Lib_db.connect env in
         Lib_db.use pool (fun db ->
             let open Lib_migration in
-            let*? () = Action.migrate db migrations_path (Some 0) in
-            let*? () = Action.migrate db migrations_path None in
+            let*? () = Migrate.run migrations_path (Some 0) db in
+            let*? () = Migrate.run migrations_path None db in
             let+? result = f env db in
             db, result)
       in
       match Lwt_main.run promise with
       | Error err -> e (Error err)
-      | Ok (pool, result) ->
+      | Ok (db, result) ->
         let _ =
-          Lwt_main.run
-          @@ Lib_migration.Action.migrate pool migrations_path (Some 0)
+          Lwt_main.run @@ Lib_migration.Migrate.run migrations_path (Some 0) db
         in
         e (Ok result))
 ;;
@@ -44,63 +44,6 @@ let nel x xs =
   | None -> Last x
   | Some xs -> x :: xs
 ;;
-
-let error_testable = Alcotest.testable Error.pp Error.equal
-let try_testable t = Alcotest.result t error_testable
-
-let validate_testable t =
-  let ppx = Alcotest.pp t
-  and eqx = Alcotest.equal t in
-  Alcotest.testable (Validate.pp ppx) (Validate.equal eqx)
-;;
-
-let sha256_testable =
-  let open Lib_crypto in
-  Alcotest.testable Sha256.pp Sha256.equal
-;;
-
-let migration_testable =
-  let open Lib_migration in
-  Alcotest.testable Migration.pp Migration.equal
-;;
-
-let step_eq a b =
-  let open Lib_migration in
-  match a, b with
-  | Context.Up la, Context.Up lb ->
-    List.equal
-      (fun a b -> Int.equal (fst a) (fst b) && Migration.equal (snd a) (snd b))
-      la
-      lb
-  | Context.Down (la, (ax, ay)), Context.Down (lb, (bx, by)) ->
-    List.equal
-      (fun a b -> Int.equal (fst a) (fst b) && Migration.equal (snd a) (snd b))
-      la
-      lb
-    && Int.equal ax bx
-    && Lib_crypto.Sha256.equal ay by
-  | Nothing, Nothing -> true
-  | _ -> false
-;;
-
-let step_pp ppf =
-  let open Lib_migration in
-  function
-  | Context.Nothing -> Format.fprintf ppf "Nothing"
-  | Up li -> Format.fprintf ppf "Up %a" Fmt.(list (pair int Migration.pp)) li
-  | Down (li, (i, h)) ->
-    Format.fprintf
-      ppf
-      "Down %a, (%d, %a)"
-      Fmt.(list (pair int Migration.pp))
-      li
-      i
-      Lib_crypto.Sha256.pp
-      h
-;;
-
-let step_testable = Alcotest.testable step_pp step_eq
-let t_step_testable = try_testable step_testable
 
 module Individual = struct
   type t =

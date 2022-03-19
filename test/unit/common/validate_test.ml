@@ -13,7 +13,7 @@ let test_int_validation_valid =
     (fun () ->
       let expected = Validate.valid 1678
       and computed = F.int "1678" in
-      same (validate_testable int) ~computed ~expected)
+      same (Testable.validate int) ~computed ~expected)
 ;;
 
 let test_int_validation_invalid =
@@ -28,7 +28,7 @@ let test_int_validation_invalid =
           to_validate
           @@ validation_unconvertible_string ~given_value ~target_type:target)
       and computed = F.int given_value in
-      same (validate_testable int) ~computed ~expected)
+      same (Testable.validate int) ~computed ~expected)
 ;;
 
 let test_int_with_smaller_bound_valid =
@@ -40,7 +40,7 @@ let test_int_with_smaller_bound_valid =
     (fun () ->
       let expected = Validate.valid 999
       and computed = V.(F.(int & greater_than 997) "999") in
-      same (validate_testable int) ~computed ~expected)
+      same (Testable.validate int) ~computed ~expected)
 ;;
 
 let test_int_with_smaller_bound_invalid =
@@ -58,7 +58,7 @@ let test_int_with_smaller_bound_invalid =
       and computed =
         V.(F.(int & greater_than min_bound)) @@ string_of_int given_value
       in
-      same (validate_testable int) ~computed ~expected)
+      same (Testable.validate int) ~computed ~expected)
 ;;
 
 let test_int_with_smaller_bound_invalid_because_of_int =
@@ -75,7 +75,7 @@ let test_int_with_smaller_bound_invalid_because_of_int =
           to_validate
           @@ validation_unconvertible_string ~given_value ~target_type:target)
       and computed = V.(F.(int & greater_than 999)) given_value in
-      same (validate_testable int) ~computed ~expected)
+      same (Testable.validate int) ~computed ~expected)
 ;;
 
 let test_int_with_greater_bound_invalid =
@@ -93,7 +93,7 @@ let test_int_with_greater_bound_invalid =
       and computed =
         V.(F.(int & smaller_than max_bound)) @@ string_of_int given_value
       in
-      same (validate_testable int) ~computed ~expected)
+      same (Testable.validate int) ~computed ~expected)
 ;;
 
 let test_int_with_greater_bound_invalid_because_of_int =
@@ -110,7 +110,7 @@ let test_int_with_greater_bound_invalid_because_of_int =
           to_validate
           @@ validation_unconvertible_string ~given_value ~target_type:target)
       and computed = V.(F.(int & smaller_than 999)) given_value in
-      same (validate_testable int) ~computed ~expected)
+      same (Testable.validate int) ~computed ~expected)
 ;;
 
 let test_int_with_bound_valid =
@@ -122,7 +122,7 @@ let test_int_with_bound_valid =
     (fun () ->
       let expected = Validate.valid 996
       and computed = V.(F.(int & bounded_to 100 1000)) "996" in
-      same (validate_testable int) ~computed ~expected)
+      same (Testable.validate int) ~computed ~expected)
 ;;
 
 let test_int_with_bound_invalid =
@@ -141,7 +141,7 @@ let test_int_with_bound_invalid =
       and computed =
         V.(F.(int & bounded_to max_bound 0)) @@ string_of_int given_value
       in
-      same (validate_testable int) ~computed ~expected)
+      same (Testable.validate int) ~computed ~expected)
 ;;
 
 let test_int_with_bound_invalid_because_of_smaller =
@@ -160,7 +160,7 @@ let test_int_with_bound_invalid_because_of_smaller =
       and computed =
         V.(F.(int & bounded_to min_bound 1000)) @@ string_of_int given_value
       in
-      same (validate_testable int) ~computed ~expected)
+      same (Testable.validate int) ~computed ~expected)
 ;;
 
 let test_int_with_bound_invalid_because_of_int =
@@ -177,7 +177,7 @@ let test_int_with_bound_invalid_because_of_int =
           to_validate
           @@ validation_unconvertible_string ~given_value ~target_type:target)
       and computed = V.(F.(int & bounded_to 0 999)) given_value in
-      same (validate_testable int) ~computed ~expected)
+      same (Testable.validate int) ~computed ~expected)
 ;;
 
 let test_string_not_empty_valid =
@@ -188,7 +188,7 @@ let test_string_not_empty_valid =
     (fun () ->
       let expected = Validate.valid "ok"
       and computed = V.(F.(string & not_empty)) "ok" in
-      same (validate_testable string) ~computed ~expected)
+      same (Testable.validate string) ~computed ~expected)
 ;;
 
 let test_string_not_empty_valid_even_blank =
@@ -200,7 +200,7 @@ let test_string_not_empty_valid_even_blank =
     (fun () ->
       let expected = Validate.valid "    "
       and computed = V.(F.(string & not_empty)) "    " in
-      same (validate_testable string) ~computed ~expected)
+      same (Testable.validate string) ~computed ~expected)
 ;;
 
 let test_string_not_empty_invalid =
@@ -210,7 +210,7 @@ let test_string_not_empty_invalid =
     (fun () ->
       let expected = Error.(to_validate @@ validation_is_empty)
       and computed = V.(F.(string & not_empty)) "" in
-      same (validate_testable string) ~computed ~expected)
+      same (Testable.validate string) ~computed ~expected)
 ;;
 
 let test_string_not_blank_valid =
@@ -221,7 +221,7 @@ let test_string_not_blank_valid =
     (fun () ->
       let expected = Validate.valid "ok"
       and computed = V.(F.(string & not_blank)) "ok" in
-      same (validate_testable string) ~computed ~expected)
+      same (Testable.validate string) ~computed ~expected)
 ;;
 
 let test_string_not_blank_invalid =
@@ -231,7 +231,7 @@ let test_string_not_blank_invalid =
     (fun () ->
       let expected = Error.(to_validate @@ validation_is_blank)
       and computed = V.(F.(string & not_blank)) "      " in
-      same (validate_testable string) ~computed ~expected)
+      same (Testable.validate string) ~computed ~expected)
 ;;
 
 module Individual = struct
@@ -273,7 +273,7 @@ let test_user_when_every_data_are_filled =
       let expected =
         Ok (Individual.make "xvw" (Some 32) (Some "Vdw") "xavier@mail.com")
       and computed = Individual.run ~name:"user" store in
-      same (try_testable Individual.testable) ~expected ~computed)
+      same (Testable.try_ Individual.testable) ~expected ~computed)
 ;;
 
 let test_user_when_some_data_are_filled =
@@ -287,7 +287,7 @@ let test_user_when_some_data_are_filled =
       in
       let expected = Ok (Individual.make "xvw" None None "xavier@mail.com")
       and computed = Individual.run store in
-      same (try_testable Individual.testable) ~expected ~computed)
+      same (Testable.try_ Individual.testable) ~expected ~computed)
 ;;
 
 let test_user_when_all_data_are_missing =
@@ -309,7 +309,7 @@ let test_user_when_all_data_are_missing =
                     [ Field (Missing { name = "id" }) ]
               })
       and computed = Individual.run ~name:"user" store in
-      same (try_testable Individual.testable) ~expected ~computed)
+      same (Testable.try_ Individual.testable) ~expected ~computed)
 ;;
 
 let test_user_when_there_is_some_errors =
@@ -352,7 +352,7 @@ let test_user_when_there_is_some_errors =
                     ]
               })
       and computed = Individual.run ~name:"user" store in
-      same (try_testable Individual.testable) ~expected ~computed)
+      same (Testable.try_ Individual.testable) ~expected ~computed)
 ;;
 
 let cases =

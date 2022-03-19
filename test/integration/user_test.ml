@@ -9,7 +9,7 @@ let test_ensure_there_is_no_user_at_starting =
     (fun _env db -> Model.User.Saved.count db)
     (fun computed ->
       let expected = Ok 0 in
-      same (try_testable int) ~expected ~computed)
+      same (Testable.try_ int) ~expected ~computed)
 ;;
 
 let test_try_to_add_users =
@@ -35,7 +35,7 @@ let test_try_to_add_users =
       Model.User.Saved.count db)
     (fun computed ->
       let expected = Ok 2 in
-      same (try_testable int) ~expected ~computed)
+      same (Testable.try_ int) ~expected ~computed)
 ;;
 
 let test_add_user_with_username_and_email_not_free =
@@ -58,7 +58,7 @@ let test_add_user_with_username_and_email_not_free =
       let expected =
         Error.(to_try @@ user_already_taken ~username:"xvw" ~email:"x@g.com")
       in
-      same (try_testable unit) ~expected ~computed)
+      same (Testable.try_ unit) ~expected ~computed)
 ;;
 
 let test_add_user_with_username_not_free =
@@ -77,7 +77,7 @@ let test_add_user_with_username_not_free =
       Model.User.For_registration.save u db)
     (fun computed ->
       let expected = Error.(to_try @@ user_name_already_taken "xvw") in
-      same (try_testable unit) ~expected ~computed)
+      same (Testable.try_ unit) ~expected ~computed)
 ;;
 
 let test_add_user_with_email_not_free =
@@ -96,7 +96,7 @@ let test_add_user_with_email_not_free =
       Model.User.For_registration.save u db)
     (fun computed ->
       let expected = Error.(to_try @@ user_email_already_taken "q@g.com") in
-      same (try_testable unit) ~expected ~computed)
+      same (Testable.try_ unit) ~expected ~computed)
 ;;
 
 let cases =

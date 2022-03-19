@@ -28,7 +28,7 @@ let test_user_valid =
               hash_string "xavier@mail.com" <|> hash_string "foobarfoobar") )
       in
       same
-        (try_testable (triple string string sha256_testable))
+        (Testable.try_ (triple string string Testable.sha256))
         ~expected
         ~computed)
 ;;
@@ -67,7 +67,7 @@ let test_user_invalid_because_confirm =
                     [])))
       in
       same
-        (try_testable (triple string string sha256_testable))
+        (Testable.try_ (triple string string Testable.sha256))
         ~expected
         ~computed)
 ;;
@@ -104,7 +104,7 @@ let test_user_invalid_because_confirm_and_email =
         to_try @@ invalid_object ~name:"User.For_registration" ~errors
       in
       same
-        (try_testable (triple string string sha256_testable))
+        (Testable.try_ (triple string string Testable.sha256))
         ~expected
         ~computed)
 ;;

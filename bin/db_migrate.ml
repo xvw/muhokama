@@ -7,7 +7,7 @@ let reset migrations_path =
     let open Lwt_util in
     let*? env = Env.init () in
     let*? pool = Db.connect env in
-    Lib_db.use pool (fun db -> Lib_migration.Action.reset db migrations_path)
+    Lib_db.use pool @@ Lib_migration.Migrate.reset migrations_path
   in
   Termination.handle promise
 ;;
@@ -17,8 +17,7 @@ let migrate migrations_path target =
     let open Lwt_util in
     let*? env = Env.init () in
     let*? pool = Db.connect env in
-    Lib_db.use pool (fun db ->
-        Lib_migration.Action.migrate db migrations_path target)
+    Lib_db.use pool @@ Lib_migration.Migrate.run migrations_path target
   in
   Termination.handle promise
 ;;
@@ -35,7 +34,7 @@ let action_migrate =
 
 let action_reset =
   let open Cmdliner in
-  let doc = "Reset the migration state" in
+  let doc = "Reset the migration state (same of [migrate --to 0])" in
   let exits = Termination.exits in
   let info = Cmd.info "db.migrate.reset" ~doc ~exits in
   Cmd.v info Term.(const reset $ Param.migrations_path_term)

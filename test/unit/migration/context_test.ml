@@ -23,6 +23,12 @@ let dirs =
       ; "3-test.yml"
       ; "4-sadlsad.yml"
       ; "5-sadlsad.yml"
+      ; "6-sadlsad.yml"
+      ; "7-sadlsad.yml"
+      ; "8-sadlsad.yml"
+      ; "9-sadlsad.yml"
+      ; "10-sadlsad.yml"
+      ; "11-sadlsad.yml"
       ] )
   ]
 ;;
@@ -46,6 +52,12 @@ let files =
   ; "dir-5/3-test.yml", Ok (`O [ "up", `A []; "down", `A [] ])
   ; "dir-5/4-sadlsad.yml", Ok (`O [ "up", `A []; "down", `A [] ])
   ; "dir-5/5-sadlsad.yml", Ok (`O [ "up", `A []; "down", `A [] ])
+  ; "dir-5/6-sadlsad.yml", Ok (`O [ "up", `A []; "down", `A [] ])
+  ; "dir-5/7-sadlsad.yml", Ok (`O [ "up", `A []; "down", `A [] ])
+  ; "dir-5/8-sadlsad.yml", Ok (`O [ "up", `A []; "down", `A [] ])
+  ; "dir-5/9-sadlsad.yml", Ok (`O [ "up", `A []; "down", `A [] ])
+  ; "dir-5/10-sadlsad.yml", Ok (`O [ "up", `A []; "down", `A [] ])
+  ; "dir-5/11-sadlsad.yml", Ok (`O [ "up", `A []; "down", `A [] ])
   ]
 ;;
 
@@ -64,8 +76,8 @@ let read_file file =
 let handle buff program =
   let handler : type a. (a -> 'b) -> a Effect.f -> 'b =
    fun resume -> function
-    | Fetch_migrations { migrations_path } -> resume @@ read_dir migrations_path
-    | Read_migration { filepath } -> resume @@ read_file filepath
+    | Fetch_migrations migrations_path -> resume @@ read_dir migrations_path
+    | Read_migration filepath -> resume @@ read_file filepath
     | Info message ->
       let () = buff := !buff @ [ "info", message ] in
       resume ()
@@ -78,10 +90,10 @@ let handle buff program =
 ;;
 
 let handle_init buff migrations_path =
-  handle buff @@ Context.init ~migrations_path
+  handle buff @@ Context.init migrations_path
 ;;
 
-let migration_list_testable = try_testable (list (pair int migration_testable))
+let migration_list_testable = Testable.try_ (list (pair int Testable.migration))
 
 let test_init_on_empty_folder =
   test
@@ -93,7 +105,7 @@ let test_init_on_empty_folder =
       and computed = handle_init buff "empty" |> Try.map Context.to_list in
       same
         (list (pair string string))
-        ~expected:[ "info", "Reading migration path: empty" ]
+        ~expected:[ "info", "Reading migration into empty" ]
         ~computed:!buff;
       same migration_list_testable ~expected ~computed)
 ;;
@@ -111,7 +123,7 @@ let test_init_on_inexistant_folder =
       in
       same
         (list (pair string string))
-        ~expected:[ "info", "Reading migration path: non-existing-folder" ]
+        ~expected:[ "info", "Reading migration into non-existing-folder" ]
         ~computed:!buff;
       same migration_list_testable ~expected ~computed)
 ;;
@@ -128,8 +140,7 @@ let test_init_on_dir_1_folder =
       same
         (list (pair string string))
         ~expected:
-          [ "info", "Reading migration path: dir-1"
-          ; "info", "Process file: 1-test.yml"
+          [ "info", "Reading migration into dir-1"
           ; "info", "Storing file: 1-test.yml in context"
           ]
         ~computed:!buff;
@@ -153,10 +164,8 @@ let test_init_on_dir_2_folder =
       same
         (list (pair string string))
         ~expected:
-          [ "info", "Reading migration path: dir-2"
-          ; "info", "Process file: 1-test.yml"
+          [ "info", "Reading migration into dir-2"
           ; "info", "Storing file: 1-test.yml in context"
-          ; "info", "Process file: 2-test-2.yml"
           ]
         ~computed:!buff;
       same migration_list_testable ~expected ~computed)
@@ -175,14 +184,10 @@ let test_init_on_dir_3_folder =
       same
         (list (pair string string))
         ~expected:
-          [ "info", "Reading migration path: dir-3"
-          ; "info", "Process file: 1-test.yml"
+          [ "info", "Reading migration into dir-3"
           ; "info", "Storing file: 1-test.yml in context"
-          ; "info", "Process file: 2-test.yml"
           ; "info", "Storing file: 2-test.yml in context"
-          ; "info", "Process file: 3-another-test-3.yml"
-          ; "info", "Storing file: 3-another-test-3.yml in context"
-          ; "info", "Process file: 3-test.yml"
+          ; "info", "Storing file: 3-test.yml in context"
           ]
         ~computed:!buff;
       same migration_list_testable ~expected ~computed)
@@ -201,16 +206,13 @@ let test_init_on_dir_4_folder =
       same
         (list (pair string string))
         ~expected:
-          [ "info", "Reading migration path: dir-4"
-          ; "info", "Process file: 0000-should-produce-a-warning"
-          ; "warning", "Invalid name scheme: 0000-should-produce-a-warning"
-          ; "info", "Process file: 1-test.yml"
+          [ "info", "Reading migration into dir-4"
+          ; ( "warning"
+            , "Invalid name scheme: 0000-should-produce-a-warning, file is \
+               ignored" )
           ; "info", "Storing file: 1-test.yml in context"
-          ; "info", "Process file: 2-test.yml"
           ; "info", "Storing file: 2-test.yml in context"
-          ; "info", "Process file: 3-test.yml"
           ; "info", "Storing file: 3-test.yml in context"
-          ; "info", "Process file: 5-omg-where-is-the-fourth-migration.yml"
           ]
         ~computed:!buff;
       same migration_list_testable ~expected ~computed)
@@ -219,7 +221,7 @@ let test_init_on_dir_4_folder =
 let test_init_on_dir_5_folder =
   test
     ~about:"init"
-    ~desc:"When there is missing index it should produce an error"
+    ~desc:"When there is no error it should build the context"
     (fun () ->
       let buff = ref [] in
       let m1 = Migration.make 1 "test" "1-test.yml" [] [] Sha256.neutral in
@@ -227,22 +229,46 @@ let test_init_on_dir_5_folder =
       let m3 = Migration.(make 3 "test" "3-test.yml" [] [] (hash m2)) in
       let m4 = Migration.(make 4 "sadlsad" "4-sadlsad.yml" [] [] (hash m3)) in
       let m5 = Migration.(make 5 "sadlsad" "5-sadlsad.yml" [] [] (hash m4)) in
-      let expected = Ok [ 1, m1; 2, m2; 3, m3; 4, m4; 5, m5 ]
+      let m6 = Migration.(make 6 "sadlsad" "6-sadlsad.yml" [] [] (hash m5)) in
+      let m7 = Migration.(make 7 "sadlsad" "7-sadlsad.yml" [] [] (hash m6)) in
+      let m8 = Migration.(make 8 "sadlsad" "8-sadlsad.yml" [] [] (hash m7)) in
+      let m9 = Migration.(make 9 "sadlsad" "9-sadlsad.yml" [] [] (hash m8)) in
+      let m10 =
+        Migration.(make 10 "sadlsad" "10-sadlsad.yml" [] [] (hash m9))
+      in
+      let m11 =
+        Migration.(make 11 "sadlsad" "11-sadlsad.yml" [] [] (hash m10))
+      in
+      let expected =
+        Ok
+          [ 1, m1
+          ; 2, m2
+          ; 3, m3
+          ; 4, m4
+          ; 5, m5
+          ; 6, m6
+          ; 7, m7
+          ; 8, m8
+          ; 9, m9
+          ; 10, m10
+          ; 11, m11
+          ]
       and computed = handle_init buff "dir-5" |> Try.map Context.to_list in
       same
         (list (pair string string))
         ~expected:
-          [ "info", "Reading migration path: dir-5"
-          ; "info", "Process file: 1-test.yml"
+          [ "info", "Reading migration into dir-5"
           ; "info", "Storing file: 1-test.yml in context"
-          ; "info", "Process file: 2-test.yml"
           ; "info", "Storing file: 2-test.yml in context"
-          ; "info", "Process file: 3-test.yml"
           ; "info", "Storing file: 3-test.yml in context"
-          ; "info", "Process file: 4-sadlsad.yml"
           ; "info", "Storing file: 4-sadlsad.yml in context"
-          ; "info", "Process file: 5-sadlsad.yml"
           ; "info", "Storing file: 5-sadlsad.yml in context"
+          ; "info", "Storing file: 6-sadlsad.yml in context"
+          ; "info", "Storing file: 7-sadlsad.yml in context"
+          ; "info", "Storing file: 8-sadlsad.yml in context"
+          ; "info", "Storing file: 9-sadlsad.yml in context"
+          ; "info", "Storing file: 10-sadlsad.yml in context"
+          ; "info", "Storing file: 11-sadlsad.yml in context"
           ]
         ~computed:!buff;
       same migration_list_testable ~expected ~computed)
@@ -250,7 +276,7 @@ let test_init_on_dir_5_folder =
 
 let test_slice_1 =
   test
-    ~about:"get_migrations"
+    ~about:"plan"
     ~desc:"when there is no migration it should returns an up list"
     (fun () ->
       let buff = ref [] in
@@ -259,17 +285,39 @@ let test_slice_1 =
       let m3 = Migration.(make 3 "test" "3-test.yml" [] [] (hash m2)) in
       let m4 = Migration.(make 4 "sadlsad" "4-sadlsad.yml" [] [] (hash m3)) in
       let m5 = Migration.(make 5 "sadlsad" "5-sadlsad.yml" [] [] (hash m4)) in
-      let ctx = handle_init buff "dir-5" in
-      let expected = Try.ok (Context.Up [ 1, m1; 2, m2; 3, m3; 4, m4; 5, m5 ])
-      and computed =
-        Try.(ctx >>= fun s -> Context.get_migrations ~current:0 s)
+      let m6 = Migration.(make 6 "sadlsad" "6-sadlsad.yml" [] [] (hash m5)) in
+      let m7 = Migration.(make 7 "sadlsad" "7-sadlsad.yml" [] [] (hash m6)) in
+      let m8 = Migration.(make 8 "sadlsad" "8-sadlsad.yml" [] [] (hash m7)) in
+      let m9 = Migration.(make 9 "sadlsad" "9-sadlsad.yml" [] [] (hash m8)) in
+      let m10 =
+        Migration.(make 10 "sadlsad" "10-sadlsad.yml" [] [] (hash m9))
       in
-      same t_step_testable ~expected ~computed)
+      let m11 =
+        Migration.(make 11 "sadlsad" "11-sadlsad.yml" [] [] (hash m10))
+      in
+      let ctx = handle_init buff "dir-5" in
+      let expected =
+        Try.ok
+          (Plan.Forward
+             [ 1, m1
+             ; 2, m2
+             ; 3, m3
+             ; 4, m4
+             ; 5, m5
+             ; 6, m6
+             ; 7, m7
+             ; 8, m8
+             ; 9, m9
+             ; 10, m10
+             ; 11, m11
+             ])
+      and computed = Try.(ctx >>= fun s -> Context.plan ~current:0 s) in
+      same Testable.(try_ migration_plan) ~expected ~computed)
 ;;
 
 let test_slice_2 =
   test
-    ~about:"get_migrations"
+    ~about:"plan"
     ~desc:"when there is some migrations it should returns an up list"
     (fun () ->
       let buff = ref [] in
@@ -278,36 +326,49 @@ let test_slice_2 =
       let m3 = Migration.(make 3 "test" "3-test.yml" [] [] (hash m2)) in
       let m4 = Migration.(make 4 "sadlsad" "4-sadlsad.yml" [] [] (hash m3)) in
       let m5 = Migration.(make 5 "sadlsad" "5-sadlsad.yml" [] [] (hash m4)) in
-      let ctx = handle_init buff "dir-5" in
-      let expected = Try.ok (Context.Up [ 3, m3; 4, m4; 5, m5 ])
-      and computed =
-        Try.(ctx >>= fun s -> Context.get_migrations ~current:2 s)
+      let m6 = Migration.(make 6 "sadlsad" "6-sadlsad.yml" [] [] (hash m5)) in
+      let m7 = Migration.(make 7 "sadlsad" "7-sadlsad.yml" [] [] (hash m6)) in
+      let m8 = Migration.(make 8 "sadlsad" "8-sadlsad.yml" [] [] (hash m7)) in
+      let m9 = Migration.(make 9 "sadlsad" "9-sadlsad.yml" [] [] (hash m8)) in
+      let m10 =
+        Migration.(make 10 "sadlsad" "10-sadlsad.yml" [] [] (hash m9))
       in
-      same t_step_testable ~expected ~computed)
+      let m11 =
+        Migration.(make 11 "sadlsad" "11-sadlsad.yml" [] [] (hash m10))
+      in
+      let ctx = handle_init buff "dir-5" in
+      let expected =
+        Try.ok
+          (Plan.Forward
+             [ 3, m3
+             ; 4, m4
+             ; 5, m5
+             ; 6, m6
+             ; 7, m7
+             ; 8, m8
+             ; 9, m9
+             ; 10, m10
+             ; 11, m11
+             ])
+      and computed = Try.(ctx >>= fun s -> Context.plan ~current:2 s) in
+      same Testable.(try_ migration_plan) ~expected ~computed)
 ;;
 
 let test_slice_3 =
   test
-    ~about:"get_migrations"
-    ~desc:"when the state is ok it should return Nothing"
+    ~about:"plan"
+    ~desc:"when the state is ok it should return Standby"
     (fun () ->
       let buff = ref [] in
-      let m1 = Migration.make 1 "test" "1-test.yml" [] [] Sha256.neutral in
-      let m2 = Migration.(make 2 "test" "2-test.yml" [] [] (hash m1)) in
-      let m3 = Migration.(make 3 "test" "3-test.yml" [] [] (hash m2)) in
-      let m4 = Migration.(make 4 "sadlsad" "4-sadlsad.yml" [] [] (hash m3)) in
-      let _m5 = Migration.(make 5 "sadlsad" "5-sadlsad.yml" [] [] (hash m4)) in
       let ctx = handle_init buff "dir-5" in
-      let expected = Try.ok Context.Nothing
-      and computed =
-        Try.(ctx >>= fun s -> Context.get_migrations ~current:5 s)
-      in
-      same t_step_testable ~expected ~computed)
+      let expected = Try.ok Plan.Standby
+      and computed = Try.(ctx >>= fun s -> Context.plan ~current:11 s) in
+      same Testable.(try_ migration_plan) ~expected ~computed)
 ;;
 
 let test_slice_4 =
   test
-    ~about:"get_migrations"
+    ~about:"plan"
     ~desc:"when the state is ok it should return Nothing 2"
     (fun () ->
       let buff = ref [] in
@@ -317,16 +378,16 @@ let test_slice_4 =
       let m4 = Migration.(make 4 "sadlsad" "4-sadlsad.yml" [] [] (hash m3)) in
       let _m5 = Migration.(make 5 "sadlsad" "5-sadlsad.yml" [] [] (hash m4)) in
       let ctx = handle_init buff "dir-5" in
-      let expected = Try.ok Context.Nothing
+      let expected = Try.ok Plan.Standby
       and computed =
-        Try.(ctx >>= fun s -> Context.get_migrations ~current:2 ~target:2 s)
+        Try.(ctx >>= fun s -> Context.plan ~current:2 ~target:2 s)
       in
-      same t_step_testable ~expected ~computed)
+      same Testable.(try_ migration_plan) ~expected ~computed)
 ;;
 
 let test_slice_5 =
   test
-    ~about:"get_migrations"
+    ~about:"plan"
     ~desc:"when there is some migration it should returns an up list"
     (fun () ->
       let buff = ref [] in
@@ -336,16 +397,16 @@ let test_slice_5 =
       let m4 = Migration.(make 4 "sadlsad" "4-sadlsad.yml" [] [] (hash m3)) in
       let _m5 = Migration.(make 5 "sadlsad" "5-sadlsad.yml" [] [] (hash m4)) in
       let ctx = handle_init buff "dir-5" in
-      let expected = Try.ok (Context.Up [ 2, m2; 3, m3; 4, m4 ])
+      let expected = Try.ok (Plan.Forward [ 2, m2; 3, m3; 4, m4 ])
       and computed =
-        Try.(ctx >>= fun s -> Context.get_migrations ~current:1 ~target:4 s)
+        Try.(ctx >>= fun s -> Context.plan ~current:1 ~target:4 s)
       in
-      same t_step_testable ~expected ~computed)
+      same Testable.(try_ migration_plan) ~expected ~computed)
 ;;
 
 let test_slice_6 =
   test
-    ~about:"get_migrations"
+    ~about:"plan"
     ~desc:"when there is some migration it should returns a down list 2"
     (fun () ->
       let buff = ref [] in
@@ -356,39 +417,33 @@ let test_slice_6 =
       let m5 = Migration.(make 5 "sadlsad" "5-sadlsad.yml" [] [] (hash m4)) in
       let ctx = handle_init buff "dir-5" in
       let expected =
-        Try.ok (Context.Down ([ 5, m5; 4, m4 ], (3, m4.previous_hash)))
+        Try.ok (Plan.Backward ([ 5, m5; 4, m4 ], (3, m4.previous_hash)))
       and computed =
-        Try.(ctx >>= fun s -> Context.get_migrations ~current:5 ~target:3 s)
+        Try.(ctx >>= fun s -> Context.plan ~current:5 ~target:3 s)
       in
-      same t_step_testable ~expected ~computed)
+      same Testable.(try_ migration_plan) ~expected ~computed)
 ;;
 
 let test_slice_7 =
-  test
-    ~about:"get_migrations"
-    ~desc:"when there the target is too high"
-    (fun () ->
+  test ~about:"plan" ~desc:"when there the target is too high" (fun () ->
       let buff = ref [] in
       let ctx = handle_init buff "dir-5" in
       let expected = Error.(to_try @@ migration_invalid_target ~given_target:13)
       and computed =
-        Try.(ctx >>= fun s -> Context.get_migrations ~current:5 ~target:13 s)
+        Try.(ctx >>= fun s -> Context.plan ~current:5 ~target:13 s)
       in
-      same t_step_testable ~expected ~computed)
+      same Testable.(try_ migration_plan) ~expected ~computed)
 ;;
 
 let test_slice_8 =
-  test
-    ~about:"get_migrations"
-    ~desc:"when there the current state is too high"
-    (fun () ->
+  test ~about:"plan" ~desc:"when there the current state is too high" (fun () ->
       let buff = ref [] in
       let ctx = handle_init buff "dir-5" in
       let expected = Error.(to_try @@ migration_invalid_state ~current_state:12)
       and computed =
-        Try.(ctx >>= fun s -> Context.get_migrations ~current:12 ~target:3 s)
+        Try.(ctx >>= fun s -> Context.plan ~current:12 ~target:3 s)
       in
-      same t_step_testable ~expected ~computed)
+      same Testable.(try_ migration_plan) ~expected ~computed)
 ;;
 
 let cases =
