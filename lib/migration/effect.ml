@@ -1,8 +1,8 @@
 open Lib_common
 
 type _ effects =
-  | Fetch_migrations : { migrations_path : string } -> string list Try.t effects
-  | Read_migration : { filepath : string } -> Assoc.Jsonm.t Try.t effects
+  | Fetch_migrations : string -> string list Try.t effects
+  | Read_migration : string -> Assoc.Jsonm.t Try.t effects
   | Info : string -> unit effects
   | Warning : string -> unit effects
   | Error : Error.t -> 'a effects
@@ -12,13 +12,10 @@ module Freer = struct
     type 'a t = 'a effects
   end)
 
-  let fetch_migrations ~migrations_path =
-    perform @@ Fetch_migrations { migrations_path }
-  ;;
+  let fetch_migrations migration_dir = perform @@ Fetch_migrations migration_dir
 
-  let read_migration ~migrations_path ~filepath =
-    perform
-    @@ Read_migration { filepath = Filename.concat migrations_path filepath }
+  let read_migration migration_dir file =
+    perform @@ Read_migration (Filename.concat migration_dir file)
   ;;
 
   let warning message = perform @@ Warning message
@@ -29,37 +26,50 @@ end
 module Traverse = Preface.List.Monad.Traversable (Freer)
 include Freer
 
-let get_migrations_files ~migrations_path =
-  fetch_migrations ~migrations_path
-  >>= function
-  | Ok list ->
-    let sorted_list = List.sort_uniq String.compare list in
-    return sorted_list
+let get_migrations_files migration_dir =
+  let* migrations = fetch_migrations migration_dir in
+  match migrations with
   | Error err -> error err
+  | Ok files ->
+    files
+    |> List.map Migration.is_valid_filename
+    |> List.sort (fun left right ->
+           match left, right with
+           | ( Migration.Valid_name_scheme { index = a; _ }
+             , Migration.Valid_name_scheme { index = b; _ } ) -> Int.compare a b
+           | Migration.Valid_name_scheme _, _ ->
+             Int.max_int (* put invalid file at the begining *)
+           | _ -> Int.min_int)
+    |> return
 ;;
 
-let read_migration_yaml path =
+let read_migration_file file =
   let open Try in
-  let* content = Io.read_file path in
-  Yaml.of_string content |> Result.map_error (function `Msg e -> Error.Yaml e)
+  let* file_content = Io.read_file file in
+  Yaml.of_string file_content
+  |> Result.map_error (function `Msg e -> Error.Yaml e)
 ;;
 
-let handle program =
-  let handler : type a. (a -> 'b) -> a f -> 'b =
-   fun resume -> function
-    | Fetch_migrations { migrations_path } ->
-      let files = Io.list_files migrations_path in
-      resume files
-    | Read_migration { filepath } ->
-      let migration_obj = read_migration_yaml filepath in
-      resume migration_obj
+let read_migration_file_to_assoc migration_dir file =
+  let* migration = read_migration migration_dir file in
+  match migration with
+  | Error err -> error err
+  | Ok migration -> return migration
+;;
+
+let default_runner program =
+  let handler : type a. (a, 'b) handle =
+   fun continue -> function
+    | Fetch_migrations migration_path ->
+      migration_path |> Io.list_files |> continue
+    | Read_migration file -> file |> read_migration_file |> continue
     | Info message ->
-      let () = Logs.debug (fun pp -> pp "%s" message) in
-      resume ()
+      Logs.info (fun pp -> pp "%s" message);
+      continue ()
     | Warning message ->
-      let () = Logs.warn (fun pp -> pp "%s" message) in
-      resume ()
+      Logs.warn (fun pp -> pp "%s" message);
+      continue ()
     | Error err -> Try.error err
   in
-  run { handler } program |> Lwt.return
+  run { handler } program
 ;;

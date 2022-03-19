@@ -1,33 +1,34 @@
+(** To be easily testable, the migration engine abstracts the execution of the
+    effects. In this way, we can easily provide another program handler that
+    simulates the execution of the migrations. This module describes the
+    plumbing related to the use of user-defined effects. *)
+
 open Lib_common
 
+(** {1 Effect plumbing} *)
+
 type _ effects =
-  | Fetch_migrations : { migrations_path : string } -> string list Try.t effects
-  | Read_migration : { filepath : string } -> Assoc.Jsonm.t Try.t effects
+  | Fetch_migrations : string -> string list Try.t effects
+  | Read_migration : string -> Assoc.Jsonm.t Try.t effects
   | Info : string -> unit effects
   | Warning : string -> unit effects
   | Error : Error.t -> 'a effects
 
-module Freer : sig
-  include Preface.Specs.FREER_MONAD with type 'a f = 'a effects
-
-  val fetch_migrations : migrations_path:string -> string list Try.t t
-
-  val read_migration
-    :  migrations_path:string
-    -> filepath:string
-    -> Assoc.Jsonm.t Try.t t
-
-  val warning : string -> unit t
-  val info : string -> unit t
-  val error : Error.t -> 'a t
-end
+include Preface.Specs.FREER_MONAD with type 'a f = 'a effects (** @inline *)
 
 module Traverse :
-  Preface.Specs.TRAVERSABLE
-    with type 'a t = 'a Freer.t
-     and type 'a iter = 'a list
+  Preface.Specs.TRAVERSABLE with type 'a t = 'a t and type 'a iter = 'a list
 
-include module type of Freer
+(** {1 Propagating effect} *)
 
-val get_migrations_files : migrations_path:string -> string list t
-val handle : 'a Try.t t -> 'a Try.t Lwt.t
+val info : string -> unit t
+val warning : string -> unit t
+val error : Error.t -> 'a t
+val get_migrations_files : string -> Migration.file list t
+val read_migration_file_to_assoc : string -> string -> Assoc.Jsonm.t t
+
+(** {1 Default interpreter}
+
+    An interpreter that performs factual reading of migrations *)
+
+val default_runner : 'a Try.t t -> 'a Try.t

@@ -10,6 +10,14 @@ type t =
   ; previous_hash : Sha256.t
   }
 
+type file =
+  | Valid_name_scheme of
+      { index : int
+      ; label : string
+      ; file : string
+      }
+  | Invalid_name_scheme of { file : string }
+
 let make index label file up down previous_hash =
   { index; label; file; up; down; previous_hash }
 ;;
@@ -23,10 +31,10 @@ let hash { index; label; file; up; down = _; previous_hash } =
   <|> previous_hash
 ;;
 
-let is_valid_filename filename =
-  let wrap i n = Some (i, n, filename) in
-  try Scanf.sscanf filename "%u-%s@.yml%!" wrap with
-  | _ -> None
+let is_valid_filename file =
+  let wrap index label = Valid_name_scheme { index; label; file } in
+  try Scanf.sscanf file "%u-%s@.yml%!" wrap with
+  | _ -> Invalid_name_scheme { file }
 ;;
 
 let list_of_string_or_string x =
@@ -35,43 +43,66 @@ let list_of_string_or_string x =
   list_of string x <|> ((fun x -> [ x ]) <$> string x)
 ;;
 
-let build index label file previous_migration json_obj =
-  let mk up down = make index label file up down previous_migration in
+let build index label file previous_migration jsonm_obj =
+  let create up down = make index label file up down previous_migration in
   let open Validate in
   let open Assoc.Jsonm in
   object_and
     (fun obj ->
-      mk
+      create
       <$> required list_of_string_or_string "up" obj
       <*> required list_of_string_or_string "down" obj)
-    json_obj
+    jsonm_obj
   |> run ~name:file
 ;;
 
 let equal a b =
-  Int.equal a.index b.index
-  && String.equal a.label b.label
-  && String.equal a.file b.file
-  && List.equal String.equal a.up b.up
-  && List.equal String.equal a.down b.down
-  && Sha256.equal a.previous_hash b.previous_hash
+  let hash_a = hash a
+  and hash_b = hash b in
+  Sha256.equal hash_a hash_b
+;;
+
+let equal_file a b =
+  match a, b with
+  | ( Valid_name_scheme { label = label_a; index = index_a; file = file_a }
+    , Valid_name_scheme { label = label_b; index = index_b; file = file_b } ) ->
+    String.equal label_a label_b
+    && String.equal file_a file_b
+    && Int.equal index_a index_b
+  | Invalid_name_scheme { file = file_a }, Invalid_name_scheme { file = file_b }
+    -> String.equal file_a file_b
+  | _ -> false
+;;
+
+let pp_file ppf = function
+  | Invalid_name_scheme { file } ->
+    Fmt.pf ppf "Invalid_name_scheme { file =  %a}" Fmt.(quote string) file
+  | Valid_name_scheme { index; label; file } ->
+    Fmt.pf
+      ppf
+      "Valid_name_scheme { index = %d; label = %a; file = %a }"
+      index
+      Fmt.(quote string)
+      label
+      Fmt.(quote string)
+      file
 ;;
 
 let pp ppf { index; label; file; up; down; previous_hash } =
-  let s = Fmt.(quote string) in
-  let l = Preface.List.pp s in
-  Format.fprintf
+  let quoted_string = Fmt.(quote string) in
+  let list_of_string = Preface.List.pp quoted_string in
+  Fmt.pf
     ppf
     "{index = %d; label = %a; file = %a; up = %a; down = %a; previous_hash = \
      %a}"
     index
-    s
+    quoted_string
     label
-    s
+    quoted_string
     file
-    l
+    list_of_string
     up
-    l
+    list_of_string
     down
     Sha256.pp
     previous_hash

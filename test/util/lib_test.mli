@@ -1,5 +1,4 @@
 (** {1 Test definition} *)
-
 open Lib_common
 
 (** An helper for test definition.*)
@@ -24,13 +23,7 @@ val same : 'a Alcotest.testable -> expected:'a -> computed:'a -> unit
 
 (** {1 Testables} *)
 
-val error_testable : Error.t Alcotest.testable
-val try_testable : 'a Alcotest.testable -> 'a Try.t Alcotest.testable
-val validate_testable : 'a Alcotest.testable -> 'a Validate.t Alcotest.testable
-val sha256_testable : Lib_crypto.Sha256.t Alcotest.testable
-val migration_testable : Lib_migration.Migration.t Alcotest.testable
-val step_testable : Lib_migration.Context.step Alcotest.testable
-val t_step_testable : Lib_migration.Context.step Try.t Alcotest.testable
+module Testable = Testable
 
 (** {1 diverses Helpers} *)
 

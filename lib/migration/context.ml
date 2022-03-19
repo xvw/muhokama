@@ -1,116 +1,114 @@
 open Lib_common
 open Lib_crypto
-module S = Map.Make (Int)
+module Migration_map = Map.Make (Int)
 
-type t = Migration.t S.t
+type t = Migration.t Migration_map.t
 
-type step =
-  | Up of (int * Migration.t) list
-  | Down of (int * Migration.t) list * (int * Sha256.t)
-  | Nothing
+let equal = Migration_map.equal Migration.equal
 
-let equal = S.equal Migration.equal
-
-let finalize_migration ctx file given_index expected_index =
+let store_migration migrations_dir filepath ctx label given_index previous_hash =
   let open Effect in
-  function
+  let* jsonm = read_migration_file_to_assoc migrations_dir filepath in
+  match Migration.build given_index label filepath previous_hash jsonm with
   | Result.Error err -> error err
   | Result.Ok migration ->
-    let* () = info @@ Fmt.str "Storing file: %s in context" file in
-    let migration_hash = Migration.hash migration in
-    return
-      (S.add given_index migration ctx, Some (expected_index, migration_hash))
+    let+ () = info @@ Fmt.str "Storing file: %s in context" filepath in
+    let hash = Migration.hash migration in
+    Migration_map.add given_index migration ctx, (given_index, hash)
 ;;
 
-let collapse_effects migrations_path eff file =
+let compute_migration migrations_dir previous current_migration =
   let open Effect in
-  let* ctx, previous = eff in
-  let previous_index, previous_hash =
-    Option.value ~default:(0, Sha256.neutral) previous
-  in
-  let* () = info @@ Fmt.str "Process file: %s" file in
-  let data = Migration.is_valid_filename file in
-  match data with
-  | Some (given_index, label, filepath) ->
+  let* current_context, (previous_index, previous_hash) = previous in
+  match current_migration with
+  | Migration.Invalid_name_scheme { file = filepath } ->
+    let+ () =
+      warning @@ Fmt.str "Invalid name scheme: %s, file is ignored" filepath
+    in
+    current_context, (previous_index, previous_hash)
+  | Migration.Valid_name_scheme { index = given_index; label; file = filepath }
+    ->
     let expected_index = succ previous_index in
     if Int.equal expected_index given_index
     then
-      let* jsonm_obj = read_migration ~migrations_path ~filepath in
-      Try.(
-        jsonm_obj
-        >>= Migration.build expected_index label filepath previous_hash)
-      |> finalize_migration ctx file given_index expected_index
+      store_migration
+        migrations_dir
+        filepath
+        current_context
+        label
+        given_index
+        previous_hash
     else error @@ Error.migration_invalid_successor ~expected_index ~given_index
-  | None ->
-    let* _ = warning @@ Fmt.str "Invalid name scheme: %s" file in
-    return (ctx, previous)
 ;;
 
-let init ~migrations_path =
+let init migrations_path =
   let open Effect in
-  let* () = info @@ Fmt.str "Reading migration path: %s" migrations_path in
-  let* migrations_files = get_migrations_files ~migrations_path in
+  let* () = info @@ Fmt.str "Reading migration into %s" migrations_path in
+  let* files = get_migrations_files migrations_path in
   let+ ctx, _ =
     List.fold_left
-      (collapse_effects migrations_path)
-      (return (S.empty, None))
-      migrations_files
+      (compute_migration migrations_path)
+      (return (Migration_map.empty, (0, Sha256.neutral)))
+      files
   in
-  Ok ctx
+  Try.ok ctx
 ;;
 
-let current_state s =
-  S.max_binding_opt s
+let to_list = Migration_map.bindings
+
+let head ctx =
+  ctx
+  |> Migration_map.max_binding_opt
   |> Option.fold
        ~none:(0, Sha256.(to_string neutral))
-       ~some:(fun (i, m) -> Migration.(i, Sha256.to_string @@ hash m))
+       ~some:(fun (i, m) -> i, Sha256.to_string @@ Migration.hash m)
 ;;
 
-let to_list = S.bindings
-
-let compute_up_path s current target =
-  let steps = S.filter (fun index _ -> index > current && index <= target) s in
-  Up (S.bindings steps)
+let compute_forward ctx current target =
+  ctx
+  |> Migration_map.filter (fun i _ -> i > current && i <= target)
+  |> Migration_map.bindings
+  |> fun steps -> Plan.Forward steps
 ;;
 
-let compute_down_path s current target =
-  let steps = S.filter (fun index _ -> index > target && index <= current) s in
-  let state =
-    S.find_opt target s
+let compute_backward ctx current target =
+  let steps =
+    ctx
+    |> Migration_map.filter (fun i _ -> i > target && i <= current)
+    |> Migration_map.bindings
+    |> List.rev
+  and state =
+    Migration_map.find_opt target ctx
     |> Option.fold ~none:(0, Sha256.neutral) ~some:(fun m ->
            Migration.(m.index, hash m))
   in
-  Down (S.bindings steps |> List.rev, state)
+  Plan.Backward (steps, state)
 ;;
 
-let get_migrations ~current ?target s =
-  let max_index, _ = current_state s in
+let plan ~current ?target ctx =
+  let max_index, _ = head ctx in
   let target = Option.value ~default:max_index target in
   if current > max_index
   then Error.(to_try @@ migration_invalid_state ~current_state:current)
   else if target > max_index
   then Error.(to_try @@ migration_invalid_target ~given_target:target)
   else if Int.equal current target
-  then Ok Nothing
+  then Ok Plan.Standby
   else
     Try.ok
       (if target > current
-      then compute_up_path s current target
-      else compute_down_path s current target)
+      then compute_forward ctx current target
+      else compute_backward ctx current target)
 ;;
 
-let check_hash s index hash =
-  if index = 0 && String.equal hash Sha256.(to_string neutral)
+let valid_checksum given_index given_hash ctx =
+  if given_index = 0 && String.equal given_hash Sha256.(to_string neutral)
   then Try.ok ()
   else (
-    let invalid =
-      Error.(to_try @@ migration_invalid_checksum ~given_index:index)
-    in
-    let r = S.find_opt index s in
-    Option.fold
-      ~none:invalid
-      ~some:(fun x ->
-        let h = Migration.hash x |> Sha256.to_string in
-        if String.equal h hash then Try.ok () else invalid)
-      r)
+    let none = Error.(to_try @@ migration_invalid_checksum ~given_index) in
+    ctx
+    |> Migration_map.find_opt given_index
+    |> Option.fold ~none ~some:(fun x ->
+           let stored_hash = Migration.hash x |> Sha256.to_string in
+           if String.equal stored_hash given_hash then Try.ok () else none))
 ;;
