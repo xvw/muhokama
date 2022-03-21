@@ -131,6 +131,14 @@ module Saved : sig
     -> Caqti_lwt.connection
     -> 'a list Try.t Lwt.t
 
+  (** [list_moderable ?like callback db] compute the list of moderable user
+      using a like query over user_name or user_email (for filtering). *)
+  val list_moderable
+    :  ?like:string
+    -> (t -> 'a)
+    -> Caqti_lwt.connection
+    -> 'a list Try.t Lwt.t
+
   (** [change_state ~user_id new_state db] try to change the state of an user. *)
   val change_state
     :  user_id:string

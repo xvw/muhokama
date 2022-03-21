@@ -312,6 +312,25 @@ module Saved = struct
         list
   ;;
 
+  let list_moderable ?(like = "%") callback =
+    let query =
+      Caqti_request.collect
+        Caqti_type.(tup2 string string)
+        Caqti_type.(tup4 string string string string)
+        "SELECT user_id, user_name, user_email, user_state FROM users WHERE \
+         (user_state <> 'admin') AND (user_name LIKE ? OR user_email LIKE ?)"
+    in
+    fun (module Q : Caqti_lwt.CONNECTION) ->
+      (* TODO: improvement streaming directly the result *)
+      let open Lwt_util in
+      let+? list = Lib_db.try_ @@ Q.collect_list query (like, like) in
+      List.map
+        (fun user ->
+          let saved_user = make_by_tup4 user in
+          callback saved_user)
+        list
+  ;;
+
   let iter =
     let query =
       Caqti_request.collect

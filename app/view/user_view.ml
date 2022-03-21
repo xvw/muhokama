@@ -216,7 +216,7 @@ module Connection = struct
   ;;
 end
 
-module List = struct
+module List_active = struct
   let state_of user =
     let Model.User.Saved.{ user_state; _ } = user in
     let color =
@@ -239,7 +239,7 @@ module List = struct
     tr [ td [ txt user_name ]; td [ txt user_email ]; td [ state_of user ] ]
   ;;
 
-  let list users =
+  let all users =
     let open Tyxml.Html in
     let hd =
       thead
@@ -250,7 +250,50 @@ module List = struct
             ]
         ]
     in
-    table ~a:[ a_class [ "table"; "table is-fullwidth" ] ] ~thead:hd
+    table
+      ~a:[ a_class [ "table"; "is-fullwidth"; "is-striped"; "is-bordered" ] ]
+      ~thead:hd
+    @@ List.map user_line users
+  ;;
+end
+
+module List_moderable = struct
+  let state_of user =
+    let Model.User.Saved.{ user_state; _ } = user in
+    let color =
+      match user_state with
+      | Model.User.State.Inactive -> "is-light"
+      | Model.User.State.Member -> "is-info"
+      | Model.User.State.Moderator -> "is-success"
+      | Model.User.State.Admin -> "is-primary"
+      | Model.User.State.Unknown _ -> "is-danger"
+    in
+    Tyxml.Html.(
+      span
+        ~a:[ a_class [ "tag"; color ] ]
+        [ txt @@ Model.User.State.to_string user_state ])
+  ;;
+
+  let user_line user =
+    let open Tyxml.Html in
+    let Model.User.Saved.{ user_email; user_name; _ } = user in
+    tr [ td [ txt user_name ]; td [ txt user_email ]; td [ state_of user ] ]
+  ;;
+
+  let all users =
+    let open Tyxml.Html in
+    let hd =
+      thead
+        [ tr
+            [ th [ txt "Nom d'utilisateur" ]
+            ; th [ txt "Courrier electronique" ]
+            ; th [ txt "Status" ]
+            ]
+        ]
+    in
+    table
+      ~a:[ a_class [ "table"; "is-fullwidth"; "is-striped"; "is-bordered" ] ]
+      ~thead:hd
     @@ List.map user_line users
   ;;
 end
@@ -289,7 +332,7 @@ let login ?flash_info ~csrf_token () =
       ]
 ;;
 
-let list ?flash_info ?user users () =
+let list_active ?flash_info ?user users () =
   Template.Layout.default
     ~lang:"fr"
     ~page_title:"Utilisateurs"
@@ -301,7 +344,41 @@ let list ?flash_info ?user users () =
           [ div
               ~a:[ a_class [ "column"; "is-full" ] ]
               [ h1 ~a:[ a_class [ "title" ] ] [ txt "Utilisateurs actifs" ]
-              ; List.list users
+              ; List_active.all users
+              ]
+          ]
+      ]
+;;
+
+let list_moderable ?flash_info ?user ~active ~inactive () =
+  Template.Layout.default
+    ~lang:"fr"
+    ~page_title:"Utilisateurs"
+    ?flash_info
+    ?user
+    Tyxml.Html.
+      [ div
+          ~a:[ a_class [ "columns" ] ]
+          [ div
+              ~a:[ a_class [ "column"; "is-full" ] ]
+              [ h1 ~a:[ a_class [ "title" ] ] [ txt "Utilisateurs modérables" ]
+              ; div
+                  ~a:[ a_class [ "columns" ] ]
+                  [ div
+                      ~a:[ a_class [ "column"; "is-half" ] ]
+                      [ h2
+                          ~a:[ a_class [ "title"; "is-4" ] ]
+                          [ txt "Utilisateurs inactifs" ]
+                      ; List_moderable.all inactive
+                      ]
+                  ; div
+                      ~a:[ a_class [ "column"; "is-half" ] ]
+                      [ h2
+                          ~a:[ a_class [ "title"; "is-4" ] ]
+                          [ txt "Utilisateurs actifs" ]
+                      ; List_moderable.all active
+                      ]
+                  ]
               ]
           ]
       ]

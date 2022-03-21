@@ -64,7 +64,7 @@ let leave request =
   Dream.redirect request "/user/login"
 ;;
 
-let list user request =
+let list_active user request =
   let open Lwt_util in
   let open Model.User in
   let* promise = Dream.sql request @@ Saved.list_active Fun.id in
@@ -72,7 +72,26 @@ let list user request =
     ~ok:(fun users ->
       let flash_info = Util.Flash_info.fetch request in
       let _csrf_token = Dream.csrf_token request in
-      let view = View.User.list ?flash_info ~user users () in
+      let view = View.User.list_active ?flash_info ~user users () in
+      Dream.html @@ from_tyxml view)
+    ~error:(fun err ->
+      Flash_info.error_tree request err;
+      Dream.redirect request "/")
+    promise
+;;
+
+let list_moderable user request =
+  let open Lwt_util in
+  let open Model.User in
+  let* promise = Dream.sql request @@ Saved.list_moderable Fun.id in
+  Result.fold
+    ~ok:(fun users ->
+      let active, inactive = List.partition Saved.is_active users in
+      let flash_info = Util.Flash_info.fetch request in
+      let _csrf_token = Dream.csrf_token request in
+      let view =
+        View.User.list_moderable ?flash_info ~user ~active ~inactive ()
+      in
       Dream.html @@ from_tyxml view)
     ~error:(fun err ->
       Flash_info.error_tree request err;
@@ -116,4 +135,24 @@ let provide_user inner_handler request =
         Flash_info.error_tree request err;
         Dream.redirect request "/user/login")
       promise
+;;
+
+let as_moderator inner_handler user request =
+  let open Model.User in
+  match user.Saved.user_state with
+  | State.Admin | State.Moderator -> inner_handler user request
+  | _ -> Dream.redirect request "/"
+;;
+
+let as_administrator inner_handler user request =
+  let open Model.User in
+  match user.Saved.user_state with
+  | State.Admin -> inner_handler user request
+  | _ -> Dream.redirect request "/"
+;;
+
+let provide_moderator inner_handler = provide_user @@ as_moderator inner_handler
+
+let provide_administrator inner_handler =
+  provide_user @@ as_administrator inner_handler
 ;;

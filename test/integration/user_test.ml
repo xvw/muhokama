@@ -198,6 +198,18 @@ let test_list_active_when_no_user =
       same (Testable.try_ @@ list string) ~expected ~computed)
 ;;
 
+let test_list_moderable_when_no_user =
+  integration_test
+    ~about:"list_moderable"
+    ~desc:"when there is no stored user it should returns an empty list"
+    (fun _ db ->
+      let open Model.User in
+      Saved.(list_moderable (fun u -> u.user_email) db))
+    (fun computed ->
+      let expected = Ok [] in
+      same (Testable.try_ @@ list string) ~expected ~computed)
+;;
+
 let test_list_active_when_no_activated_user =
   integration_test
     ~about:"list_active"
@@ -210,6 +222,21 @@ let test_list_active_when_no_activated_user =
       Saved.(list_active (fun u -> u.user_email) db))
     (fun computed ->
       let expected = Ok [] in
+      same (Testable.try_ @@ list string) ~expected ~computed)
+;;
+
+let test_list_moderable_when_no_activated_user =
+  integration_test
+    ~about:"list_moderable"
+    ~desc:"when there is no activated user it should returns all members list"
+    (fun _ db ->
+      let open Model.User in
+      let open Lwt_util in
+      let*? _ = make_user "user_1" "x@g.com" "1234567" db in
+      let*? _ = make_user "user_2" "q@g.com" "1234567" db in
+      Saved.(list_moderable (fun u -> u.user_name) db))
+    (fun computed ->
+      let expected = Ok [ "user_1"; "user_2" ] in
       same (Testable.try_ @@ list string) ~expected ~computed)
 ;;
 
@@ -230,6 +257,26 @@ let test_list_active_when_there_are_candidates =
       Saved.(list_active ~like:"user_%" (fun u -> u.user_name) db))
     (fun computed ->
       let expected = Ok [ "user_1"; "user_2"; "user_4"; "user_5" ] in
+      same (Testable.try_ @@ list string) ~expected ~computed)
+;;
+
+let test_list_moderable_when_there_are_candidates =
+  integration_test
+    ~about:"list_moderable"
+    ~desc:"when there are moderable users it should returns it"
+    (fun _ db ->
+      let open Model.User in
+      let open Lwt_util in
+      let*? _ = make_user ~state:State.Member "user_1" "a@g.com" "1234567" db in
+      let*? _ = make_user ~state:State.Member "user_2" "b@g.com" "1234567" db in
+      let*? _ = make_user "user_3" "c@g.com" "1111111" db in
+      let*? _ = make_user ~state:State.Admin "user_4" "d@g.com" "11111111" db in
+      let*? _ =
+        make_user ~state:State.Moderator "user_5" "e@g.com" "1111111" db
+      in
+      Saved.(list_moderable ~like:"user_%" (fun u -> u.user_name) db))
+    (fun computed ->
+      let expected = Ok [ "user_1"; "user_2"; "user_3"; "user_5" ] in
       same (Testable.try_ @@ list string) ~expected ~computed)
 ;;
 
@@ -257,6 +304,32 @@ let test_list_active_when_there_are_candidates_with_like =
       same (Testable.try_ @@ list string) ~expected ~computed)
 ;;
 
+let test_list_moderable_when_there_are_candidates_with_like =
+  integration_test
+    ~about:"list_moderable"
+    ~desc:
+      "when there are activated users it should returns the one that fit with \
+       like"
+    (fun _ db ->
+      let open Model.User in
+      let open Lwt_util in
+      let*? _ =
+        make_user ~state:State.Inactive "user_1" "a@g.com" "1234567" db
+      in
+      let*? _ =
+        make_user ~state:State.Member "grm" "user_@g.com" "1234567" db
+      in
+      let*? _ = make_user "user_3" "c@g.com" "1111111" db in
+      let*? _ = make_user ~state:State.Admin "user_4" "d@g.com" "11111111" db in
+      let*? _ =
+        make_user ~state:State.Moderator "fooo" "e@g.com" "1111111" db
+      in
+      Saved.(list_moderable ~like:"user_%" (fun u -> u.user_name) db))
+    (fun computed ->
+      let expected = Ok [ "user_1"; "grm"; "user_3" ] in
+      same (Testable.try_ @@ list string) ~expected ~computed)
+;;
+
 let cases =
   ( "User"
   , [ test_ensure_there_is_no_user_at_starting
@@ -270,8 +343,12 @@ let cases =
     ; test_get_for_connection_when_there_is_no_candidate_user_because_of_activate
     ; test_get_for_connection_when_there_is_a_candidate_user
     ; test_list_active_when_no_user
+    ; test_list_moderable_when_no_user
     ; test_list_active_when_no_activated_user
+    ; test_list_moderable_when_no_activated_user
     ; test_list_active_when_there_are_candidates
+    ; test_list_moderable_when_there_are_candidates
     ; test_list_active_when_there_are_candidates_with_like
+    ; test_list_moderable_when_there_are_candidates_with_like
     ] )
 ;;
