@@ -3,5 +3,5 @@
     their identification, they are suffixed by model. This module is used to
     re-export them. *)
 
-module User = User_controller
 module Dummy = Dummy_controller
+module User = User_controller

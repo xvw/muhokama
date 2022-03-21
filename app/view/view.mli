@@ -3,5 +3,5 @@
     their identification, they are suffixed by view. This module is used to
     re-export them. *)
 
-module User = User_view
 module Dummy = Dummy_view
+module User = User_view

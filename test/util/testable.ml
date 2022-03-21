@@ -28,3 +28,8 @@ let migration_plan =
   let open Lib_migration in
   Alcotest.testable Plan.pp Plan.equal
 ;;
+
+let saved_user =
+  let open Model.User in
+  Alcotest.testable Saved.pp Saved.equal
+;;

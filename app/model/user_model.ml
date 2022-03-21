@@ -1,6 +1,11 @@
 open Lib_common
+open Lib_crypto
 
 let trim value = value |> String.trim |> String.lowercase_ascii
+
+let hash_password email password =
+  Sha256.(hash_string email <|> hash_string password)
+;;
 
 module State = struct
   type t =
@@ -67,11 +72,14 @@ module State = struct
     and ib = to_int b in
     Int.compare ia ib
   ;;
+
+  let is_active = function
+    | Member | Moderator | Admin -> true
+    | Inactive | Unknown _ -> false
+  ;;
 end
 
 module For_registration = struct
-  open Lib_crypto
-
   type t =
     { user_name : string
     ; user_email : string
@@ -181,6 +189,53 @@ module For_registration = struct
   ;;
 end
 
+module For_connection = struct
+  type t =
+    { user_email : string
+    ; user_password : Sha256.t
+    }
+
+  let user_email_key = "user_email"
+  let user_password_key = "user_password"
+
+  let pp ppf { user_email; user_password = _ } =
+    Fmt.pf
+      ppf
+      "User.For_registration.{ user_email = %a; user_password = ***  }"
+      Fmt.(quote string)
+      user_email
+  ;;
+
+  let equal
+      { user_email = a_email; user_password = a_password }
+      { user_email = b_email; user_password = b_password }
+    =
+    String.equal a_email b_email && Sha256.equal a_password b_password
+  ;;
+
+  let make user_email user_pasword =
+    let user_email = trim user_email
+    and user_password = hash_password user_email user_pasword in
+    { user_email; user_password }
+  ;;
+
+  let from_yojson yojson_obj =
+    let open Validate in
+    let open Assoc.Yojson in
+    object_and
+      (fun obj ->
+        make
+        <$> required (string & is_email) user_email_key obj
+        <*> required string user_password_key obj)
+      yojson_obj
+    |> run ~name:"User.For_connection"
+  ;;
+
+  let from_assoc_list query_string =
+    query_string |> Assoc.Yojson.from_assoc_list |> from_yojson
+  ;;
+end
+
 module Saved = struct
   type t =
     { user_id : string
@@ -188,6 +243,42 @@ module Saved = struct
     ; user_email : string
     ; user_state : State.t
     }
+
+  let user_id_key = "user_id"
+  let user_email_key = "user_email"
+  let user_name_key = "user_name"
+  let user_state_key = "user_state"
+
+  let make user_id user_email user_name user_state =
+    { user_id; user_email; user_name; user_state }
+  ;;
+
+  let is_active { user_state; _ } = State.is_active user_state
+
+  let from_yojson yojson_obj =
+    let open Validate in
+    let open Assoc.Yojson in
+    object_and
+      (fun obj ->
+        make
+        <$> required string user_id_key obj
+        <*> required (string & is_email) user_email_key obj
+        <*> required string user_name_key obj
+        <*> required (string & State.validate_state) user_state_key obj)
+      yojson_obj
+    |> run ~name:"User.For_connection"
+  ;;
+
+  let from_assoc_list query_string =
+    query_string |> Assoc.Yojson.from_assoc_list |> from_yojson
+  ;;
+
+  let equal a b =
+    String.equal a.user_id b.user_id
+    && String.equal a.user_name b.user_name
+    && String.equal a.user_email b.user_email
+    && State.equal a.user_state b.user_state
+  ;;
 
   let count =
     let query =
@@ -232,5 +323,89 @@ module Saved = struct
       Lib_db.try_ @@ Q.exec query (state_str, user_id)
   ;;
 
-  let activate ~user_id = change_state ~user_id State.Member
+  let activate user_id = change_state ~user_id State.Member
+
+  let from_tuple error =
+    let open Lwt_util in
+    function
+    | Some (user_id, user_name, user_email, user_state) ->
+      return_ok
+        { user_id
+        ; user_name
+        ; user_email
+        ; user_state = State.from_string user_state
+        }
+    | None -> return @@ Error.to_try error
+  ;;
+
+  let get_by_email =
+    let query =
+      Caqti_request.find_opt
+        Caqti_type.(string)
+        Caqti_type.(tup4 string string string string)
+        ("SELECT user_id, user_name, user_email, user_state FROM users "
+        ^ "WHERE user_email = ?")
+    in
+    fun email (module Q : Caqti_lwt.CONNECTION) ->
+      let open Lwt_util in
+      let*? potential_user = Lib_db.try_ @@ Q.find_opt query email in
+      potential_user |> from_tuple @@ Error.user_not_found email
+  ;;
+
+  let get_by_id =
+    let query =
+      Caqti_request.find_opt
+        Caqti_type.(string)
+        Caqti_type.(tup4 string string string string)
+        ("SELECT user_id, user_name, user_email, user_state FROM users "
+        ^ "WHERE user_id = ?")
+    in
+    fun id (module Q : Caqti_lwt.CONNECTION) ->
+      let open Lwt_util in
+      let*? potential_user = Lib_db.try_ @@ Q.find_opt query id in
+      potential_user |> from_tuple @@ Error.user_id_not_found id
+  ;;
+
+  let get_by_email_and_password =
+    let query =
+      Caqti_request.find_opt
+        Caqti_type.(tup2 string string)
+        Caqti_type.(tup4 string string string string)
+        ("SELECT user_id, user_name, user_email, user_state FROM users "
+        ^ "WHERE user_email = ? AND user_password = ?")
+    in
+    fun ~email ~password (module Q : Caqti_lwt.CONNECTION) ->
+      let open Lwt_util in
+      let*? potential_user =
+        Lib_db.try_ @@ Q.find_opt query (email, password)
+      in
+      potential_user |> from_tuple @@ Error.user_not_found email
+  ;;
+
+  let get_for_connection connection_data db =
+    let open Lwt_util in
+    let For_connection.{ user_email = email; user_password } =
+      connection_data
+    in
+    let password = Sha256.to_string user_password in
+    let*? user = get_by_email_and_password ~email ~password db in
+    if State.is_active user.user_state
+    then return_ok user
+    else return Error.(to_try @@ user_not_activated email)
+  ;;
+
+  let pp ppf { user_id; user_name; user_email; user_state } =
+    Fmt.pf
+      ppf
+      "User.Saved { user_id = %a; user_name = %a; user_email = %a; user_state \
+       = %a}"
+      Fmt.(quote string)
+      user_id
+      Fmt.(quote string)
+      user_name
+      Fmt.(quote string)
+      user_email
+      State.pp
+      user_state
+  ;;
 end

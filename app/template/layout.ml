@@ -33,6 +33,7 @@ let default
     ?(additional_meta = [])
     ?(additional_css = [])
     ?flash_info
+    ?user
     content
   =
   let open Tyxml.Html in
@@ -45,7 +46,7 @@ let default
        additional_meta
        additional_css)
     (body
-       [ Component.unconnected_navbar
+       [ Component.navbar user
        ; Component.main_header
        ; main
            [ section
