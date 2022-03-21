@@ -120,14 +120,8 @@ let test_get_for_connection_when_there_is_no_candidate_user =
     ~desc:"when there is no associated user, it should raise an error"
     (fun _ db ->
       let open Lwt_util in
-      let*? u =
-        return (user_for_registration "user_1" "x@g.com" "1234567" "1234567")
-      in
-      let*? () = Model.User.For_registration.save u db in
-      let*? u =
-        return (user_for_registration "user_2" "q@g.com" "1234567" "1234567")
-      in
-      let*? () = Model.User.For_registration.save u db in
+      let*? _ = make_user "user_1" "x@g.com" "1234567" db in
+      let*? _ = make_user "user_2" "q@g.com" "1234567" db in
       let email = "pierre@mail.com"
       and password = "password_of_pierre" in
       let*? obj = return @@ user_for_connection email password in
@@ -145,14 +139,8 @@ let test_get_for_connection_when_there_is_no_candidate_user_because_of_password 
        an error"
     (fun _ db ->
       let open Lwt_util in
-      let*? u =
-        return (user_for_registration "user_1" "x@g.com" "1234567" "1234567")
-      in
-      let*? () = Model.User.For_registration.save u db in
-      let*? u =
-        return (user_for_registration "user_2" "q@g.com" "1234567" "1234567")
-      in
-      let*? () = Model.User.For_registration.save u db in
+      let*? _ = make_user "user_1" "x@g.com" "1234567" db in
+      let*? _ = make_user "user_2" "q@g.com" "1234567" db in
       let email = "x@g.com"
       and password = "password_of_pierre" in
       let*? obj = return @@ user_for_connection email password in
@@ -168,14 +156,8 @@ let test_get_for_connection_when_there_is_no_candidate_user_because_of_activate 
     ~desc:"when there is no activated associated user, it should raise an error"
     (fun _ db ->
       let open Lwt_util in
-      let*? u =
-        return (user_for_registration "user_1" "x@g.com" "1234567" "1234567")
-      in
-      let*? () = Model.User.For_registration.save u db in
-      let*? u =
-        return (user_for_registration "user_2" "q@g.com" "1234567" "1234567")
-      in
-      let*? () = Model.User.For_registration.save u db in
+      let*? _ = make_user "user_1" "x@g.com" "1234567" db in
+      let*? _ = make_user "user_2" "q@g.com" "1234567" db in
       let email = "x@g.com"
       and password = "1234567" in
       let*? obj = return @@ user_for_connection email password in
@@ -191,25 +173,88 @@ let test_get_for_connection_when_there_is_a_candidate_user =
     ~desc:"when there is an associated user, it should returns it"
     (fun _ db ->
       let open Lwt_util in
-      let*? u =
-        return (user_for_registration "user_1" "x@g.com" "1234567" "1234567")
-      in
-      let*? () = Model.User.For_registration.save u db in
-      let*? { user_id; _ } = Model.User.Saved.get_by_email "x@g.com" db in
-      let*? () = Model.User.Saved.activate user_id db in
-      let*? u =
-        return (user_for_registration "user_2" "q@g.com" "1234567" "1234567")
-      in
-      let*? () = Model.User.For_registration.save u db in
+      let state = Model.User.State.Member in
+      let*? witness_user = make_user ~state "user_1" "x@g.com" "1234567" db in
+      let*? _ = make_user "user_2" "q@g.com" "1234567" db in
       let email = "x@g.com"
       and password = "1234567" in
       let*? obj = return @@ user_for_connection email password in
-      let*? computed = Model.User.Saved.get_for_connection obj db in
-      let+? witness_user = Model.User.Saved.get_by_id user_id db in
+      let+? computed = Model.User.Saved.get_for_connection obj db in
       computed, witness_user)
     (function
       | Error _ -> assert false
       | Ok (computed, expected) -> same Testable.saved_user ~expected ~computed)
+;;
+
+let test_list_active_when_no_user =
+  integration_test
+    ~about:"list_active"
+    ~desc:"when there is no stored user it should returns an empty list"
+    (fun _ db ->
+      let open Model.User in
+      Saved.(list_active (fun u -> u.user_email) db))
+    (fun computed ->
+      let expected = Ok [] in
+      same (Testable.try_ @@ list string) ~expected ~computed)
+;;
+
+let test_list_active_when_no_activated_user =
+  integration_test
+    ~about:"list_active"
+    ~desc:"when there is no activated user it should returns an empty list"
+    (fun _ db ->
+      let open Model.User in
+      let open Lwt_util in
+      let*? _ = make_user "user_1" "x@g.com" "1234567" db in
+      let*? _ = make_user "user_2" "q@g.com" "1234567" db in
+      Saved.(list_active (fun u -> u.user_email) db))
+    (fun computed ->
+      let expected = Ok [] in
+      same (Testable.try_ @@ list string) ~expected ~computed)
+;;
+
+let test_list_active_when_there_are_candidates =
+  integration_test
+    ~about:"list_active"
+    ~desc:"when there are activated users it should returns it"
+    (fun _ db ->
+      let open Model.User in
+      let open Lwt_util in
+      let*? _ = make_user ~state:State.Member "user_1" "a@g.com" "1234567" db in
+      let*? _ = make_user ~state:State.Member "user_2" "b@g.com" "1234567" db in
+      let*? _ = make_user "user_3" "c@g.com" "1111111" db in
+      let*? _ = make_user ~state:State.Admin "user_4" "d@g.com" "11111111" db in
+      let*? _ =
+        make_user ~state:State.Moderator "user_5" "e@g.com" "1111111" db
+      in
+      Saved.(list_active ~like:"user_%" (fun u -> u.user_name) db))
+    (fun computed ->
+      let expected = Ok [ "user_1"; "user_2"; "user_4"; "user_5" ] in
+      same (Testable.try_ @@ list string) ~expected ~computed)
+;;
+
+let test_list_active_when_there_are_candidates_with_like =
+  integration_test
+    ~about:"list_active"
+    ~desc:
+      "when there are activated users it should returns the one that fit with \
+       like"
+    (fun _ db ->
+      let open Model.User in
+      let open Lwt_util in
+      let*? _ = make_user ~state:State.Member "user_1" "a@g.com" "1234567" db in
+      let*? _ =
+        make_user ~state:State.Member "grm" "user_@g.com" "1234567" db
+      in
+      let*? _ = make_user "user_3" "c@g.com" "1111111" db in
+      let*? _ = make_user ~state:State.Admin "user_4" "d@g.com" "11111111" db in
+      let*? _ =
+        make_user ~state:State.Moderator "fooo" "e@g.com" "1111111" db
+      in
+      Saved.(list_active ~like:"user_%" (fun u -> u.user_name) db))
+    (fun computed ->
+      let expected = Ok [ "user_1"; "grm"; "user_4" ] in
+      same (Testable.try_ @@ list string) ~expected ~computed)
 ;;
 
 let cases =
@@ -224,5 +269,9 @@ let cases =
     ; test_get_for_connection_when_there_is_no_candidate_user_because_of_password
     ; test_get_for_connection_when_there_is_no_candidate_user_because_of_activate
     ; test_get_for_connection_when_there_is_a_candidate_user
+    ; test_list_active_when_no_user
+    ; test_list_active_when_no_activated_user
+    ; test_list_active_when_there_are_candidates
+    ; test_list_active_when_there_are_candidates_with_like
     ] )
 ;;

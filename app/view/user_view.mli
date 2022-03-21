@@ -13,3 +13,11 @@ val login
   -> csrf_token:string
   -> unit
   -> Tyxml.Html.doc
+
+(** A view for listing users. *)
+val list
+  :  ?flash_info:Model.Flash_info.t
+  -> ?user:Model.User.Saved.t
+  -> Model.User.Saved.t list
+  -> unit
+  -> Tyxml.Html.doc

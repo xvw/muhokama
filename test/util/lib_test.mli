@@ -40,6 +40,14 @@ val user_for_registration
 
 val user_for_connection : string -> string -> Model.User.For_connection.t Try.t
 
+val make_user
+  :  ?state:Model.User.State.t
+  -> string
+  -> string
+  -> string
+  -> Caqti_lwt.connection
+  -> Model.User.Saved.t Try.t Lwt.t
+
 (** {1 Some data} *)
 
 module Individual : sig

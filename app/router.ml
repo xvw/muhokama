@@ -7,7 +7,12 @@ let routes =
     [ scope
         "/" (* Connected scope *)
         [ User.is_authenticated ]
-        [ scope "/user" [] [ get "/leave" User.leave ]
+        [ scope
+            "/user"
+            []
+            [ get "/leave" User.leave
+            ; get "/list" @@ User.provide_user User.list
+            ]
         ; get "/" @@ User.provide_user Dummy.hello_world
         ]
     ; scope

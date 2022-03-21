@@ -15,6 +15,9 @@ val auth : Dream.handler
 (** The controller for disconnection.*)
 val leave : Dream.handler
 
+(** The controller for listing users. *)
+val list : Model.User.Saved.t -> Dream.handler
+
 (** {1 Middleware} *)
 
 val provide_user

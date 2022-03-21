@@ -216,6 +216,45 @@ module Connection = struct
   ;;
 end
 
+module List = struct
+  let state_of user =
+    let Model.User.Saved.{ user_state; _ } = user in
+    let color =
+      match user_state with
+      | Model.User.State.Inactive -> "is-light"
+      | Model.User.State.Member -> "is-info"
+      | Model.User.State.Moderator -> "is-success"
+      | Model.User.State.Admin -> "is-primary"
+      | Model.User.State.Unknown _ -> "is-danger"
+    in
+    Tyxml.Html.(
+      span
+        ~a:[ a_class [ "tag"; color ] ]
+        [ txt @@ Model.User.State.to_string user_state ])
+  ;;
+
+  let user_line user =
+    let open Tyxml.Html in
+    let Model.User.Saved.{ user_email; user_name; _ } = user in
+    tr [ td [ txt user_name ]; td [ txt user_email ]; td [ state_of user ] ]
+  ;;
+
+  let list users =
+    let open Tyxml.Html in
+    let hd =
+      thead
+        [ tr
+            [ th [ txt "Nom d'utilisateur" ]
+            ; th [ txt "Courrier electronique" ]
+            ; th [ txt "Status" ]
+            ]
+        ]
+    in
+    table ~a:[ a_class [ "table"; "table is-fullwidth" ] ] ~thead:hd
+    @@ List.map user_line users
+  ;;
+end
+
 let create ?flash_info ~csrf_token () =
   Template.Layout.default
     ~lang:"fr"
@@ -245,6 +284,24 @@ let login ?flash_info ~csrf_token () =
               ~a:[ a_class [ "column"; "is-two-fifths" ] ]
               [ h1 ~a:[ a_class [ "title" ] ] [ txt "Se connecter" ]
               ; Connection.connection_form csrf_token
+              ]
+          ]
+      ]
+;;
+
+let list ?flash_info ?user users () =
+  Template.Layout.default
+    ~lang:"fr"
+    ~page_title:"Utilisateurs"
+    ?flash_info
+    ?user
+    Tyxml.Html.
+      [ div
+          ~a:[ a_class [ "columns" ] ]
+          [ div
+              ~a:[ a_class [ "column"; "is-full" ] ]
+              [ h1 ~a:[ a_class [ "title" ] ] [ txt "Utilisateurs actifs" ]
+              ; List.list users
               ]
           ]
       ]
