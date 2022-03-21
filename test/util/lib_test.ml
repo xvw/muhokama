@@ -86,6 +86,15 @@ let user_for_registration name mail pass confirm =
       ])
 ;;
 
+let make_user ?(state = Model.User.State.Inactive) name mail pass db =
+  let open Lwt_util in
+  let*? r = return @@ user_for_registration name mail pass pass in
+  let*? () = Model.User.For_registration.save r db in
+  let*? { user_id; _ } = Model.User.Saved.get_by_email mail db in
+  let*? () = Model.User.Saved.change_state ~user_id state db in
+  Model.User.Saved.get_by_email mail db
+;;
+
 let user_for_connection mail pass =
   Model.User.For_connection.(
     from_assoc_list [ user_email_key, mail; user_password_key, pass ])

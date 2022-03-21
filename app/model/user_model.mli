@@ -123,6 +123,14 @@ module Saved : sig
   (** [iter f db] apply [f] on each saved users. *)
   val iter : (t -> unit) -> Caqti_lwt.connection -> unit Try.t Lwt.t
 
+  (** [list_active ?like callback db] compute the list of activated user using a
+      like query over user_name or user_email (for filtering). *)
+  val list_active
+    :  ?like:string
+    -> (t -> 'a)
+    -> Caqti_lwt.connection
+    -> 'a list Try.t Lwt.t
+
   (** [change_state ~user_id new_state db] try to change the state of an user. *)
   val change_state
     :  user_id:string

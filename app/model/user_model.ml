@@ -253,6 +253,10 @@ module Saved = struct
     { user_id; user_email; user_name; user_state }
   ;;
 
+  let make_by_tup4 (user_id, user_name, user_email, user_state) =
+    make user_id user_email user_name (State.from_string user_state)
+  ;;
+
   let is_active { user_state; _ } = State.is_active user_state
 
   let from_yojson yojson_obj =
@@ -288,6 +292,26 @@ module Saved = struct
     fun (module Q : Caqti_lwt.CONNECTION) -> Lib_db.try_ @@ Q.find query ()
   ;;
 
+  let list_active ?(like = "%") callback =
+    let query =
+      Caqti_request.collect
+        Caqti_type.(tup2 string string)
+        Caqti_type.(tup4 string string string string)
+        "SELECT user_id, user_name, user_email, user_state FROM users WHERE \
+         (user_state = 'member' OR user_state = 'moderator' OR user_state = \
+         'admin') AND (user_name LIKE ? OR user_email LIKE ?)"
+    in
+    fun (module Q : Caqti_lwt.CONNECTION) ->
+      (* TODO: improvement streaming directly the result *)
+      let open Lwt_util in
+      let+? list = Lib_db.try_ @@ Q.collect_list query (like, like) in
+      List.map
+        (fun user ->
+          let saved_user = make_by_tup4 user in
+          callback saved_user)
+        list
+  ;;
+
   let iter =
     let query =
       Caqti_request.collect
@@ -298,14 +322,8 @@ module Saved = struct
     fun callback (module Q : Caqti_lwt.CONNECTION) ->
       Q.iter_s
         query
-        (fun (user_id, user_name, user_email, user_state) ->
-          let saved =
-            { user_id
-            ; user_name
-            ; user_email
-            ; user_state = State.from_string user_state
-            }
-          in
+        (fun user ->
+          let saved = make_by_tup4 user in
           Lwt.return_ok @@ callback saved)
         ()
       |> Lib_db.try_
@@ -328,13 +346,7 @@ module Saved = struct
   let from_tuple error =
     let open Lwt_util in
     function
-    | Some (user_id, user_name, user_email, user_state) ->
-      return_ok
-        { user_id
-        ; user_name
-        ; user_email
-        ; user_state = State.from_string user_state
-        }
+    | Some user -> return_ok @@ make_by_tup4 user
     | None -> return @@ Error.to_try error
   ;;
 
