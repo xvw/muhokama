@@ -64,6 +64,22 @@ let leave request =
   Dream.redirect request "/user/login"
 ;;
 
+let list user request =
+  let open Lwt_util in
+  let open Model.User in
+  let* promise = Dream.sql request @@ Saved.list_active Fun.id in
+  Result.fold
+    ~ok:(fun users ->
+      let flash_info = Util.Flash_info.fetch request in
+      let _csrf_token = Dream.csrf_token request in
+      let view = View.User.list ?flash_info ~user users () in
+      Dream.html @@ from_tyxml view)
+    ~error:(fun err ->
+      Flash_info.error_tree request err;
+      Dream.redirect request "/")
+    promise
+;;
+
 let is_not_authenticated inner_handler request =
   match Auth.get_connected_user_id request with
   | None -> inner_handler request

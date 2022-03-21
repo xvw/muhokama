@@ -63,7 +63,11 @@ let connected_navbar _user =
         ~a:[ a_class [ "navbar-menu"; "is-active" ] ]
         [ div
             ~a:[ a_class [ "navbar-start" ] ]
-            [ a ~a:[ a_href "/"; a_class [ "navbar-item" ] ] [ txt "Accueil" ] ]
+            [ a ~a:[ a_href "/"; a_class [ "navbar-item" ] ] [ txt "Accueil" ]
+            ; a
+                ~a:[ a_href "/user/list"; a_class [ "navbar-item" ] ]
+                [ txt "Utilisateurs" ]
+            ]
         ; div
             ~a:[ a_class [ "navbar-end" ] ]
             [ a
