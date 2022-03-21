@@ -85,3 +85,8 @@ let user_for_registration name mail pass confirm =
       ; confirm_user_password_key, confirm
       ])
 ;;
+
+let user_for_connection mail pass =
+  Model.User.For_connection.(
+    from_assoc_list [ user_email_key, mail; user_password_key, pass ])
+;;

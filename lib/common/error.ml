@@ -217,6 +217,9 @@ module User = struct
         ; email : string
         }
     | Invalid_state of string
+    | Not_found of string
+    | Id_not_found of string
+    | Unactivated of string
 
   let equal a b =
     match a, b with
@@ -225,6 +228,9 @@ module User = struct
     | Identity_already_taken a, Identity_already_taken b ->
       String.equal a.email b.email && String.equal a.username b.username
     | Invalid_state a, Invalid_state b -> String.equal a b
+    | Not_found a, Not_found b -> String.equal a b
+    | Id_not_found a, Id_not_found b -> String.equal a b
+    | Unactivated a, Unactivated b -> String.equal a b
     | _ -> false
   ;;
 
@@ -242,6 +248,9 @@ module User = struct
         Fmt.(quote string)
         email
     | Invalid_state s -> Fmt.pf ppf "Invalid_state %a" Fmt.(quote string) s
+    | Not_found s -> Fmt.pf ppf "Not_found %a" Fmt.(quote string) s
+    | Id_not_found s -> Fmt.pf ppf "Not_found %a" Fmt.(quote string) s
+    | Unactivated s -> Fmt.pf ppf "Unactivated %a" Fmt.(quote string) s
   ;;
 
   let rec normalize = function
@@ -263,6 +272,12 @@ module User = struct
         ]
       in
       Node { label; tree }
+    | Not_found label | Id_not_found label ->
+      let message = Some "Not found" in
+      Leaf { label; message }
+    | Unactivated label ->
+      let message = Some "Not activated" in
+      Leaf { label; message }
   ;;
 end
 
@@ -409,6 +424,9 @@ let user_already_taken ~username ~email =
 
 let user_invalid_state state = User (User.Invalid_state state)
 let invalid_object ~name ~errors = Invalid_object { name; errors }
+let user_not_found email = User (User.Not_found email)
+let user_id_not_found id = User (User.Id_not_found id)
+let user_not_activated email = User (User.Unactivated email)
 
 let form_error err =
   Form

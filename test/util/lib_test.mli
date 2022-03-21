@@ -38,6 +38,8 @@ val user_for_registration
   -> string
   -> Model.User.For_registration.t Try.t
 
+val user_for_connection : string -> string -> Model.User.For_connection.t Try.t
+
 (** {1 Some data} *)
 
 module Individual : sig
