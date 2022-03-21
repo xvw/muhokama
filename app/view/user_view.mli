@@ -6,3 +6,10 @@ val create
   -> csrf_token:string
   -> unit
   -> Tyxml.Html.doc
+
+(** A view for login an user. *)
+val login
+  :  ?flash_info:Model.Flash_info.t
+  -> csrf_token:string
+  -> unit
+  -> Tyxml.Html.doc

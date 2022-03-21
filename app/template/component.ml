@@ -44,13 +44,39 @@ let unconnected_navbar =
         ~a:[ a_class [ "navbar-menu"; "is-active" ] ]
         [ div
             ~a:[ a_class [ "navbar-start" ] ]
-            [ a ~a:[ a_href "/"; a_class [ "navbar-item" ] ] [ txt "Home" ]
+            [ a
+                ~a:[ a_href "/"; a_class [ "navbar-item" ] ]
+                [ txt "Se connecter" ]
             ; a
                 ~a:[ a_href "/user/new"; a_class [ "navbar-item" ] ]
                 [ txt "Créer un compte" ]
             ]
         ]
     ]
+;;
+
+let connected_navbar _user =
+  let open Tyxml.Html in
+  nav
+    ~a:[ a_class [ "navbar"; "is-link" ]; a_role [ "navigation" ] ]
+    [ div
+        ~a:[ a_class [ "navbar-menu"; "is-active" ] ]
+        [ div
+            ~a:[ a_class [ "navbar-start" ] ]
+            [ a ~a:[ a_href "/"; a_class [ "navbar-item" ] ] [ txt "Accueil" ] ]
+        ; div
+            ~a:[ a_class [ "navbar-end" ] ]
+            [ a
+                ~a:[ a_href "/user/leave"; a_class [ "navbar-item" ] ]
+                [ txt "Se déconnecter" ]
+            ]
+        ]
+    ]
+;;
+
+let navbar = function
+  | None -> unconnected_navbar
+  | Some user -> connected_navbar user
 ;;
 
 let error_tree_leaf error_label =
