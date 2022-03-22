@@ -16,3 +16,6 @@ val navbar : Model.User.Saved.t option -> [> Html_types.nav ] Html.elt
 (** [flash_info potential_info] display (or not) the topbar where flash info are
     displayed. *)
 val flash_info : Model.Flash_info.t option -> [> Html_types.div ] Html.elt
+
+(** Render an user state to a visual tag. *)
+val user_state_tag : Model.User.State.t -> [> Html_types.span ] Html.elt

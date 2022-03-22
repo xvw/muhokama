@@ -64,7 +64,7 @@ let leave request =
   Dream.redirect request "/user/login"
 ;;
 
-let list user request =
+let list_active user request =
   let open Lwt_util in
   let open Model.User in
   let* promise = Dream.sql request @@ Saved.list_active Fun.id in
@@ -72,11 +72,74 @@ let list user request =
     ~ok:(fun users ->
       let flash_info = Util.Flash_info.fetch request in
       let _csrf_token = Dream.csrf_token request in
-      let view = View.User.list ?flash_info ~user users () in
+      let view = View.User.list_active ?flash_info ~user users () in
       Dream.html @@ from_tyxml view)
     ~error:(fun err ->
       Flash_info.error_tree request err;
       Dream.redirect request "/")
+    promise
+;;
+
+let list_moderable user request =
+  let open Lwt_util in
+  let open Model.User in
+  let* promise = Dream.sql request @@ Saved.list_moderable Fun.id in
+  Result.fold
+    ~ok:(fun users ->
+      let active, inactive = List.partition Saved.is_active users in
+      let flash_info = Util.Flash_info.fetch request in
+      let csrf_token = Dream.csrf_token request in
+      let view =
+        View.User.list_moderable
+          ?flash_info
+          ~csrf_token
+          ~user
+          ~active
+          ~inactive
+          ()
+      in
+      Dream.html @@ from_tyxml view)
+    ~error:(fun err ->
+      Flash_info.error_tree request err;
+      Dream.redirect request "/")
+    promise
+;;
+
+let compute_next_state user action =
+  let open Model.User in
+  Lwt.return
+  @@
+  match user.Saved.user_state, action with
+  | State.Admin, _ -> Error.(to_try user_is_admin)
+  | State.(Inactive | Unknown _), For_state_changement.Downgrade ->
+    Error.(to_try user_already_inactive)
+  | State.(Inactive | Unknown _), For_state_changement.Upgrade ->
+    Ok State.Member
+  | State.Member, For_state_changement.Downgrade -> Ok State.Inactive
+  | State.Member, For_state_changement.Upgrade -> Ok State.Moderator
+  | State.Moderator, For_state_changement.Downgrade -> Ok State.Member
+  | State.Moderator, For_state_changement.Upgrade -> Ok State.Admin
+;;
+
+let state_change _ request =
+  let open Lwt_util in
+  let open Model.User in
+  let open For_state_changement in
+  let* promise =
+    let*? post_params = Dream.form ~csrf:true request >|= Try.ok in
+    let*? fields = return @@ Try.form post_params in
+    let*? { action; user_id } = return @@ from_assoc_list fields in
+    let*? user_target = Dream.sql request @@ Saved.get_by_id user_id in
+    let*? new_state = compute_next_state user_target action in
+    Dream.sql request @@ Saved.change_state ~user_id new_state
+  in
+  Result.fold
+    ~ok:(fun () ->
+      Flash_info.action request "L'utilisateur a bien été modifié !";
+      Dream.redirect request "/admin/user")
+    ~error:(fun err ->
+      Flash_info.error_tree request err;
+      Dream.redirect request "/admin/user")
     promise
 ;;
 
@@ -116,4 +179,24 @@ let provide_user inner_handler request =
         Flash_info.error_tree request err;
         Dream.redirect request "/user/login")
       promise
+;;
+
+let as_moderator inner_handler user request =
+  let open Model.User in
+  match user.Saved.user_state with
+  | State.Admin | State.Moderator -> inner_handler user request
+  | _ -> Dream.redirect request "/"
+;;
+
+let as_administrator inner_handler user request =
+  let open Model.User in
+  match user.Saved.user_state with
+  | State.Admin -> inner_handler user request
+  | _ -> Dream.redirect request "/"
+;;
+
+let provide_moderator inner_handler = provide_user @@ as_moderator inner_handler
+
+let provide_administrator inner_handler =
+  provide_user @@ as_administrator inner_handler
 ;;

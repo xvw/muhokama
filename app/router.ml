@@ -11,7 +11,13 @@ let routes =
             "/user"
             []
             [ get "/leave" User.leave
-            ; get "/list" @@ User.provide_user User.list
+            ; get "/list" @@ User.provide_user User.list_active
+            ]
+        ; scope
+            "/admin"
+            []
+            [ get "/user" @@ User.provide_administrator User.list_moderable
+            ; post "/user/state" @@ User.provide_administrator User.state_change
             ]
         ; get "/" @@ User.provide_user Dummy.hello_world
         ]

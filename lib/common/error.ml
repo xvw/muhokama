@@ -220,6 +220,7 @@ module User = struct
     | Not_found of string
     | Id_not_found of string
     | Unactivated of string
+    | Invalid_state_change of string
 
   let equal a b =
     match a, b with
@@ -231,6 +232,7 @@ module User = struct
     | Not_found a, Not_found b -> String.equal a b
     | Id_not_found a, Id_not_found b -> String.equal a b
     | Unactivated a, Unactivated b -> String.equal a b
+    | Invalid_state_change a, Invalid_state_change b -> String.equal a b
     | _ -> false
   ;;
 
@@ -251,6 +253,8 @@ module User = struct
     | Not_found s -> Fmt.pf ppf "Not_found %a" Fmt.(quote string) s
     | Id_not_found s -> Fmt.pf ppf "Not_found %a" Fmt.(quote string) s
     | Unactivated s -> Fmt.pf ppf "Unactivated %a" Fmt.(quote string) s
+    | Invalid_state_change s ->
+      Fmt.pf ppf "Invalid_state_change %a" Fmt.(quote string) s
   ;;
 
   let rec normalize = function
@@ -278,6 +282,10 @@ module User = struct
     | Unactivated label ->
       let message = Some "Not activated" in
       Leaf { label; message }
+    | Invalid_state_change m ->
+      let message = Some m
+      and label = "Invalid state change" in
+      Leaf { message; label }
   ;;
 end
 
@@ -427,6 +435,14 @@ let invalid_object ~name ~errors = Invalid_object { name; errors }
 let user_not_found email = User (User.Not_found email)
 let user_id_not_found id = User (User.Id_not_found id)
 let user_not_activated email = User (User.Unactivated email)
+
+let user_already_inactive =
+  User (User.Invalid_state_change "the user is already at the bottom")
+;;
+
+let user_is_admin =
+  User (User.Invalid_state_change "you can not change administrator state")
+;;
 
 let form_error err =
   Form

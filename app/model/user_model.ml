@@ -299,7 +299,28 @@ module Saved = struct
         Caqti_type.(tup4 string string string string)
         "SELECT user_id, user_name, user_email, user_state FROM users WHERE \
          (user_state = 'member' OR user_state = 'moderator' OR user_state = \
-         'admin') AND (user_name LIKE ? OR user_email LIKE ?)"
+         'admin') AND (user_name LIKE ? OR user_email LIKE ?) ORDER BY \
+         user_name"
+    in
+    fun (module Q : Caqti_lwt.CONNECTION) ->
+      (* TODO: improvement streaming directly the result *)
+      let open Lwt_util in
+      let+? list = Lib_db.try_ @@ Q.collect_list query (like, like) in
+      List.map
+        (fun user ->
+          let saved_user = make_by_tup4 user in
+          callback saved_user)
+        list
+  ;;
+
+  let list_moderable ?(like = "%") callback =
+    let query =
+      Caqti_request.collect
+        Caqti_type.(tup2 string string)
+        Caqti_type.(tup4 string string string string)
+        "SELECT user_id, user_name, user_email, user_state FROM users WHERE \
+         (user_state <> 'admin') AND (user_name LIKE ? OR user_email LIKE ?) \
+         ORDER BY user_name"
     in
     fun (module Q : Caqti_lwt.CONNECTION) ->
       (* TODO: improvement streaming directly the result *)
@@ -419,5 +440,81 @@ module Saved = struct
       user_email
       State.pp
       user_state
+  ;;
+end
+
+module For_state_changement = struct
+  type action =
+    | Upgrade
+    | Downgrade
+
+  type t =
+    { user_id : string
+    ; action : action
+    }
+
+  let equal_action a b =
+    match a, b with
+    | Upgrade, Upgrade -> true
+    | Downgrade, Downgrade -> true
+    | _ -> false
+  ;;
+
+  let pp_action ppf = function
+    | Downgrade -> Fmt.pf ppf "Downgrade"
+    | Upgrade -> Fmt.pf ppf "Upgrade"
+  ;;
+
+  let equal
+      { user_id = user_id_a; action = action_a }
+      { user_id = user_id_b; action = action_b }
+    =
+    String.equal user_id_a user_id_b && equal_action action_a action_b
+  ;;
+
+  let pp ppf { user_id; action } =
+    Fmt.pf
+      ppf
+      "User.For_state_changement.{ user_id = %a; action = %a  }"
+      Fmt.(quote string)
+      user_id
+      pp_action
+      action
+  ;;
+
+  let upgrade_key = "upgrade_state"
+  let downgrade_key = "downgrade_state"
+  let user_id_key = "user_id"
+  let make user_id action = { user_id; action }
+
+  let require_upgrade obj =
+    let open Validate in
+    let open Assoc.Yojson in
+    Fun.const Upgrade <$> required string upgrade_key obj
+  ;;
+
+  let require_downgrade obj =
+    let open Validate in
+    let open Assoc.Yojson in
+    Fun.const Downgrade <$> required string downgrade_key obj
+  ;;
+
+  let require_action obj =
+    let open Validate in
+    require_upgrade obj <|> require_downgrade obj
+  ;;
+
+  let from_yojson yojson_obj =
+    let open Validate in
+    let open Assoc.Yojson in
+    object_and
+      (fun obj ->
+        make <$> required string user_id_key obj <*> require_action obj)
+      yojson_obj
+    |> run ~name:"User.For_state_changement"
+  ;;
+
+  let from_assoc_list query_string =
+    query_string |> Assoc.Yojson.from_assoc_list |> from_yojson
   ;;
 end

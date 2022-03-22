@@ -4,7 +4,7 @@ let main_header =
     ~a:[ a_class [ "hero"; "is-primary"; "is-small"; "is-info" ] ]
     [ div
         ~a:[ a_class [ "hero-body" ] ]
-        [ h1 ~a:[ a_class [ "title" ] ] [ txt "Muhokama" ]
+        [ h1 ~a:[ a_class [ "title"; "is-1" ] ] [ txt "Muhokama" ]
         ; h2
             ~a:[ a_class [ "subtitle" ] ]
             [ txt "Ça veut dire "; i [ txt "discussion" ]; txt " en Ouzbek" ]
@@ -21,7 +21,7 @@ let main_footer =
         [ p
             [ strong [ txt "Muhokama" ]
             ; txt " est un logiciel libre écrit en "
-            ; a ~a:[ a_href "https;//ocaml.org" ] [ txt "OCaml" ]
+            ; a ~a:[ a_href "https://ocaml.org" ] [ txt "OCaml" ]
             ; txt " pour discuter."
             ; br ()
             ; txt "Son "
@@ -55,7 +55,19 @@ let unconnected_navbar =
     ]
 ;;
 
-let connected_navbar _user =
+let administrator_navbar user =
+  let open Model.User in
+  match user.Saved.user_state with
+  | State.Admin ->
+    let open Tyxml.Html in
+    [ a
+        ~a:[ a_href "/admin/user"; a_class [ "navbar-item" ] ]
+        [ txt "Gestion des utilisateurs" ]
+    ]
+  | _ -> []
+;;
+
+let connected_navbar user =
   let open Tyxml.Html in
   nav
     ~a:[ a_class [ "navbar"; "is-link" ]; a_role [ "navigation" ] ]
@@ -70,10 +82,11 @@ let connected_navbar _user =
             ]
         ; div
             ~a:[ a_class [ "navbar-end" ] ]
-            [ a
-                ~a:[ a_href "/user/leave"; a_class [ "navbar-item" ] ]
-                [ txt "Se déconnecter" ]
-            ]
+            (administrator_navbar user
+            @ [ a
+                  ~a:[ a_href "/user/leave"; a_class [ "navbar-item" ] ]
+                  [ txt "Se déconnecter" ]
+              ])
         ]
     ]
 ;;
@@ -132,4 +145,19 @@ let flash_info =
   | Some (Model.Flash_info.Error_tree tree) ->
     flash_info_box "is-danger" (error_tree tree)
   | Some Model.Flash_info.Nothing | None -> div ~a:[ a_class [ "void" ] ] []
+;;
+
+let user_state_tag user_state =
+  let color =
+    match user_state with
+    | Model.User.State.Inactive -> "is-light"
+    | Model.User.State.Member -> "is-info"
+    | Model.User.State.Moderator -> "is-success"
+    | Model.User.State.Admin -> "is-primary"
+    | Model.User.State.Unknown _ -> "is-danger"
+  in
+  Tyxml.Html.(
+    span
+      ~a:[ a_class [ "tag"; color ] ]
+      [ txt @@ Model.User.State.to_string user_state ])
 ;;
