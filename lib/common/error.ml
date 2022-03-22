@@ -298,6 +298,16 @@ module Form = struct
     | Many_tokens of (string * string) list
     | Wrong_content_type
 
+  type 'a raw =
+    [ `Expired of 'a * float
+    | `Wrong_session of 'a
+    | `Invalid_token of 'a
+    | `Missing_token of 'a
+    | `Many_tokens of 'a
+    | `Wrong_content_type
+    | `Wrong_session of 'a
+    ]
+
   let eq_list = List.equal (Preface.Pair.equal String.equal String.equal)
 
   let equal a b =
@@ -370,6 +380,10 @@ type t =
       { name : string
       ; errors : t Preface.Nonempty_list.t
       }
+  | Invalid_form of
+      { name : string
+      ; errors : t Preface.Nonempty_list.t
+      }
 
 let yaml s = Yaml s
 let database s = Database s
@@ -432,6 +446,7 @@ let user_already_taken ~username ~email =
 
 let user_invalid_state state = User (User.Invalid_state state)
 let invalid_object ~name ~errors = Invalid_object { name; errors }
+let invalid_form ~name ~errors = Invalid_form { name; errors }
 let user_not_found email = User (User.Not_found email)
 let user_id_not_found id = User (User.Id_not_found id)
 let user_not_activated email = User (User.Unactivated email)
@@ -466,6 +481,9 @@ let rec equal a b =
   | Invalid_object a, Invalid_object b ->
     String.equal a.name b.name
     && Preface.Nonempty_list.equal equal a.errors b.errors
+  | Invalid_form a, Invalid_form b ->
+    String.equal a.name b.name
+    && Preface.Nonempty_list.equal equal a.errors b.errors
   | User a, User b -> User.equal a b
   | Form a, Form b -> Form.equal a b
   | _ -> false
@@ -484,6 +502,14 @@ let rec pp ppf = function
     Fmt.pf
       ppf
       "Error.Invald_object { name = %a; errors = %a }"
+      Fmt.(quote string)
+      name
+      Fmt.(list pp)
+      (Preface.Nonempty_list.to_list errors)
+  | Invalid_form { name; errors } ->
+    Fmt.pf
+      ppf
+      "Error.Invald_form { name = %a; errors = %a }"
       Fmt.(quote string)
       name
       Fmt.(list pp)
@@ -514,6 +540,10 @@ let rec normalize = function
   | User u -> User.normalize u
   | Invalid_object { name; errors } ->
     let label = "Object <" ^ name ^ "> is invalid"
+    and tree = Preface.Nonempty_list.(map normalize errors |> to_list) in
+    Node { label; tree }
+  | Invalid_form { name; errors } ->
+    let label = "Form <" ^ name ^ "> is invalid"
     and tree = Preface.Nonempty_list.(map normalize errors |> to_list) in
     Node { label; tree }
 ;;

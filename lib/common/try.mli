@@ -25,14 +25,7 @@ val apply : ('a -> 'b) t -> 'a t -> 'b t
 val bind : ('a -> 'b t) -> 'a t -> 'b t
 
 val form
-  :  [ `Expired of (string * string) list * float
-     | `Wrong_session of (string * string) list
-     | `Invalid_token of (string * string) list
-     | `Missing_token of (string * string) list
-     | `Many_tokens of (string * string) list
-     | `Wrong_content_type
-     | `Ok of (string * string) list
-     ]
+  :  [< `Ok of (string * string) list | (string * string) list Error.Form.raw ]
   -> (string * string) list t
 
 (** {1 Infix operators} *)
