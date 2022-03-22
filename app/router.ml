@@ -16,7 +16,9 @@ let routes =
         ; scope
             "/admin"
             []
-            [ get "/user" @@ User.provide_administrator User.list_moderable ]
+            [ get "/user" @@ User.provide_administrator User.list_moderable
+            ; post "/user/state" @@ User.provide_administrator User.state_change
+            ]
         ; get "/" @@ User.provide_user Dummy.hello_world
         ]
     ; scope

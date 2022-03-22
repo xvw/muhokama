@@ -21,6 +21,9 @@ val list_active : Model.User.Saved.t -> Dream.handler
 (** The controller for listing moderable users. *)
 val list_moderable : Model.User.Saved.t -> Dream.handler
 
+(** The controller for patching the state of an user. *)
+val state_change : Model.User.Saved.t -> Dream.handler
+
 (** {1 Middleware} *)
 
 val provide_user : (Model.User.Saved.t -> Dream.handler) -> Dream.handler

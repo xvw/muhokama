@@ -300,7 +300,7 @@ let test_list_active_when_there_are_candidates_with_like =
       in
       Saved.(list_active ~like:"user_%" (fun u -> u.user_name) db))
     (fun computed ->
-      let expected = Ok [ "user_1"; "grm"; "user_4" ] in
+      let expected = Ok [ "grm"; "user_1"; "user_4" ] in
       same (Testable.try_ @@ list string) ~expected ~computed)
 ;;
 
@@ -326,7 +326,7 @@ let test_list_moderable_when_there_are_candidates_with_like =
       in
       Saved.(list_moderable ~like:"user_%" (fun u -> u.user_name) db))
     (fun computed ->
-      let expected = Ok [ "user_1"; "grm"; "user_3" ] in
+      let expected = Ok [ "grm"; "user_1"; "user_3" ] in
       same (Testable.try_ @@ list string) ~expected ~computed)
 ;;
 
