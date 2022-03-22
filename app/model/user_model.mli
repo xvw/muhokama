@@ -180,3 +180,37 @@ module Saved : sig
   val pp : t Fmt.t
   val equal : t -> t -> bool
 end
+
+(** A model for user state change *)
+module For_state_changement : sig
+  type action =
+    | Upgrade
+    | Downgrade
+
+  type t =
+    { user_id : string
+    ; action : action
+    }
+
+  (** key that reference [upgrade_key] (for action). (That can be useful for
+      generating formlet) *)
+  val upgrade_key : string
+
+  (** key that reference [downgrade_key] (for action). (That can be useful for
+      generating formlet) *)
+  val downgrade_key : string
+
+  (** key that reference [user_id__key]. (That can be useful for generating
+      formlet) *)
+  val user_id_key : string
+
+  (** Produce a [t] using a Json representation. *)
+  val from_yojson : Assoc.Yojson.t -> t Try.t
+
+  (** Produce a [t] from an associative list (for example, urlencoded value from
+      a post query).*)
+  val from_assoc_list : (string * string) list -> t Try.t
+
+  val pp : t Fmt.t
+  val equal : t -> t -> bool
+end
