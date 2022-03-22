@@ -217,26 +217,16 @@ module Connection = struct
 end
 
 module List_active = struct
-  let state_of user =
-    let Model.User.Saved.{ user_state; _ } = user in
-    let color =
-      match user_state with
-      | Model.User.State.Inactive -> "is-light"
-      | Model.User.State.Member -> "is-info"
-      | Model.User.State.Moderator -> "is-success"
-      | Model.User.State.Admin -> "is-primary"
-      | Model.User.State.Unknown _ -> "is-danger"
-    in
-    Tyxml.Html.(
-      span
-        ~a:[ a_class [ "tag"; color ] ]
-        [ txt @@ Model.User.State.to_string user_state ])
-  ;;
-
   let user_line user =
     let open Tyxml.Html in
-    let Model.User.Saved.{ user_email; user_name; _ } = user in
-    tr [ td [ txt user_name ]; td [ txt user_email ]; td [ state_of user ] ]
+    let Model.User.Saved.{ user_email; user_name; user_state; _ } = user in
+    tr
+      [ td [ txt user_name ]
+      ; td [ txt user_email ]
+      ; td
+          ~a:[ a_class [ "has-text-centered" ] ]
+          [ Template.Component.user_state_tag user_state ]
+      ]
   ;;
 
   let all users =
@@ -246,7 +236,7 @@ module List_active = struct
         [ tr
             [ th [ txt "Nom d'utilisateur" ]
             ; th [ txt "Courrier electronique" ]
-            ; th [ txt "Status" ]
+            ; th ~a:[ a_class [ "has-text-centered" ] ] [ txt "Status" ]
             ]
         ]
     in
@@ -258,43 +248,91 @@ module List_active = struct
 end
 
 module List_moderable = struct
-  let state_of user =
-    let Model.User.Saved.{ user_state; _ } = user in
-    let color =
-      match user_state with
-      | Model.User.State.Inactive -> "is-light"
-      | Model.User.State.Member -> "is-info"
-      | Model.User.State.Moderator -> "is-success"
-      | Model.User.State.Admin -> "is-primary"
-      | Model.User.State.Unknown _ -> "is-danger"
-    in
-    Tyxml.Html.(
-      span
-        ~a:[ a_class [ "tag"; color ] ]
-        [ txt @@ Model.User.State.to_string user_state ])
-  ;;
-
-  let user_line user =
+  let upgrade_btn =
     let open Tyxml.Html in
-    let Model.User.Saved.{ user_email; user_name; _ } = user in
-    tr [ td [ txt user_name ]; td [ txt user_email ]; td [ state_of user ] ]
+    input
+      ~a:
+        [ a_input_type `Submit
+        ; a_class [ "button"; "is-success"; "is-small" ]
+        ; a_name Model.User.For_state_changement.upgrade_key
+        ; a_value "+"
+        ]
+      ()
   ;;
 
-  let all users =
+  let downgrade_btn =
+    let open Tyxml.Html in
+    input
+      ~a:
+        [ a_input_type `Submit
+        ; a_class [ "button"; "is-danger"; "is-small" ]
+        ; a_name Model.User.For_state_changement.downgrade_key
+        ; a_value "-"
+        ]
+      ()
+  ;;
+
+  let action_for = function
+    | Model.User.State.Admin -> []
+    | Model.User.State.Inactive -> [ upgrade_btn ]
+    | _ -> [ upgrade_btn; downgrade_btn ]
+  ;;
+
+  let change_state_form csrf user =
+    let open Tyxml.Html in
+    let Model.User.Saved.{ user_state; user_id; _ } = user in
+    form ~a:[ a_method `Post; a_action "/admin/user/state" ]
+    @@ [ input
+           ~a:
+             [ a_input_type `Hidden
+             ; a_name Model.User.For_state_changement.user_id_key
+             ; a_value user_id
+             ]
+           ()
+       ; Template.Util.csrf_input csrf
+       ]
+    @ action_for user_state
+  ;;
+
+  let user_line csrf user =
+    let open Tyxml.Html in
+    let Model.User.Saved.{ user_email; user_name; user_state; _ } = user in
+    tr
+      [ td [ txt user_name ]
+      ; td [ txt user_email ]
+      ; td
+          ~a:[ a_class [ "has-text-centered" ] ]
+          [ Template.Component.user_state_tag user_state ]
+      ; td
+          ~a:[ a_class [ "has-text-centered" ] ]
+          [ change_state_form csrf user ]
+      ]
+  ;;
+
+  let all csrf users =
     let open Tyxml.Html in
     let hd =
       thead
         [ tr
             [ th [ txt "Nom d'utilisateur" ]
             ; th [ txt "Courrier electronique" ]
-            ; th [ txt "Status" ]
+            ; th ~a:[ a_class [ "has-text-centered" ] ] [ txt "Status" ]
+            ; th ~a:[ a_class [ "has-text-centered" ] ] [ txt "Action" ]
             ]
         ]
     in
     table
-      ~a:[ a_class [ "table"; "is-fullwidth"; "is-striped"; "is-bordered" ] ]
+      ~a:
+        [ a_class
+            [ "table"
+            ; "is-fullwidth"
+            ; "is-narrow"
+            ; "is-striped"
+            ; "is-bordered"
+            ]
+        ]
       ~thead:hd
-    @@ List.map user_line users
+    @@ List.map (user_line csrf) users
   ;;
 end
 
@@ -350,7 +388,7 @@ let list_active ?flash_info ?user users () =
       ]
 ;;
 
-let list_moderable ?flash_info ?user ~active ~inactive () =
+let list_moderable ?flash_info ~csrf_token ?user ~active ~inactive () =
   Template.Layout.default
     ~lang:"fr"
     ~page_title:"Utilisateurs"
@@ -369,14 +407,14 @@ let list_moderable ?flash_info ?user ~active ~inactive () =
                       [ h2
                           ~a:[ a_class [ "title"; "is-4" ] ]
                           [ txt "Utilisateurs inactifs" ]
-                      ; List_moderable.all inactive
+                      ; List_moderable.all csrf_token inactive
                       ]
                   ; div
                       ~a:[ a_class [ "column"; "is-half" ] ]
                       [ h2
                           ~a:[ a_class [ "title"; "is-4" ] ]
                           [ txt "Utilisateurs actifs" ]
-                      ; List_moderable.all active
+                      ; List_moderable.all csrf_token active
                       ]
                   ]
               ]

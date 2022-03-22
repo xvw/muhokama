@@ -25,6 +25,7 @@ val list_active
 (** A view for listing moderable users. *)
 val list_moderable
   :  ?flash_info:Model.Flash_info.t
+  -> csrf_token:string
   -> ?user:Model.User.Saved.t
   -> active:Model.User.Saved.t list
   -> inactive:Model.User.Saved.t list

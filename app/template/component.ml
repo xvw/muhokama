@@ -146,3 +146,18 @@ let flash_info =
     flash_info_box "is-danger" (error_tree tree)
   | Some Model.Flash_info.Nothing | None -> div ~a:[ a_class [ "void" ] ] []
 ;;
+
+let user_state_tag user_state =
+  let color =
+    match user_state with
+    | Model.User.State.Inactive -> "is-light"
+    | Model.User.State.Member -> "is-info"
+    | Model.User.State.Moderator -> "is-success"
+    | Model.User.State.Admin -> "is-primary"
+    | Model.User.State.Unknown _ -> "is-danger"
+  in
+  Tyxml.Html.(
+    span
+      ~a:[ a_class [ "tag"; color ] ]
+      [ txt @@ Model.User.State.to_string user_state ])
+;;
