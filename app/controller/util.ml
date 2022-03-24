@@ -2,6 +2,13 @@ open Lib_common
 
 let from_tyxml doc = doc |> Fmt.str "%a" (Tyxml.Html.pp ())
 
+let handle_form ?(csrf = true) request formlet =
+  let open Lwt_util in
+  let*? params = Dream.form ~csrf request >|= Try.ok in
+  let*? fields = return @@ Try.form params in
+  return @@ formlet fields
+;;
+
 module Flash_info = struct
   module Model = Model.Flash_info
 
@@ -36,8 +43,8 @@ module Auth = struct
 
   let set_current_user request user =
     let open Lwt_util in
-    let Model.User.Saved.{ user_id; _ } = user in
-    let* () = Dream.set_session_field request inbox user_id in
+    let Model.User.{ id; _ } = user in
+    let* () = Dream.set_session_field request inbox id in
     return_ok ()
   ;;
 
