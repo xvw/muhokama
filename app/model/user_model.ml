@@ -1,520 +1,311 @@
 open Lib_common
 open Lib_crypto
+open Util
+module State = User_state
 
-let trim value = value |> String.trim |> String.lowercase_ascii
+type t =
+  { id : string
+  ; name : string
+  ; email : string
+  ; state : State.t
+  }
 
-let hash_password email password =
-  Sha256.(hash_string email <|> hash_string password)
+type registration_form =
+  { registration_name : string
+  ; registration_email : string
+  ; registration_password : Sha256.t
+  }
+
+type connection_form =
+  { connection_email : string
+  ; connection_password : Sha256.t
+  }
+
+type state_change_form =
+  { state_change_id : string
+  ; state_change_action : action
+  }
+
+and action =
+  | Upgrade
+  | Downgrade
+
+let from_tuple (id, name, email, state) =
+  { id; name; email; state = State.from_string state }
 ;;
 
-module State = struct
-  type t =
-    | Inactive
-    | Member
-    | Moderator
-    | Admin
-    | Unknown of string
+let from_tuple_with_error err =
+  Option.fold
+    ~none:Error.(Lwt.return @@ to_try err)
+    ~some:Preface.Fun.(Lwt.return_ok % from_tuple)
+;;
 
-  let equal a b =
-    match a, b with
-    | Inactive, Inactive -> true
-    | Member, Member -> true
-    | Moderator, Moderator -> true
-    | Admin, Admin -> true
-    | Unknown a, Unknown b -> String.equal a b
-    | _ -> false
-  ;;
-
-  let pp ppf = function
-    | Inactive -> Fmt.pf ppf "inactive"
-    | Member -> Fmt.pf ppf "member"
-    | Moderator -> Fmt.pf ppf "moderator"
-    | Admin -> Fmt.pf ppf "admin"
-    | Unknown s -> Fmt.pf ppf "%s" s
-  ;;
-
-  let to_string = Fmt.str "%a" pp
-
-  let try_state state =
-    match trim state with
-    | "inactive" -> Ok Inactive
-    | "member" -> Ok Member
-    | "moderator" -> Ok Moderator
-    | "admin" -> Ok Admin
-    | s -> Error.(to_try @@ user_invalid_state s)
-  ;;
-
-  let validate_state state =
-    match try_state state with
-    | Ok s -> Validate.valid s
-    | Error err -> Error.(to_validate err)
-  ;;
-
-  let from_string state =
-    match trim state with
-    | "inactive" -> Inactive
-    | "member" -> Member
-    | "moderator" -> Moderator
-    | "admin" -> Admin
-    | s -> Unknown s
-  ;;
-
-  let to_int = function
-    | Inactive -> 0
-    | Member -> 1
-    | Moderator -> 2
-    | Admin -> 3
-    | Unknown _ -> -1
-  ;;
-
-  let compare a b =
-    let ia = to_int a
-    and ib = to_int b in
-    Int.compare ia ib
-  ;;
-
-  let is_active = function
-    | Member | Moderator | Admin -> true
-    | Inactive | Unknown _ -> false
-  ;;
-end
-
-module For_registration = struct
-  type t =
-    { user_name : string
-    ; user_email : string
-    ; user_password : Sha256.t
-    }
-
-  let user_name_key = "user_name"
-  let user_email_key = "user_email"
-  let user_password_key = "user_password"
-  let confirm_user_password_key = "confirm_user_password"
-
-  let pp ppf { user_name; user_email; user_password = _ } =
-    Fmt.pf
-      ppf
-      "User.For_registration.{ user_name = %a; user_email = %a; user_password \
-       = ***  }"
-      Fmt.(quote string)
-      user_name
-      Fmt.(quote string)
-      user_email
-  ;;
-
-  let equal
-      { user_name = a_name; user_email = a_email; user_password = a_password }
-      { user_name = b_name; user_email = b_email; user_password = b_password }
-    =
-    String.equal a_name b_name
-    && String.equal a_email b_email
-    && Sha256.equal a_password b_password
-  ;;
-
-  let make user_name user_email user_password () =
-    let user_email = trim user_email
-    and user_name = trim user_name
-    and user_password =
-      Sha256.(hash_string user_email <|> hash_string user_password)
-    in
-    { user_email; user_name; user_password }
-  ;;
-
-  let verify_password password =
-    let open Validate in
-    let open Assoc.Yojson in
-    let message = "min_password_size : 7" in
-    password
-    |> (string
-       & not_blank
-       & from_predicate ~message (fun x -> String.length x >= 7))
-  ;;
-
-  let from_yojson yojson_obj =
-    let open Validate in
-    let open Assoc.Yojson in
-    object_and
-      (fun obj ->
-        make
-        <$> required (string & not_blank) user_name_key obj
-        <*> required (string & is_email) user_email_key obj
-        <*> required verify_password user_password_key obj
-        <*> ensure_equality user_password_key confirm_user_password_key obj)
-      yojson_obj
-    |> run ~name:"User.For_registration"
-  ;;
-
-  let from_assoc_list query_string =
-    query_string |> Assoc.Yojson.from_assoc_list |> from_yojson
-  ;;
-
-  let ensure_unicity =
-    let query =
-      Caqti_request.find
-        Caqti_type.(tup2 string string)
-        Caqti_type.(tup2 int int)
-        "SELECT (SELECT COUNT(*) FROM users WHERE user_name = ?), (SELECT \
-         COUNT(*) FROM users WHERE user_email = ?)"
-    in
-    fun ~user_name ~user_email (module Q : Caqti_lwt.CONNECTION) ->
-      let open Lwt_util in
-      let*? names, mails =
-        Lib_db.try_ @@ Q.find query (user_name, user_email)
-      in
-      if names > 0 && mails > 0
-      then
-        return
-          Error.(
-            to_try @@ user_already_taken ~username:user_name ~email:user_email)
-      else if names > 0
-      then return Error.(to_try @@ user_name_already_taken user_name)
-      else if mails > 0
-      then return Error.(to_try @@ user_email_already_taken user_email)
-      else return_ok ()
-  ;;
-
-  let save =
-    let query =
-      Caqti_request.exec
-        Caqti_type.(tup3 string string string)
-        "INSERT INTO users (user_name, user_email, user_password, user_state) \
-         VALUES (?, ?, ?, 'inactive')"
-    in
-    fun { user_name; user_email; user_password }
-        (module Q : Caqti_lwt.CONNECTION) ->
-      let open Lwt_util in
-      let*? () = ensure_unicity ~user_name ~user_email (module Q) in
-      Q.exec query (user_name, user_email, Sha256.to_string user_password)
-      |> Lib_db.try_
-  ;;
-end
-
-module For_connection = struct
-  type t =
-    { user_email : string
-    ; user_password : Sha256.t
-    }
-
-  let user_email_key = "user_email"
-  let user_password_key = "user_password"
-
-  let pp ppf { user_email; user_password = _ } =
-    Fmt.pf
-      ppf
-      "User.For_registration.{ user_email = %a; user_password = ***  }"
-      Fmt.(quote string)
-      user_email
-  ;;
-
-  let equal
-      { user_email = a_email; user_password = a_password }
-      { user_email = b_email; user_password = b_password }
-    =
-    String.equal a_email b_email && Sha256.equal a_password b_password
-  ;;
-
-  let make user_email user_pasword =
-    let user_email = trim user_email
-    and user_password = hash_password user_email user_pasword in
-    { user_email; user_password }
-  ;;
-
-  let from_yojson yojson_obj =
-    let open Validate in
-    let open Assoc.Yojson in
-    object_and
-      (fun obj ->
-        make
-        <$> required (string & is_email) user_email_key obj
-        <*> required string user_password_key obj)
-      yojson_obj
-    |> run ~name:"User.For_connection"
-  ;;
-
-  let from_assoc_list query_string =
-    query_string |> Assoc.Yojson.from_assoc_list |> from_yojson
-  ;;
-end
-
-module Saved = struct
-  type t =
-    { user_id : string
-    ; user_name : string
-    ; user_email : string
-    ; user_state : State.t
-    }
-
-  let user_id_key = "user_id"
-  let user_email_key = "user_email"
-  let user_name_key = "user_name"
-  let user_state_key = "user_state"
-
-  let make user_id user_email user_name user_state =
-    { user_id; user_email; user_name; user_state }
-  ;;
-
-  let make_by_tup4 (user_id, user_name, user_email, user_state) =
-    make user_id user_email user_name (State.from_string user_state)
-  ;;
-
-  let is_active { user_state; _ } = State.is_active user_state
-
-  let from_yojson yojson_obj =
-    let open Validate in
-    let open Assoc.Yojson in
-    object_and
-      (fun obj ->
-        make
-        <$> required string user_id_key obj
-        <*> required (string & is_email) user_email_key obj
-        <*> required string user_name_key obj
-        <*> required (string & State.validate_state) user_state_key obj)
-      yojson_obj
-    |> run ~name:"User.For_connection"
-  ;;
-
-  let from_assoc_list query_string =
-    query_string |> Assoc.Yojson.from_assoc_list |> from_yojson
-  ;;
-
-  let equal a b =
-    String.equal a.user_id b.user_id
-    && String.equal a.user_name b.user_name
-    && String.equal a.user_email b.user_email
-    && State.equal a.user_state b.user_state
-  ;;
-
-  let count =
-    let query =
-      Caqti_request.find Caqti_type.unit Caqti_type.int
-      @@ "SELECT COUNT(*) FROM users"
-    in
-    fun (module Q : Caqti_lwt.CONNECTION) -> Lib_db.try_ @@ Q.find query ()
-  ;;
-
-  let list_active ?(like = "%") callback =
-    let query =
-      Caqti_request.collect
-        Caqti_type.(tup2 string string)
-        Caqti_type.(tup4 string string string string)
-        "SELECT user_id, user_name, user_email, user_state FROM users WHERE \
-         (user_state = 'member' OR user_state = 'moderator' OR user_state = \
-         'admin') AND (user_name LIKE ? OR user_email LIKE ?) ORDER BY \
-         user_name"
-    in
-    fun (module Q : Caqti_lwt.CONNECTION) ->
-      (* TODO: improvement streaming directly the result *)
-      let open Lwt_util in
-      let+? list = Lib_db.try_ @@ Q.collect_list query (like, like) in
-      List.map
-        (fun user ->
-          let saved_user = make_by_tup4 user in
-          callback saved_user)
-        list
-  ;;
-
-  let list_moderable ?(like = "%") callback =
-    let query =
-      Caqti_request.collect
-        Caqti_type.(tup2 string string)
-        Caqti_type.(tup4 string string string string)
-        "SELECT user_id, user_name, user_email, user_state FROM users WHERE \
-         (user_state <> 'admin') AND (user_name LIKE ? OR user_email LIKE ?) \
-         ORDER BY user_name"
-    in
-    fun (module Q : Caqti_lwt.CONNECTION) ->
-      (* TODO: improvement streaming directly the result *)
-      let open Lwt_util in
-      let+? list = Lib_db.try_ @@ Q.collect_list query (like, like) in
-      List.map
-        (fun user ->
-          let saved_user = make_by_tup4 user in
-          callback saved_user)
-        list
-  ;;
-
-  let iter =
-    let query =
-      Caqti_request.collect
-        Caqti_type.unit
-        Caqti_type.(tup4 string string string string)
-        "SELECT user_id, user_name, user_email, user_state FROM users"
-    in
-    fun callback (module Q : Caqti_lwt.CONNECTION) ->
-      Q.iter_s
-        query
-        (fun user ->
-          let saved = make_by_tup4 user in
-          Lwt.return_ok @@ callback saved)
-        ()
-      |> Lib_db.try_
-  ;;
-
-  let change_state =
-    let query =
-      Caqti_request.exec
-        ~oneshot:true
-        Caqti_type.(tup2 string string)
-        "UPDATE users SET user_state = ? WHERE user_id = ?"
-    in
-    fun ~user_id state (module Q : Caqti_lwt.CONNECTION) ->
-      let state_str = State.to_string state in
-      Lib_db.try_ @@ Q.exec query (state_str, user_id)
-  ;;
-
-  let activate user_id = change_state ~user_id State.Member
-
-  let from_tuple error =
+let report_non_integrity_violation =
+  let query =
+    Caqti_request.find
+      Caqti_type.(tup2 string string)
+      Caqti_type.(tup2 int int)
+      "SELECT (SELECT COUNT(*) FROM users WHERE user_name = ?), (SELECT \
+       COUNT(*) FROM users WHERE user_email = ?)"
+  in
+  fun ~name ~email (module Db : Lib_db.T) ->
     let open Lwt_util in
-    function
-    | Some user -> return_ok @@ make_by_tup4 user
-    | None -> return @@ Error.to_try error
-  ;;
+    let*? ns, ms = Lib_db.try_ @@ Db.find query (name, email) in
+    match ns, ms with
+    | 0, 0 -> return_ok ()
+    | _, 0 -> return Error.(to_try @@ user_name_already_taken name)
+    | 0, _ -> return Error.(to_try @@ user_email_already_taken email)
+    | _, _ -> return Error.(to_try @@ user_already_taken ~username:name ~email)
+;;
 
-  let get_by_email =
-    let query =
-      Caqti_request.find_opt
-        Caqti_type.(string)
-        Caqti_type.(tup4 string string string string)
-        ("SELECT user_id, user_name, user_email, user_state FROM users "
-        ^ "WHERE user_email = ?")
-    in
-    fun email (module Q : Caqti_lwt.CONNECTION) ->
-      let open Lwt_util in
-      let*? potential_user = Lib_db.try_ @@ Q.find_opt query email in
-      potential_user |> from_tuple @@ Error.user_not_found email
-  ;;
-
-  let get_by_id =
-    let query =
-      Caqti_request.find_opt
-        Caqti_type.(string)
-        Caqti_type.(tup4 string string string string)
-        ("SELECT user_id, user_name, user_email, user_state FROM users "
-        ^ "WHERE user_id = ?")
-    in
-    fun id (module Q : Caqti_lwt.CONNECTION) ->
-      let open Lwt_util in
-      let*? potential_user = Lib_db.try_ @@ Q.find_opt query id in
-      potential_user |> from_tuple @@ Error.user_id_not_found id
-  ;;
-
-  let get_by_email_and_password =
-    let query =
-      Caqti_request.find_opt
-        Caqti_type.(tup2 string string)
-        Caqti_type.(tup4 string string string string)
-        ("SELECT user_id, user_name, user_email, user_state FROM users "
-        ^ "WHERE user_email = ? AND user_password = ?")
-    in
-    fun ~email ~password (module Q : Caqti_lwt.CONNECTION) ->
-      let open Lwt_util in
-      let*? potential_user =
-        Lib_db.try_ @@ Q.find_opt query (email, password)
-      in
-      potential_user |> from_tuple @@ Error.user_not_found email
-  ;;
-
-  let get_for_connection connection_data db =
+let register =
+  let query =
+    Caqti_request.exec
+      Caqti_type.(tup3 string string string)
+      "INSERT INTO users (user_name, user_email, user_password, user_state) \
+       VALUES (?, ?, ?, 'inactive')"
+  in
+  fun { registration_name = name
+      ; registration_email = email
+      ; registration_password = password
+      }
+      (module Db : Lib_db.T) ->
     let open Lwt_util in
-    let For_connection.{ user_email = email; user_password } =
-      connection_data
-    in
-    let password = Sha256.to_string user_password in
-    let*? user = get_by_email_and_password ~email ~password db in
-    if State.is_active user.user_state
-    then return_ok user
-    else return Error.(to_try @@ user_not_activated email)
-  ;;
+    let*? () = report_non_integrity_violation ~name ~email (module Db) in
+    let password = Sha256.to_string password in
+    Db.exec query (name, email, password) |> Lib_db.try_
+;;
 
-  let pp ppf { user_id; user_name; user_email; user_state } =
-    Fmt.pf
-      ppf
-      "User.Saved { user_id = %a; user_name = %a; user_email = %a; user_state \
-       = %a}"
-      Fmt.(quote string)
-      user_id
-      Fmt.(quote string)
-      user_name
-      Fmt.(quote string)
-      user_email
-      State.pp
-      user_state
-  ;;
-end
+let count ?(filter = State.all) =
+  let query =
+    Caqti_request.find Caqti_type.unit Caqti_type.int
+    @@ Fmt.str
+         "SELECT COUNT(*) FROM users WHERE (%a)"
+         (State.pp_filter ())
+         filter
+  in
+  fun (module Db : Lib_db.T) -> Lib_db.try_ @@ Db.find query ()
+;;
 
-module For_state_changement = struct
-  type action =
-    | Upgrade
-    | Downgrade
+let list ?(filter = State.all) ?(like = "%") callback =
+  let query =
+    Caqti_request.collect
+      Caqti_type.(tup2 string string)
+      Caqti_type.(tup4 string string string string)
+    @@ Fmt.str
+         "SELECT user_id, user_name, user_email, user_state FROM users WHERE \
+          (%a) AND (user_name LIKE ? OR user_email LIKE ?) ORDER BY user_name"
+         (State.pp_filter ())
+         filter
+  in
+  fun (module Db : Lib_db.T) ->
+    (* TODO: improvement streaming directly the result *)
+    let open Lwt_util in
+    let+? list = Lib_db.try_ @@ Db.collect_list query (like, like) in
+    List.map Preface.Fun.(callback % from_tuple) list
+;;
 
-  type t =
-    { user_id : string
-    ; action : action
+let iter =
+  let query =
+    Caqti_request.collect
+      Caqti_type.unit
+      Caqti_type.(tup4 string string string string)
+      "SELECT user_id, user_name, user_email, user_state FROM users"
+  in
+  fun callback (module Db : Lib_db.T) ->
+    Db.iter_s query Preface.Fun.(Lwt.return_ok % callback % from_tuple) ()
+    |> Lib_db.try_
+;;
+
+let change_state =
+  let query =
+    Caqti_request.exec
+      ~oneshot:true
+      Caqti_type.(tup2 string string)
+      "UPDATE users SET user_state = ? WHERE user_id = ?"
+  in
+  fun ~user_id state (module Db : Lib_db.T) ->
+    let state_str = State.to_string state in
+    Lib_db.try_ @@ Db.exec query (state_str, user_id)
+;;
+
+let activate user_id = change_state ~user_id State.Member
+
+let get_by_email =
+  let query =
+    Caqti_request.find_opt
+      Caqti_type.(string)
+      Caqti_type.(tup4 string string string string)
+      "SELECT user_id, user_name, user_email, user_state FROM users WHERE \
+       user_email = ?"
+  in
+  fun email (module Db : Lib_db.T) ->
+    let open Lwt_util in
+    let*? potential_user = Lib_db.try_ @@ Db.find_opt query email in
+    potential_user |> from_tuple_with_error @@ Error.user_not_found email
+;;
+
+let get_by_id =
+  let query =
+    Caqti_request.find_opt
+      Caqti_type.(string)
+      Caqti_type.(tup4 string string string string)
+      "SELECT user_id, user_name, user_email, user_state FROM users WHERE \
+       user_id = ?"
+  in
+  fun id (module Db : Lib_db.T) ->
+    let open Lwt_util in
+    let*? potential_user = Lib_db.try_ @@ Db.find_opt query id in
+    potential_user |> from_tuple_with_error @@ Error.user_id_not_found id
+;;
+
+let get_by_email_and_password =
+  let query =
+    Caqti_request.find_opt
+      Caqti_type.(tup2 string string)
+      Caqti_type.(tup4 string string string string)
+      "SELECT user_id, user_name, user_email, user_state FROM users WHERE \
+       user_email = ? AND user_password = ?"
+  in
+  fun email pass (module Db : Lib_db.T) ->
+    let open Lwt_util in
+    let*? potential_user = Lib_db.try_ @@ Db.find_opt query (email, pass) in
+    potential_user |> from_tuple_with_error @@ Error.user_not_found email
+;;
+
+let get_for_connection
+    { connection_email = email; connection_password = password }
+    db
+  =
+  let open Lwt_util in
+  let password = Sha256.to_string password in
+  let*? user = get_by_email_and_password email password db in
+  if State.is_active user.state
+  then return_ok user
+  else return Error.(to_try @@ user_not_activated email)
+;;
+
+let compute_new_state action state =
+  match state, action with
+  | State.Admin, _ -> Error.(to_try user_is_admin)
+  | State.(Inactive | Unknown _), Downgrade ->
+    Error.(to_try user_already_inactive)
+  | State.(Inactive | Unknown _), Upgrade -> Ok State.Member
+  | State.Member, Downgrade -> Ok State.Inactive
+  | State.Member, Upgrade -> Ok State.Moderator
+  | State.Moderator, Downgrade -> Ok State.Member
+  | State.Moderator, Upgrade -> Ok State.Admin
+;;
+
+let update_state { state_change_id = user_id; state_change_action = action } db =
+  let open Lwt_util in
+  let*? user = get_by_id user_id db in
+  let*? new_state = return @@ compute_new_state action user.state in
+  change_state ~user_id:user.id new_state db
+;;
+
+let required_password ~password_field source =
+  let open Lib_form in
+  let message = "the password must contain at least 7 characters"
+  and check_length x = String.length x >= 7 in
+  required source password_field
+  &> (not_blank && from_predicate ~message check_length)
+;;
+
+let confirm_password ~confirm_password_field ~password_field source =
+  let open Lib_form in
+  let message =
+    Fmt.str
+      "%a and %a are not equivalent"
+      Fmt.(quote string)
+      confirm_password_field
+      Fmt.(quote string)
+      password_field
+  and are_equal (a, b) = String.equal a b in
+  (required source confirm_password_field & required source password_field)
+  &> (from_predicate ~message are_equal $ Fun.const ())
+;;
+
+let validate_registration
+    ?(name_field = "user_name")
+    ?(email_field = "user_email")
+    ?(password_field = "user_password")
+    ?(confirm_password_field = "confirm_user_password")
+  =
+  let open Lib_form in
+  let formlet s =
+    let+ name = required s name_field &> not_blank
+    and+ email = required s email_field &> (is_email $ normalize_name)
+    and+ password = required_password ~password_field s
+    and+ () = confirm_password ~confirm_password_field ~password_field s in
+    { registration_name = name
+    ; registration_email = email
+    ; registration_password = hash_password ~email ~password
     }
+  in
+  run ~name:"User.registration" formlet
+;;
 
-  let equal_action a b =
-    match a, b with
-    | Upgrade, Upgrade -> true
-    | Downgrade, Downgrade -> true
-    | _ -> false
-  ;;
+let validate_connection
+    ?(email_field = "user_email")
+    ?(password_field = "user_password")
+  =
+  let open Lib_form in
+  let formlet s =
+    let+ email = required s email_field &> (is_email $ normalize_name)
+    and+ password = required s password_field &> is_string in
+    { connection_email = email
+    ; connection_password = hash_password ~email ~password
+    }
+  in
+  run ~name:"User.connection" formlet
+;;
 
-  let pp_action ppf = function
-    | Downgrade -> Fmt.pf ppf "Downgrade"
-    | Upgrade -> Fmt.pf ppf "Upgrade"
-  ;;
+let is_action x =
+  match normalize_name x with
+  | "upgrade" -> Validate.valid Upgrade
+  | "downgrade" -> Validate.valid Downgrade
+  | given_value ->
+    let target_type = "Downgrade | Upgrade" in
+    let error =
+      Error.validation_unconvertible_string ~given_value ~target_type
+    in
+    Error.to_validate error
+;;
 
-  let equal
-      { user_id = user_id_a; action = action_a }
-      { user_id = user_id_b; action = action_b }
-    =
-    String.equal user_id_a user_id_b && equal_action action_a action_b
-  ;;
+let validate_state_change ?(id_field = "user_id") ?(action_field = "action") =
+  let open Lib_form in
+  let formlet s =
+    let+ id = required s id_field &> is_uuid
+    and+ action = required s action_field &> is_action in
+    { state_change_id = id; state_change_action = action }
+  in
+  run ~name:"User.state_change" formlet
+;;
 
-  let pp ppf { user_id; action } =
-    Fmt.pf
-      ppf
-      "User.For_state_changement.{ user_id = %a; action = %a  }"
-      Fmt.(quote string)
-      user_id
-      pp_action
-      action
-  ;;
+let equal
+    { id = id_a; name = name_a; email = email_a; state = state_a }
+    { id = id_b; name = name_b; email = email_b; state = state_b }
+  =
+  String.equal id_a id_b
+  && String.equal name_a name_b
+  && String.equal email_a email_b
+  && State.equal state_a state_b
+;;
 
-  let upgrade_key = "upgrade_state"
-  let downgrade_key = "downgrade_state"
-  let user_id_key = "user_id"
-  let make user_id action = { user_id; action }
+let pp ppf { id; name; email; state } =
+  let quoted = Fmt.(quote string) in
+  Fmt.pf
+    ppf
+    "User { id = %a; name = %a; email = %a; state = %a }"
+    quoted
+    id
+    quoted
+    name
+    quoted
+    email
+    State.pp
+    state
+;;
 
-  let require_upgrade obj =
-    let open Validate in
-    let open Assoc.Yojson in
-    Fun.const Upgrade <$> required string upgrade_key obj
-  ;;
-
-  let require_downgrade obj =
-    let open Validate in
-    let open Assoc.Yojson in
-    Fun.const Downgrade <$> required string downgrade_key obj
-  ;;
-
-  let require_action obj =
-    let open Validate in
-    require_upgrade obj <|> require_downgrade obj
-  ;;
-
-  let from_yojson yojson_obj =
-    let open Validate in
-    let open Assoc.Yojson in
-    object_and
-      (fun obj ->
-        make <$> required string user_id_key obj <*> require_action obj)
-      yojson_obj
-    |> run ~name:"User.For_state_changement"
-  ;;
-
-  let from_assoc_list query_string =
-    query_string |> Assoc.Yojson.from_assoc_list |> from_yojson
-  ;;
-end
+let is_active { state; _ } = State.is_active state

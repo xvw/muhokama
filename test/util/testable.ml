@@ -30,6 +30,6 @@ let migration_plan =
 ;;
 
 let saved_user =
-  let open Model.User in
-  Alcotest.testable Saved.pp Saved.equal
+  let open Model in
+  Alcotest.testable User.pp User.equal
 ;;
