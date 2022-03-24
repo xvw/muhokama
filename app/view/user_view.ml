@@ -13,7 +13,7 @@ module Create = struct
                 [ a_input_type `Email
                 ; a_placeholder "you@domain.com"
                 ; a_id "register_user_email"
-                ; a_name Model.User.For_registration.user_email_key
+                ; a_name "user_email"
                 ; a_class [ "input" ]
                 ]
               ()
@@ -41,7 +41,7 @@ module Create = struct
                 [ a_input_type `Text
                 ; a_placeholder "J. Doe"
                 ; a_id "register_user_name"
-                ; a_name Model.User.For_registration.user_name_key
+                ; a_name "user_name"
                 ; a_class [ "input" ]
                 ]
               ()
@@ -69,7 +69,7 @@ module Create = struct
                 [ a_input_type `Password
                 ; a_placeholder "azerty123"
                 ; a_id "register_user_password"
-                ; a_name Model.User.For_registration.user_password_key
+                ; a_name "user_password"
                 ; a_class [ "input" ]
                 ]
               ()
@@ -97,7 +97,7 @@ module Create = struct
                 [ a_input_type `Password
                 ; a_placeholder "azerty123"
                 ; a_id "register_confirm_user_password"
-                ; a_name Model.User.For_registration.confirm_user_password_key
+                ; a_name "confirm_user_password"
                 ; a_class [ "input" ]
                 ]
               ()
@@ -157,7 +157,7 @@ module Connection = struct
                 [ a_input_type `Email
                 ; a_placeholder "you@domain.com"
                 ; a_id "connect_user_email"
-                ; a_name Model.User.For_connection.user_email_key
+                ; a_name "user_email"
                 ; a_class [ "input" ]
                 ]
               ()
@@ -179,7 +179,7 @@ module Connection = struct
                 [ a_input_type `Password
                 ; a_placeholder "azerty123"
                 ; a_id "connect_user_password"
-                ; a_name @@ Model.User.For_connection.user_password_key
+                ; a_name "user_password"
                 ; a_class [ "input" ]
                 ]
               ()
@@ -219,13 +219,13 @@ end
 module List_active = struct
   let user_line user =
     let open Tyxml.Html in
-    let Model.User.Saved.{ user_email; user_name; user_state; _ } = user in
+    let Model.User.{ email; name; state; _ } = user in
     tr
-      [ td [ txt user_name ]
-      ; td [ txt user_email ]
+      [ td [ txt name ]
+      ; td [ txt email ]
       ; td
           ~a:[ a_class [ "has-text-centered" ] ]
-          [ Template.Component.user_state_tag user_state ]
+          [ Template.Component.user_state_tag state ]
       ]
   ;;
 
@@ -254,8 +254,8 @@ module List_moderable = struct
       ~a:
         [ a_input_type `Submit
         ; a_class [ "button"; "is-success"; "is-small" ]
-        ; a_name Model.User.For_state_changement.upgrade_key
-        ; a_value "+"
+        ; a_name "action"
+        ; a_value "upgrade"
         ]
       ()
   ;;
@@ -266,8 +266,8 @@ module List_moderable = struct
       ~a:
         [ a_input_type `Submit
         ; a_class [ "button"; "is-danger"; "is-small" ]
-        ; a_name Model.User.For_state_changement.downgrade_key
-        ; a_value "-"
+        ; a_name "action"
+        ; a_value "downgrade"
         ]
       ()
   ;;
@@ -280,29 +280,23 @@ module List_moderable = struct
 
   let change_state_form csrf user =
     let open Tyxml.Html in
-    let Model.User.Saved.{ user_state; user_id; _ } = user in
+    let Model.User.{ state; id; _ } = user in
     form ~a:[ a_method `Post; a_action "/admin/user/state" ]
-    @@ [ input
-           ~a:
-             [ a_input_type `Hidden
-             ; a_name Model.User.For_state_changement.user_id_key
-             ; a_value user_id
-             ]
-           ()
+    @@ [ input ~a:[ a_input_type `Hidden; a_name "user_id"; a_value id ] ()
        ; Template.Util.csrf_input csrf
        ]
-    @ action_for user_state
+    @ action_for state
   ;;
 
   let user_line csrf user =
     let open Tyxml.Html in
-    let Model.User.Saved.{ user_email; user_name; user_state; _ } = user in
+    let Model.User.{ email; name; state; _ } = user in
     tr
-      [ td [ txt user_name ]
-      ; td [ txt user_email ]
+      [ td [ txt name ]
+      ; td [ txt email ]
       ; td
           ~a:[ a_class [ "has-text-centered" ] ]
-          [ Template.Component.user_state_tag user_state ]
+          [ Template.Component.user_state_tag state ]
       ; td
           ~a:[ a_class [ "has-text-centered" ] ]
           [ change_state_form csrf user ]

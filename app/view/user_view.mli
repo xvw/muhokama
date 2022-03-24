@@ -17,8 +17,8 @@ val login
 (** A view for listing active users. *)
 val list_active
   :  ?flash_info:Model.Flash_info.t
-  -> ?user:Model.User.Saved.t
-  -> Model.User.Saved.t list
+  -> ?user:Model.User.t
+  -> Model.User.t list
   -> unit
   -> Tyxml.Html.doc
 
@@ -26,8 +26,8 @@ val list_active
 val list_moderable
   :  ?flash_info:Model.Flash_info.t
   -> csrf_token:string
-  -> ?user:Model.User.Saved.t
-  -> active:Model.User.Saved.t list
-  -> inactive:Model.User.Saved.t list
+  -> ?user:Model.User.t
+  -> active:Model.User.t list
+  -> inactive:Model.User.t list
   -> unit
   -> Tyxml.Html.doc

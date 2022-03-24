@@ -3,6 +3,6 @@
 (** The view for a dummy service that just print [Hello World]. *)
 val hello_world
   :  ?flash_info:Model.Flash_info.t
-  -> ?user:Model.User.Saved.t
+  -> ?user:Model.User.t
   -> unit
   -> Tyxml.Html.doc

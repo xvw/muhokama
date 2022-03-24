@@ -57,7 +57,7 @@ let unconnected_navbar =
 
 let administrator_navbar user =
   let open Model.User in
-  match user.Saved.user_state with
+  match user.state with
   | State.Admin ->
     let open Tyxml.Html in
     [ a
