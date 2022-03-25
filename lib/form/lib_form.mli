@@ -35,8 +35,8 @@ open Lib_common
     {[
       let name_form source =
         let open Lib_form in
-        let+ firstname = required source "firstname" &> is_string
-        and+ lastname = required source "lastname" &> is_string in
+        let+ firstname = required source "firstname" is_string
+        and+ lastname = required source "lastname" is_string in
         firstname, lastname
       ;;
     ]}
@@ -62,9 +62,9 @@ open Lib_common
     {[
       let name_form source =
         let open Lib_form in
-        let+ firstname = required source "firstname"
-        and+ lastname = required source "lastname"
-        and+ nickname = optional source "nickname" in
+        let+ firstname = required source "firstname" is_string
+        and+ lastname = required source "lastname" is_string
+        and+ nickname = optional source "nickname" is_string in
         firstname, lastname, nickname
       ;;
     ]}
@@ -104,26 +104,23 @@ open Lib_common
       result of [a x]
     - [a &&? b] and [a ||? b] that are like, respectively, [a && b] and
       [a ||? b] but acts on validator that returns options.
-    - [validated &> validator] will apply [validator] on [validated] if
-      [validated] is succeed and there is [&?] which is the same but acting with
-      options. So [&>] is used with [required] and [&?] is used with [optional].
 
     Let's write a form validator for our type [user]:
 
     {[
       let user_form source =
         let open Lib_form in
-        let+ id = required source "user_id" &> is_uuid
-        and+ age = optional source "user_age" &? (is_int && bounded_to 7 100)
-        and+ name = optional source "user_name" &? not_blank
-        and+ email = required source "user_email" &> is_email
-        and+ () = required source "accepted_rules" &> (is_bool && is_true) in
+        let+ id = required source "user_id" is_uuid
+        and+ age = optional source "user_age" (is_int && bounded_to 7 100)
+        and+ name = optional source "user_name" not_blank
+        and+ email = required source "user_email" is_email
+        and+ () = required source "accepted_rules" (is_bool && is_true) in
         { id; age; name; email }
       ;;
     ]}
 
     As you can see, the canonical scheme for a field is:
-    [required_or_optional source field_name (&>|&?) (validator && validators etc...)].
+    [required_or_optional source field_name (validator && validators etc...)].
     This should be enough to build complex forms. Note that since a validator is
     just a function ['a -> 'b validated], you can easily build your own
     validators. *)
@@ -151,20 +148,22 @@ type ('a, 'b) validator = 'a -> 'b validated
 
 (** [validator_a && validator_b] will apply [validator_b] if [validator_a]
     succeed. *)
-val ( && ) : ('a, 'b) validator -> ('b, 'c) validator -> ('a, 'c) validator
+val ( &> ) : ('a, 'b) validator -> ('b, 'c) validator -> ('a, 'c) validator
 
 (** [validator_a || validator_b] will apply [validator_b] if [validator_b]
     fails. Do not accumulate the error. *)
-val ( || ) : ('a, 'b) validator -> ('a, 'b) validator -> ('a, 'b) validator
+val ( <|> ) : ('a, 'b) validator -> ('a, 'b) validator -> ('a, 'b) validator
 
-(** As [&&] but acting on validator that returns options. *)
-val ( &&? )
+val ( & ) : 'a validated -> 'b validated -> ('a * 'b) validated
+
+(** As [&>] but acting on validator that returns options. *)
+val ( &? )
   :  ('a, 'b option) validator
   -> ('b, 'c) validator
   -> ('a, 'c option) validator
 
-(** As [||] but acting on validator that returns options. *)
-val ( ||? )
+(** As [<|>] but acting on validator that returns options. *)
+val ( <?> )
   :  ('a, 'b option) validator
   -> ('a, 'b option) validator
   -> ('a, 'b option) validator
@@ -236,26 +235,20 @@ val run_validator : ('a, 'b) validator -> 'a -> 'b Validate.t
 
 (** {2 Queries over fields} *)
 
-val required : (string * string) list -> string -> string validated * string
+val required
+  :  (string * string) list
+  -> string
+  -> (string, 'a) validator
+  -> 'a validated
 
 val optional
   :  (string * string) list
   -> string
-  -> string option validated * string
-
-val ( & )
-  :  'a validated * string
-  -> 'b validated * string
-  -> ('a * 'b) validated * string
+  -> (string, 'a) validator
+  -> 'a option validated
 
 val ( let+ ) : 'a validated -> ('a -> 'b, 'b) validator
 val ( and+ ) : 'a validated -> ('b validated, 'a * 'b) validator
-val ( &> ) : 'a validated * string -> ('a, 'b) validator -> 'b validated
-
-val ( &? )
-  :  'a option validated * string
-  -> ('a, 'b) validator
-  -> 'b option validated
 
 (** {2 Running validation} *)
 

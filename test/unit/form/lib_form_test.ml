@@ -4,11 +4,11 @@ open Lib_common
 
 let user_form post =
   let open Lib_form in
-  let+ user_id = required post "id" &> is_uuid
-  and+ age = optional post "age" &? (is_int && bounded_to 7 99)
-  and+ name = optional post "name" &? not_blank
-  and+ email = required post "email" &> is_email
-  and+ () = required post "checked_rules" &> (is_bool && is_true) in
+  let+ user_id = required post "id" is_uuid
+  and+ age = optional post "age" (is_int &> bounded_to 7 99)
+  and+ name = optional post "name" not_blank
+  and+ email = required post "email" is_email
+  and+ () = required post "checked_rules" (is_bool &> is_true) in
   Individual.make user_id age name email
 ;;
 
@@ -21,7 +21,7 @@ let validator_cases =
           let open Lib_form in
           let a = from_predicate ~message:">10" (fun x -> x > 10)
           and b = from_predicate ~message:"<20" (fun x -> x < 20) in
-          let validator = a && b in
+          let validator = a &> b in
           let expected = Validate.valid 15
           and computed = run_validator validator 15 in
           let () = same (Testable.validate int) ~expected ~computed in
@@ -44,7 +44,7 @@ let validator_cases =
           let a = from_predicate ~message:">10" (fun x -> x > 10)
           and b = from_predicate ~message:"<20" (fun x -> x < 20)
           and c = from_predicate ~message:">100" (fun x -> x > 100) in
-          let validator = (a && b) || c in
+          let validator = a &> b <|> c in
           let expected = Validate.valid 15
           and computed = run_validator validator 15 in
           let () = same (Testable.validate int) ~expected ~computed in

@@ -68,63 +68,46 @@ let is_true = Validate.is_true
 let is_false = Validate.is_false
 let run_validator f x = f x
 
-let optional assoc key =
+let optional assoc key f =
   let open Validate in
   assoc
   |> List.assoc_opt key
-  |> Option.(fold ~none:(valid None) ~some:(fun value -> valid @@ Some value))
-  |> fun x -> x, key
+  |> Option.(
+       fold ~none:(valid None) ~some:(fun value ->
+           Option.some <$> (f value |> Error.collapse_for_field key)))
 ;;
 
-let required assoc key =
-  let open Validate in
+let required assoc key f =
   assoc
   |> List.assoc_opt key
   |> Option.fold
        ~none:Error.(to_validate @@ field_missing ~name:key)
-       ~some:valid
-  |> fun x -> x, key
+       ~some:(fun value -> f value |> Error.collapse_for_field key)
 ;;
 
-let ( && ) = Validate.Monad.compose_left_to_right
-let ( || ) a b x = Validate.Alt.combine (a x) (b x)
+let ( &> ) = Validate.Monad.compose_left_to_right
+let ( <|> ) a b x = Validate.Alt.combine (a x) (b x)
 let ( $ ) a f x = Validate.map f (a x)
 
-let ( &&? ) a b x =
+let ( &? ) a b x =
   let open Validate in
   a x >>= Option.fold ~none:(valid None) ~some:(fun x -> Option.some <$> b x)
 ;;
 
-let ( ||? ) a b x =
+let ( <?> ) a b x =
   let open Validate in
   a x >>= Option.fold ~none:(b x) ~some:(fun x -> valid @@ Some x)
 ;;
 
+let ( & ) a b =
+  let open Validate in
+  let+ a
+  and+ b in
+  a, b
+;;
+
 let ( let+ ) = Validate.( let+ )
 let ( and+ ) = Validate.( and+ )
-
-let ( &> ) (a, key) validator =
-  Validate.(a >>= fun x -> x |> validator |> Error.collapse_for_field key)
-;;
-
-let ( & ) (a, key) (b, _) =
-  let r =
-    let open Validate in
-    let+ a
-    and+ b in
-    a, b
-  in
-  r, key
-;;
-
-let ( &? ) (a, key) validator =
-  let open Validate in
-  a
-  |> VO.sequence
-  |> Option.map (fun x ->
-         x >>= fun x -> x |> validator |> Error.collapse_for_field key)
-  |> OV.sequence
-;;
 
 let run ?(name = "form") f x =
   match f x with

@@ -208,8 +208,10 @@ let required_password ~password_field source =
   let open Lib_form in
   let message = "the password must contain at least 7 characters"
   and check_length x = String.length x >= 7 in
-  required source password_field
-  &> (not_blank && from_predicate ~message check_length)
+  required
+    source
+    password_field
+    (not_blank &> from_predicate ~message check_length)
 ;;
 
 let confirm_password ~confirm_password_field ~password_field source =
@@ -222,8 +224,10 @@ let confirm_password ~confirm_password_field ~password_field source =
       Fmt.(quote string)
       password_field
   and are_equal (a, b) = String.equal a b in
-  (required source confirm_password_field & required source password_field)
-  &> (from_predicate ~message are_equal $ Fun.const ())
+  Validate.bind
+    (from_predicate ~message are_equal $ Fun.const ())
+    (required source confirm_password_field is_string
+    & required source password_field is_string)
 ;;
 
 let validate_registration
@@ -234,8 +238,8 @@ let validate_registration
   =
   let open Lib_form in
   let formlet s =
-    let+ name = required s name_field &> not_blank
-    and+ email = required s email_field &> (is_email $ normalize_name)
+    let+ name = required s name_field not_blank
+    and+ email = required s email_field (is_email $ normalize_name)
     and+ password = required_password ~password_field s
     and+ () = confirm_password ~confirm_password_field ~password_field s in
     { registration_name = name
@@ -252,8 +256,8 @@ let validate_connection
   =
   let open Lib_form in
   let formlet s =
-    let+ email = required s email_field &> (is_email $ normalize_name)
-    and+ password = required s password_field &> is_string in
+    let+ email = required s email_field (is_email $ normalize_name)
+    and+ password = required s password_field is_string in
     { connection_email = email
     ; connection_password = hash_password ~email ~password
     }
@@ -276,8 +280,8 @@ let is_action x =
 let validate_state_change ?(id_field = "user_id") ?(action_field = "action") =
   let open Lib_form in
   let formlet s =
-    let+ id = required s id_field &> is_uuid
-    and+ action = required s action_field &> is_action in
+    let+ id = required s id_field is_uuid
+    and+ action = required s action_field is_action in
     { state_change_id = id; state_change_action = action }
   in
   run ~name:"User.state_change" formlet
