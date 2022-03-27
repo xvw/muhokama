@@ -17,12 +17,10 @@ let login request =
 
 let save request =
   let open Lwt_util in
-  let open Model.User.For_registration in
+  let open Model.User in
   let* promise =
-    let*? post_params = Dream.form ~csrf:true request >|= Try.ok in
-    let*? fields = return @@ Try.form post_params in
-    let*? user = return @@ from_assoc_list fields in
-    Dream.sql request @@ save user
+    let*? user = handle_form request validate_registration in
+    Dream.sql request @@ register user
   in
   Result.fold
     ~ok:(fun () ->
@@ -41,10 +39,8 @@ let auth request =
   let open Lwt_util in
   let open Model.User in
   let* promise =
-    let*? post_params = Dream.form ~csrf:true request >|= Try.ok in
-    let*? fields = return @@ Try.form post_params in
-    let*? user_auth = return @@ For_connection.from_assoc_list fields in
-    let*? user = Dream.sql request @@ Saved.get_for_connection user_auth in
+    let*? user_auth = handle_form request validate_connection in
+    let*? user = Dream.sql request @@ get_for_connection user_auth in
     Auth.set_current_user request user
   in
   Result.fold
@@ -67,7 +63,7 @@ let leave request =
 let list_active user request =
   let open Lwt_util in
   let open Model.User in
-  let* promise = Dream.sql request @@ Saved.list_active Fun.id in
+  let* promise = Dream.sql request @@ list ~filter:State.active Fun.id in
   Result.fold
     ~ok:(fun users ->
       let flash_info = Util.Flash_info.fetch request in
@@ -83,10 +79,10 @@ let list_active user request =
 let list_moderable user request =
   let open Lwt_util in
   let open Model.User in
-  let* promise = Dream.sql request @@ Saved.list_moderable Fun.id in
+  let* promise = Dream.sql request @@ list ~filter:State.moderable Fun.id in
   Result.fold
     ~ok:(fun users ->
-      let active, inactive = List.partition Saved.is_active users in
+      let active, inactive = List.partition is_active users in
       let flash_info = Util.Flash_info.fetch request in
       let csrf_token = Dream.csrf_token request in
       let view =
@@ -105,33 +101,12 @@ let list_moderable user request =
     promise
 ;;
 
-let compute_next_state user action =
-  let open Model.User in
-  Lwt.return
-  @@
-  match user.Saved.user_state, action with
-  | State.Admin, _ -> Error.(to_try user_is_admin)
-  | State.(Inactive | Unknown _), For_state_changement.Downgrade ->
-    Error.(to_try user_already_inactive)
-  | State.(Inactive | Unknown _), For_state_changement.Upgrade ->
-    Ok State.Member
-  | State.Member, For_state_changement.Downgrade -> Ok State.Inactive
-  | State.Member, For_state_changement.Upgrade -> Ok State.Moderator
-  | State.Moderator, For_state_changement.Downgrade -> Ok State.Member
-  | State.Moderator, For_state_changement.Upgrade -> Ok State.Admin
-;;
-
 let state_change _ request =
   let open Lwt_util in
   let open Model.User in
-  let open For_state_changement in
   let* promise =
-    let*? post_params = Dream.form ~csrf:true request >|= Try.ok in
-    let*? fields = return @@ Try.form post_params in
-    let*? { action; user_id } = return @@ from_assoc_list fields in
-    let*? user_target = Dream.sql request @@ Saved.get_by_id user_id in
-    let*? new_state = compute_next_state user_target action in
-    Dream.sql request @@ Saved.change_state ~user_id new_state
+    let*? state_change = handle_form request validate_state_change in
+    Dream.sql request @@ update_state state_change
   in
   Result.fold
     ~ok:(fun () ->
@@ -164,7 +139,7 @@ let provide_user inner_handler request =
     let* () = Dream.invalidate_session request in
     Dream.redirect request "/user/login"
   | Some user_id ->
-    let open Model.User.Saved in
+    let open Model.User in
     let* promise = Dream.sql request @@ get_by_id user_id in
     Result.fold
       ~ok:(fun user ->
@@ -183,14 +158,14 @@ let provide_user inner_handler request =
 
 let as_moderator inner_handler user request =
   let open Model.User in
-  match user.Saved.user_state with
+  match user.state with
   | State.Admin | State.Moderator -> inner_handler user request
   | _ -> Dream.redirect request "/"
 ;;
 
 let as_administrator inner_handler user request =
   let open Model.User in
-  match user.Saved.user_state with
+  match user.state with
   | State.Admin -> inner_handler user request
   | _ -> Dream.redirect request "/"
 ;;

@@ -1,216 +1,108 @@
-(** Defines some model related to the users. For example, an user before being
-    saved. Or a connected user.*)
+(** Defines some model related to an user. *)
 
 open Lib_common
 
-(** [State] represents the state of an user. *)
-module State : sig
-  type t =
-    | Inactive (** When the user just be registered. *)
-    | Member (** When the user was activated. *)
-    | Moderator (** Status and power to be defined. *)
-    | Admin (** Status and power to be defined. *)
-    | Unknown of string
-        (** When the status is not handle. (Migration purpose). *)
+(** {1 Define an [user state]} *)
 
-  val equal : t -> t -> bool
-  val pp : t Fmt.t
-  val to_string : t -> string
-  val validate_state : string -> t Validate.t
-  val try_state : string -> t Try.t
-  val from_string : string -> t
-  val is_active : t -> bool
+module State = User_state
 
-  (** A comparison where [Unknown] < [Inactive] < [Member] < [Moderator] <
-      [Admin]. *)
-  val compare : t -> t -> int
-end
+(** {1 Types} *)
 
-(** An user before registration (so without ID and always inactive). *)
-module For_registration : sig
-  type t = private
-    { user_name : string
-    ; user_email : string
-    ; user_password : Lib_crypto.Sha256.t
-    }
+(** The main type that define an user.*)
+type t = private
+  { id : string
+  ; name : string
+  ; email : string
+  ; state : State.t
+  }
 
-  (** key that reference [user_name]. (That can be useful for generating
-      formlet) *)
-  val user_name_key : string
+(** {2 Form}
 
-  (** key that reference [user_email]. (That can be useful for generating
-      formlet) *)
-  val user_email_key : string
+    The forms are models intended to validate the data before it is persisted in
+    the database. They exist for any kind of action, for example for login, for
+    registering a new user or for changing the status. A [Form] is the result of
+    a form validation.*)
 
-  (** key that reference [user_password]. (That can be useful for generating
-      formlet) *)
-  val user_password_key : string
+(** A type that define the validation of a registration formlet.*)
+type registration_form
 
-  (** key that reference [user_password] confirmation. (That can be useful for
-      generating formlet) *)
-  val confirm_user_password_key : string
+(** A type that define the validation of a connection formlet.*)
+type connection_form
 
-  (** Produce a [t] using a Json representation. *)
-  val from_yojson : Assoc.Yojson.t -> t Try.t
+(** A type that define the validation of an user state change formlet *)
+type state_change_form
 
-  (** Produce a [t] from an associative list (for example, urlencoded value from
-      a post query).*)
-  val from_assoc_list : (string * string) list -> t Try.t
+(** {1 Helpers} *)
 
-  (** Save it in database*)
-  val save : t -> Caqti_lwt.connection -> unit Try.t Lwt.t
+(** [is_active user] returns true if an user is active. *)
+val is_active : t -> bool
 
-  val pp : t Fmt.t
-  val equal : t -> t -> bool
-end
+(** Pretty-printer for [User.t]. *)
+val pp : t Fmt.t
 
-(** Model for connecting users. *)
-module For_connection : sig
-  type t = private
-    { user_email : string
-    ; user_password : Lib_crypto.Sha256.t
-    }
+(** Equality between [User.t]. *)
+val equal : t -> t -> bool
 
-  (** key that reference [user_email]. (That can be useful for generating
-      formlet) *)
-  val user_email_key : string
+(** {1 Actions} *)
 
-  (** key that reference [user_password]. (That can be useful for generating
-      formlet) *)
-  val user_password_key : string
+(** Register an user from a [registration_form]. *)
+val register : registration_form -> Lib_db.t -> unit Try.t Lwt.t
 
-  (** Produce a [t] using a Json representation. *)
-  val from_yojson : Assoc.Yojson.t -> t Try.t
+(** Get an user from a [connection_form]. *)
+val get_for_connection : connection_form -> Lib_db.t -> t Try.t Lwt.t
 
-  (** Produce a [t] from an associative list (for example, urlencoded value from
-      a post query).*)
-  val from_assoc_list : (string * string) list -> t Try.t
+(** Update an user state from a [state_change_form]. *)
+val update_state : state_change_form -> Lib_db.t -> unit Try.t Lwt.t
 
-  val pp : t Fmt.t
-  val equal : t -> t -> bool
-end
+(** Returns the number of stored users. *)
+val count : ?filter:State.filter -> Lib_db.t -> int Try.t Lwt.t
 
-(** A model that describe a saved user. *)
-module Saved : sig
-  type t = private
-    { user_id : string
-    ; user_name : string
-    ; user_email : string
-    ; user_state : State.t
-    }
+(** [list ?filter ?like callback db] compute the list users (filtered by
+    [filter], by default [filter] is set to [all]) using a like query over
+    [user_name] or [user_email] (for filtering). *)
+val list
+  :  ?filter:State.filter
+  -> ?like:string
+  -> (t -> 'a)
+  -> Lib_db.t
+  -> 'a list Try.t Lwt.t
 
-  (** [is_active user] returns true if an user is active false otherwise. *)
-  val is_active : t -> bool
+(** [iter f db] apply [f] on each saved users. *)
+val iter : (t -> unit) -> Lib_db.t -> unit Try.t Lwt.t
 
-  (** key that reference [user_id]. (That can be useful for generating formlet) *)
-  val user_id_key : string
+(** [change_state ~user_id new_state db] try to change the state of an user. *)
+val change_state : user_id:string -> State.t -> Lib_db.t -> unit Try.t Lwt.t
 
-  (** key that reference [user_email]. (That can be useful for generating
-      formlet) *)
-  val user_email_key : string
+(** [activate user_id] try to activate an user. *)
+val activate : string -> Lib_db.t -> unit Try.t Lwt.t
 
-  (** key that reference [user_name]. (That can be useful for generating
-      formlet) *)
-  val user_name_key : string
+(** [get_by_email email] try to fetch an user by his email. *)
+val get_by_email : string -> Lib_db.t -> t Try.t Lwt.t
 
-  (** key that reference [user_state]. (That can be useful for generating
-      formlet) *)
-  val user_state_key : string
+(** [get_by_id id] try to fetch an user by his id. *)
+val get_by_id : string -> Lib_db.t -> t Try.t Lwt.t
 
-  (** [count db] try to get the number of saved users. *)
-  val count : Caqti_lwt.connection -> int Try.t Lwt.t
+(** {1 Form validation} *)
 
-  (** [iter f db] apply [f] on each saved users. *)
-  val iter : (t -> unit) -> Caqti_lwt.connection -> unit Try.t Lwt.t
+(** Try to validate POST params for an user's registration. *)
+val validate_registration
+  :  ?name_field:string
+  -> ?email_field:string
+  -> ?password_field:string
+  -> ?confirm_password_field:string
+  -> (string * string) list
+  -> registration_form Try.t
 
-  (** [list_active ?like callback db] compute the list of activated user using a
-      like query over user_name or user_email (for filtering). *)
-  val list_active
-    :  ?like:string
-    -> (t -> 'a)
-    -> Caqti_lwt.connection
-    -> 'a list Try.t Lwt.t
+(** Try to validate POST params for an user's connection. *)
+val validate_connection
+  :  ?email_field:string
+  -> ?password_field:string
+  -> (string * string) list
+  -> connection_form Try.t
 
-  (** [list_moderable ?like callback db] compute the list of moderable user
-      using a like query over user_name or user_email (for filtering). *)
-  val list_moderable
-    :  ?like:string
-    -> (t -> 'a)
-    -> Caqti_lwt.connection
-    -> 'a list Try.t Lwt.t
-
-  (** [change_state ~user_id new_state db] try to change the state of an user. *)
-  val change_state
-    :  user_id:string
-    -> State.t
-    -> Caqti_lwt.connection
-    -> unit Try.t Lwt.t
-
-  (** [activate ~user_id] activate an user. *)
-  val activate : string -> Caqti_lwt.connection -> unit Try.t Lwt.t
-
-  (** [get_by_email email] try to fetch an user by his email. *)
-  val get_by_email : string -> Caqti_lwt.connection -> t Try.t Lwt.t
-
-  (** [get_by_id id] try to fetch an user by his id. *)
-  val get_by_id : string -> Caqti_lwt.connection -> t Try.t Lwt.t
-
-  (** [get_by_email_and_password ~email ~password] try to fetch an user by email
-      and password. *)
-  val get_by_email_and_password
-    :  email:string
-    -> password:string
-    -> Caqti_lwt.connection
-    -> t Try.t Lwt.t
-
-  (** [get_for_connection login_data] try to fetch an activated user by email
-      and password. *)
-  val get_for_connection
-    :  For_connection.t
-    -> Caqti_lwt.connection
-    -> t Try.t Lwt.t
-
-  (** Produce a [t] using a Json representation. *)
-  val from_yojson : Assoc.Yojson.t -> t Try.t
-
-  (** Produce a [t] from an associative list (for example, urlencoded value from
-      a post query).*)
-  val from_assoc_list : (string * string) list -> t Try.t
-
-  val pp : t Fmt.t
-  val equal : t -> t -> bool
-end
-
-(** A model for user state change *)
-module For_state_changement : sig
-  type action =
-    | Upgrade
-    | Downgrade
-
-  type t =
-    { user_id : string
-    ; action : action
-    }
-
-  (** key that reference [upgrade_key] (for action). (That can be useful for
-      generating formlet) *)
-  val upgrade_key : string
-
-  (** key that reference [downgrade_key] (for action). (That can be useful for
-      generating formlet) *)
-  val downgrade_key : string
-
-  (** key that reference [user_id__key]. (That can be useful for generating
-      formlet) *)
-  val user_id_key : string
-
-  (** Produce a [t] using a Json representation. *)
-  val from_yojson : Assoc.Yojson.t -> t Try.t
-
-  (** Produce a [t] from an associative list (for example, urlencoded value from
-      a post query).*)
-  val from_assoc_list : (string * string) list -> t Try.t
-
-  val pp : t Fmt.t
-  val equal : t -> t -> bool
-end
+(** Try to validate POST params for an user's state change. *)
+val validate_state_change
+  :  ?id_field:string
+  -> ?action_field:string
+  -> (string * string) list
+  -> state_change_form Try.t

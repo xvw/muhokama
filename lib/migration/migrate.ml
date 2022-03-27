@@ -1,13 +1,14 @@
 open Lib_common
 open Lib_crypto
+open Caqti_request.Infix
+open Caqti_type.Std
 
 let table = "muhokama_migrations"
 
 let create_migration_table =
   let query =
-    Caqti_request.exec
+    (unit ->. unit)
       ~oneshot:true
-      Caqti_type.unit
       ([ "CREATE TABLE IF NOT EXISTS "
        ; table
        ; " (id SERIAL NOT NULL PRIMARY KEY,"
@@ -21,15 +22,14 @@ let create_migration_table =
 
 let drop_migration_table =
   let query =
-    Caqti_request.exec ~oneshot:true Caqti_type.unit
-    @@ Fmt.str "DROP TABLE IF EXISTS %s" table
+    (unit ->. unit) ~oneshot:true @@ Fmt.str "DROP TABLE IF EXISTS %s" table
   in
   fun (module Q : Caqti_lwt.CONNECTION) -> Lib_db.try_ @@ Q.exec query ()
 ;;
 
 let insert_migration =
   let query =
-    Caqti_request.exec ~oneshot:true Caqti_type.(tup2 int string)
+    (tup2 int string ->. unit) ~oneshot:true
     @@ Fmt.str "INSERT INTO %s (number, checksum) VALUES (?, ?)" table
   in
   fun index checksum (module Q : Caqti_lwt.CONNECTION) ->
@@ -38,10 +38,7 @@ let insert_migration =
 
 let get_current_state =
   let query =
-    Caqti_request.find_opt
-      ~oneshot:true
-      Caqti_type.unit
-      Caqti_type.(tup2 int string)
+    (unit ->? tup2 int string) ~oneshot:true
     @@ Fmt.str "SELECT number, checksum FROM %s ORDER BY id DESC LIMIT 1" table
   in
   fun (module Q : Caqti_lwt.CONNECTION) ->
@@ -61,7 +58,7 @@ let compute_migration_query queries db =
   let open Lwt_util in
   List.fold_left
     (fun queries query_str ->
-      let query = Caqti_request.exec ~oneshot:true Caqti_type.unit query_str in
+      let query = (unit ->. unit) ~oneshot:true query_str in
       let action (module Q : Caqti_lwt.CONNECTION) = Q.exec query () in
       let*? () = queries in
       Lib_db.try_ @@ action db)

@@ -1,5 +1,9 @@
 open Lib_common
 
+type t = Caqti_lwt.connection
+
+module type T = Caqti_lwt.CONNECTION
+
 let try_ request_expr =
   let open Lwt_util in
   request_expr

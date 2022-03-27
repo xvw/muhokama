@@ -20,7 +20,9 @@ all dependencies at the root of the project (locally) rather than globally,
 recommended:
 
 ``` shellsession
+opam update
 opam switch create . ocaml-base-compiler.4.13.1 --deps-only -y
+eval $(opam env)
 ```
 
 When the _local switch build procedure_ is complete you can simply run the

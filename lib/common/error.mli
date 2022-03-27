@@ -84,6 +84,16 @@ module Form : sig
     | Many_tokens of (string * string) list
     | Wrong_content_type
 
+  type 'a raw =
+    [ `Expired of 'a * float
+    | `Wrong_session of 'a
+    | `Invalid_token of 'a
+    | `Missing_token of 'a
+    | `Many_tokens of 'a
+    | `Wrong_content_type
+    | `Wrong_session of 'a
+    ]
+
   val equal : t -> t -> bool
   val pp : t Fmt.t
 end
@@ -101,6 +111,10 @@ type t =
       { name : string
       ; errors : t Preface.Nonempty_list.t
       }
+  | Invalid_form of
+      { name : string
+      ; errors : t Preface.Nonempty_list.t
+      }
 
 val equal : t -> t -> bool
 val pp : t Fmt.t
@@ -113,16 +127,7 @@ val migration_invalid_checksum : given_index:int -> t
 val io_unreadable_dir : dirpath:string -> t
 val io_unreadable_file : filepath:string -> t
 val io_invalid_loglevel : string -> t
-
-val form_error
-  :  [ `Expired of (string * string) list * float
-     | `Wrong_session of (string * string) list
-     | `Invalid_token of (string * string) list
-     | `Missing_token of (string * string) list
-     | `Many_tokens of (string * string) list
-     | `Wrong_content_type
-     ]
-  -> t
+val form_error : (string * string) list Form.raw -> t
 
 val validation_unconvertible_string
   :  given_value:string
@@ -147,6 +152,7 @@ val user_not_activated : string -> t
 val user_already_inactive : t
 val user_is_admin : t
 val invalid_object : name:string -> errors:t Preface.Nonempty_list.t -> t
+val invalid_form : name:string -> errors:t Preface.Nonempty_list.t -> t
 val to_try : t -> ('a, t) Result.t
 val to_validate : t -> ('a, t Preface.Nonempty_list.t) Preface.Validation.t
 

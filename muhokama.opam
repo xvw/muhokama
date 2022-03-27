@@ -34,7 +34,7 @@ depends: [
   "ppx_yojson_conv" { >= "0.14.0" }
   "odoc" {with-doc}
   "alcotest" {with-test}
-  "preface" { pinned }
+  "preface"
 ]
 
 build: [
@@ -42,8 +42,4 @@ build: [
   [ "dune" "build" "-p" name "-j" jobs ]
   [ "dune" "runtest" "-p" name ] {with-test}
   [ "dune" "build" "@doc" "-p" name ] {with-doc}
-]
-
-pin-depends: [
-  ["preface.dev" "git+https://github.com/xvw/preface.git"]
 ]

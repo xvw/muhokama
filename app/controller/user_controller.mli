@@ -16,22 +16,18 @@ val auth : Dream.handler
 val leave : Dream.handler
 
 (** The controller for listing active users. *)
-val list_active : Model.User.Saved.t -> Dream.handler
+val list_active : Model.User.t -> Dream.handler
 
 (** The controller for listing moderable users. *)
-val list_moderable : Model.User.Saved.t -> Dream.handler
+val list_moderable : Model.User.t -> Dream.handler
 
 (** The controller for patching the state of an user. *)
-val state_change : Model.User.Saved.t -> Dream.handler
+val state_change : Model.User.t -> Dream.handler
 
 (** {1 Middleware} *)
 
-val provide_user : (Model.User.Saved.t -> Dream.handler) -> Dream.handler
-val provide_moderator : (Model.User.Saved.t -> Dream.handler) -> Dream.handler
-
-val provide_administrator
-  :  (Model.User.Saved.t -> Dream.handler)
-  -> Dream.handler
-
+val provide_user : (Model.User.t -> Dream.handler) -> Dream.handler
+val provide_moderator : (Model.User.t -> Dream.handler) -> Dream.handler
+val provide_administrator : (Model.User.t -> Dream.handler) -> Dream.handler
 val is_authenticated : Dream.middleware
 val is_not_authenticated : Dream.middleware

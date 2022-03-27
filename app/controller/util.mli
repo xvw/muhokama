@@ -5,6 +5,13 @@ open Lib_common
 (** Render a [Tyxml view] as a string of Html (to be served by [Dream.html]). *)
 val from_tyxml : Tyxml.Html.doc -> string
 
+(** Handle [form] using a [formlet] (usually defined in [Model]. )*)
+val handle_form
+  :  ?csrf:bool
+  -> Dream.request
+  -> ((string * string) list -> 'a Try.t)
+  -> 'a Try.t Lwt.t
+
 (** Inject and retreives flash infos. *)
 module Flash_info : sig
   (** [action request message] will store the message as an [Action] into the
@@ -33,7 +40,7 @@ end
 
 module Auth : sig
   (** [set_user_id request user] set the connected user session. *)
-  val set_current_user : Dream.request -> Model.User.Saved.t -> unit Try.t Lwt.t
+  val set_current_user : Dream.request -> Model.User.t -> unit Try.t Lwt.t
 
   (** Resolves the current connected user.*)
   val get_connected_user_id : Dream.request -> string option

@@ -58,7 +58,7 @@ let read_migration_file_to_assoc migration_dir file =
 ;;
 
 let default_runner program =
-  let handler : type a. (a, 'b) handle =
+  let handler : type b. (b -> 'a) -> b f -> 'a =
    fun continue -> function
     | Fetch_migrations migration_path ->
       migration_path |> Io.list_files |> continue

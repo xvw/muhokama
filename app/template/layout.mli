@@ -18,6 +18,6 @@ val default
   -> ?additional_meta:[< Html_types.meta_attrib ] Html.attrib list list
   -> ?additional_css:string list
   -> ?flash_info:Model.Flash_info.t
-  -> ?user:Model.User.Saved.t
+  -> ?user:Model.User.t
   -> [< Html_types.flow5 ] Html.elt list
   -> [> Html_types.html ] Html.elt

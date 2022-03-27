@@ -12,6 +12,7 @@
   yojson
   lib_common
   lib_crypto
+  lib_form
   lib_db)
  (preprocess
   (pps ppx_yojson_conv)))

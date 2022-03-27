@@ -10,3 +10,4 @@ module User = User_model
 (** {1 Non-storable models} *)
 
 module Flash_info = Flash_info
+module User_state = User_state

@@ -1,2 +1,2 @@
-let suites = [ User_test.cases ]
+let suites = [ State_test.cases ]
 let () = Alcotest.run "Model" suites
