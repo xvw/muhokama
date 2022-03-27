@@ -85,6 +85,25 @@ let required assoc key f =
        ~some:(fun value -> f value |> Error.collapse_for_field key)
 ;;
 
+let ensure_equality assoc key_a key_b =
+  let message =
+    Fmt.str
+      "fields %a and %a are note equivalent"
+      Fmt.(quote string)
+      key_a
+      Fmt.(quote string)
+      key_b
+  and a = List.assoc_opt key_a assoc
+  and b = List.assoc_opt key_b assoc in
+  let result =
+    match Option.equal String.equal a b with
+    | true -> Validate.valid ()
+    | false ->
+      Error.(to_validate @@ validation_invalid_predicate ~with_message:message)
+  in
+  result |> Error.collapse_for_field key_a
+;;
+
 let ( &> ) = Validate.Monad.compose_left_to_right
 let ( <|> ) a b x = Validate.Alt.combine (a x) (b x)
 let ( $ ) a f x = Validate.map f (a x)

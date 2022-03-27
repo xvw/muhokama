@@ -41,5 +41,5 @@ module Syntax = struct
   include Monad.Syntax
 end
 
-include (Infix : module type of Infix with type 'a t := 'a t)
-include (Syntax : module type of Syntax with type 'a t := 'a t)
+include Infix
+include Syntax

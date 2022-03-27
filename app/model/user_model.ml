@@ -2,6 +2,8 @@ open Lib_common
 open Lib_crypto
 open Util
 module State = User_state
+open Caqti_request.Infix
+open Caqti_type.Std
 
 type t =
   { id : string
@@ -42,11 +44,9 @@ let from_tuple_with_error err =
 
 let report_non_integrity_violation =
   let query =
-    Caqti_request.find
-      Caqti_type.(tup2 string string)
-      Caqti_type.(tup2 int int)
-      "SELECT (SELECT COUNT(*) FROM users WHERE user_name = ?), (SELECT \
-       COUNT(*) FROM users WHERE user_email = ?)"
+    (tup2 string string ->! tup2 int int)
+    @@ "SELECT (SELECT COUNT(*) FROM users WHERE user_name = ?), (SELECT \
+        COUNT(*) FROM users WHERE user_email = ?)"
   in
   fun ~name ~email (module Db : Lib_db.T) ->
     let open Lwt_util in
@@ -60,10 +60,9 @@ let report_non_integrity_violation =
 
 let register =
   let query =
-    Caqti_request.exec
-      Caqti_type.(tup3 string string string)
-      "INSERT INTO users (user_name, user_email, user_password, user_state) \
-       VALUES (?, ?, ?, 'inactive')"
+    (tup3 string string string ->. unit)
+    @@ "INSERT INTO users (user_name, user_email, user_password, user_state) \
+        VALUES (?, ?, ?, 'inactive')"
   in
   fun { registration_name = name
       ; registration_email = email
@@ -78,7 +77,7 @@ let register =
 
 let count ?(filter = State.all) =
   let query =
-    Caqti_request.find Caqti_type.unit Caqti_type.int
+    (unit ->! int)
     @@ Fmt.str
          "SELECT COUNT(*) FROM users WHERE (%a)"
          (State.pp_filter ())
@@ -89,9 +88,7 @@ let count ?(filter = State.all) =
 
 let list ?(filter = State.all) ?(like = "%") callback =
   let query =
-    Caqti_request.collect
-      Caqti_type.(tup2 string string)
-      Caqti_type.(tup4 string string string string)
+    (tup2 string string ->* tup4 string string string string)
     @@ Fmt.str
          "SELECT user_id, user_name, user_email, user_state FROM users WHERE \
           (%a) AND (user_name LIKE ? OR user_email LIKE ?) ORDER BY user_name"
@@ -107,10 +104,8 @@ let list ?(filter = State.all) ?(like = "%") callback =
 
 let iter =
   let query =
-    Caqti_request.collect
-      Caqti_type.unit
-      Caqti_type.(tup4 string string string string)
-      "SELECT user_id, user_name, user_email, user_state FROM users"
+    (unit ->* tup4 string string string string)
+    @@ "SELECT user_id, user_name, user_email, user_state FROM users"
   in
   fun callback (module Db : Lib_db.T) ->
     Db.iter_s query Preface.Fun.(Lwt.return_ok % callback % from_tuple) ()
@@ -119,10 +114,8 @@ let iter =
 
 let change_state =
   let query =
-    Caqti_request.exec
-      ~oneshot:true
-      Caqti_type.(tup2 string string)
-      "UPDATE users SET user_state = ? WHERE user_id = ?"
+    (tup2 string string ->. unit) ~oneshot:true
+    @@ "UPDATE users SET user_state = ? WHERE user_id = ?"
   in
   fun ~user_id state (module Db : Lib_db.T) ->
     let state_str = State.to_string state in
@@ -133,11 +126,9 @@ let activate user_id = change_state ~user_id State.Member
 
 let get_by_email =
   let query =
-    Caqti_request.find_opt
-      Caqti_type.(string)
-      Caqti_type.(tup4 string string string string)
-      "SELECT user_id, user_name, user_email, user_state FROM users WHERE \
-       user_email = ?"
+    (string ->? tup4 string string string string)
+    @@ "SELECT user_id, user_name, user_email, user_state FROM users WHERE \
+        user_email = ?"
   in
   fun email (module Db : Lib_db.T) ->
     let open Lwt_util in
@@ -147,11 +138,9 @@ let get_by_email =
 
 let get_by_id =
   let query =
-    Caqti_request.find_opt
-      Caqti_type.(string)
-      Caqti_type.(tup4 string string string string)
-      "SELECT user_id, user_name, user_email, user_state FROM users WHERE \
-       user_id = ?"
+    (string ->? tup4 string string string string)
+    @@ "SELECT user_id, user_name, user_email, user_state FROM users WHERE \
+        user_id = ?"
   in
   fun id (module Db : Lib_db.T) ->
     let open Lwt_util in
@@ -161,11 +150,9 @@ let get_by_id =
 
 let get_by_email_and_password =
   let query =
-    Caqti_request.find_opt
-      Caqti_type.(tup2 string string)
-      Caqti_type.(tup4 string string string string)
-      "SELECT user_id, user_name, user_email, user_state FROM users WHERE \
-       user_email = ? AND user_password = ?"
+    (tup2 string string ->? tup4 string string string string)
+    @@ "SELECT user_id, user_name, user_email, user_state FROM users WHERE \
+        user_email = ? AND user_password = ?"
   in
   fun email pass (module Db : Lib_db.T) ->
     let open Lwt_util in
@@ -214,22 +201,6 @@ let required_password ~password_field source =
     (not_blank &> from_predicate ~message check_length)
 ;;
 
-let confirm_password ~confirm_password_field ~password_field source =
-  let open Lib_form in
-  let message =
-    Fmt.str
-      "%a and %a are not equivalent"
-      Fmt.(quote string)
-      confirm_password_field
-      Fmt.(quote string)
-      password_field
-  and are_equal (a, b) = String.equal a b in
-  Validate.bind
-    (from_predicate ~message are_equal $ Fun.const ())
-    (required source confirm_password_field is_string
-    & required source password_field is_string)
-;;
-
 let validate_registration
     ?(name_field = "user_name")
     ?(email_field = "user_email")
@@ -241,7 +212,7 @@ let validate_registration
     let+ name = required s name_field not_blank
     and+ email = required s email_field (is_email $ normalize_name)
     and+ password = required_password ~password_field s
-    and+ () = confirm_password ~confirm_password_field ~password_field s in
+    and+ () = ensure_equality s password_field confirm_password_field in
     { registration_name = name
     ; registration_email = email
     ; registration_password = hash_password ~email ~password

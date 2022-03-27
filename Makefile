@@ -43,7 +43,6 @@ utop:
 # Retreive dependencies
 deps:
 	opam install . --deps-only --with-doc --with-test -y
-	opam install preface -y
 
 # Retrieves development dependencies
 dev-deps:

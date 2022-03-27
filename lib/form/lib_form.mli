@@ -247,6 +247,12 @@ val optional
   -> (string, 'a) validator
   -> 'a option validated
 
+val ensure_equality
+  :  (string * string) list
+  -> string
+  -> string
+  -> unit validated
+
 val ( let+ ) : 'a validated -> ('a -> 'b, 'b) validator
 val ( and+ ) : 'a validated -> ('b validated, 'a * 'b) validator
 
