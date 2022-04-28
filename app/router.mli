@@ -1,1 +1,2 @@
-val routes : Dream.route list
+val perform : Dream.middleware
+val static : Dream.handler

@@ -8,7 +8,9 @@
   preface
   lib_common
   lib_db
+  lib_service
   template
   view
   model
+  service
   controller))

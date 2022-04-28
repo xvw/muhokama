@@ -1,38 +1,26 @@
-open Controller
+open Lib_service
+module S = Service
+module C = Controller
 
-let static = Dream.[ get "/css/**" @@ static "assets/css" ]
-
-let routes =
-  Dream.
-    [ scope
-        "/" (* Connected scope *)
-        [ User.is_authenticated ]
-        [ scope
-            "/user"
-            []
-            [ get "/leave" User.leave
-            ; get "/list" @@ User.provide_user User.list_active
-            ]
-        ; scope
-            "/admin"
-            []
-            [ get "/user" @@ User.provide_administrator User.list_moderable
-            ; post "/user/state" @@ User.provide_administrator User.state_change
-            ]
-        ; get "/" @@ User.provide_user Dummy.hello_world
-        ]
-    ; scope
-        "/"
-        [ Controller.User.is_not_authenticated ]
-        [ scope (* Not connected scope *)
-            "/user"
-            []
-            [ get "/new" User.create
-            ; get "/login" User.login
-            ; post "/new" User.save
-            ; post "/auth" User.auth
-            ]
-        ]
-    ]
-  @ static
+let perform next_handler request =
+  let uri = Dream.target request
+  and meth = Dream.method_ request in
+  Endpoint.(
+    decide
+      [ ~:S.User.login >> C.User.login
+      ; ~:S.User.create >> C.User.create
+      ; ~:S.User.save >> C.User.save
+      ; ~:S.User.auth >> C.User.auth
+      ; ~:S.User.leave >> C.User.leave
+      ; (~:S.User.list >> C.User.(provide_user list_active))
+      ; (~:S.Global.root >> C.(User.provide_user Dummy.hello_world))
+      ; (~:S.User.moderables >> C.User.(provide_administrator list_moderable))
+      ; (~:S.User.state_change >> C.User.(provide_administrator state_change))
+      ]
+      meth
+      uri
+      next_handler
+      request)
 ;;
+
+let static = Dream.(router [ get "/css/**" @@ static "assets/css" ])
