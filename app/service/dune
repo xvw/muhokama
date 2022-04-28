@@ -1,0 +1,5 @@
+(library
+ (name service)
+ (package muhokama)
+ (modules_without_implementation service)
+ (libraries logs dream tyxml fmt preface lib_common lib_service model))
