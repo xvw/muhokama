@@ -1,6 +1,6 @@
 (library
  (name template)
  (package muhokama)
- (libraries tyxml fmt preface yojson lib_common model)
+ (libraries tyxml fmt preface yojson lib_common lib_service model service)
  (preprocess
   (pps ppx_yojson_conv)))

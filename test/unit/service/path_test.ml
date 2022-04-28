@@ -28,6 +28,30 @@ let test_to_route_for_a_path_with_params =
       same string ~expected ~computed)
 ;;
 
+let test_to_string_for_immediate_variable =
+  test
+    ~about:"to_string"
+    ~desc:
+      "When there is only a root fragment + a variable it should return \
+       /variable"
+    (fun () ->
+      let path = Path.(!:string / "foo") in
+      let expected = "/hello/foo"
+      and computed = Path.to_string path "hello" in
+      same string ~expected ~computed)
+;;
+
+let test_to_string_for_root =
+  test
+    ~about:"to_string"
+    ~desc:"When there is only a root fragment it should return /"
+    (fun () ->
+      let path = Path.root in
+      let expected = "/"
+      and computed = Path.to_string path in
+      same string ~expected ~computed)
+;;
+
 let test_to_string_for_a_constant_path =
   test
     ~about:"to_string"
@@ -41,7 +65,7 @@ let test_to_string_for_a_constant_path =
 
 let test_to_string_for_a_path_with_params =
   test
-    ~about:"to_route"
+    ~about:"to_string"
     ~desc:
       "when the path introduces variables, the continuation is a function that \
        takes parameters"
@@ -160,5 +184,7 @@ let cases =
     ; test_handle_with_for_path_with_params_when_invalid_uri
     ; test_handle_with_for_path_without_params
     ; test_handle_with_for_path_without_params_with_invalid_uri
+    ; test_to_string_for_root
+    ; test_to_string_for_immediate_variable
     ] )
 ;;

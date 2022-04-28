@@ -129,9 +129,14 @@ module Create = struct
   ;;
 
   let registration_form csrf_token =
+    let open Lib_service in
     let open Tyxml.Html in
+    let service = Service.User.save in
     form
-      ~a:[ a_method `Post; a_action "/user/new" ]
+      ~a:
+        [ a_method @@ Endpoint.method_ ~:service
+        ; a_action @@ Endpoint.action ~:service
+        ]
       [ Template.Util.csrf_input csrf_token
       ; user_email_input
       ; user_name_input
@@ -206,8 +211,13 @@ module Connection = struct
 
   let connection_form csrf_token =
     let open Tyxml.Html in
+    let open Lib_service in
+    let service = Service.User.auth in
     form
-      ~a:[ a_method `Post; a_action "/user/auth" ]
+      ~a:
+        [ a_method @@ Endpoint.method_ ~:service
+        ; a_action @@ Endpoint.action ~:service
+        ]
       [ Template.Util.csrf_input csrf_token
       ; user_email_input
       ; user_password_input
@@ -279,9 +289,15 @@ module List_moderable = struct
   ;;
 
   let change_state_form csrf user =
+    let open Lib_service in
     let open Tyxml.Html in
     let Model.User.{ state; id; _ } = user in
-    form ~a:[ a_method `Post; a_action "/admin/user/state" ]
+    let service = Service.User.state_change in
+    form
+      ~a:
+        [ a_method @@ Endpoint.method_ ~:service
+        ; a_action @@ Endpoint.action ~:service
+        ]
     @@ [ input ~a:[ a_input_type `Hidden; a_name "user_id"; a_value id ] ()
        ; Template.Util.csrf_input csrf
        ]

@@ -77,14 +77,24 @@ let to_route path =
 let to_string path =
   let rec aux : type a b. (string -> b) -> (a, b) t -> a =
    fun k -> function
-    | Root -> k ""
+    | Root -> k "/"
     | Const (_, previous, const) ->
-      aux (fun acc -> k (acc ^ "/" ^ const)) previous
+      let s =
+        match previous with
+        | Root -> ""
+        | _ -> "/"
+      in
+      aux (fun acc -> k (acc ^ s ^ const)) previous
     | Param (_, previous, witness) ->
+      let s =
+        match previous with
+        | Root -> ""
+        | _ -> "/"
+      in
       aux
         (fun acc param ->
           let param_str = param_to_string witness param in
-          k (acc ^ "/" ^ param_str))
+          k (acc ^ s ^ param_str))
         previous
   in
   aux Fun.id path

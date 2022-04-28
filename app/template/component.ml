@@ -37,6 +37,7 @@ let main_footer =
 ;;
 
 let unconnected_navbar =
+  let open Lib_service in
   let open Tyxml.Html in
   nav
     ~a:[ a_class [ "navbar"; "is-link" ]; a_role [ "navigation" ] ]
@@ -45,10 +46,16 @@ let unconnected_navbar =
         [ div
             ~a:[ a_class [ "navbar-start" ] ]
             [ a
-                ~a:[ a_href "/"; a_class [ "navbar-item" ] ]
+                ~a:
+                  [ a_href @@ Endpoint.href ~:Service.User.login
+                  ; a_class [ "navbar-item" ]
+                  ]
                 [ txt "Se connecter" ]
             ; a
-                ~a:[ a_href "/user/new"; a_class [ "navbar-item" ] ]
+                ~a:
+                  [ a_href @@ Endpoint.href ~:Service.User.create
+                  ; a_class [ "navbar-item" ]
+                  ]
                 [ txt "Créer un compte" ]
             ]
         ]
@@ -56,18 +63,23 @@ let unconnected_navbar =
 ;;
 
 let administrator_navbar user =
+  let open Lib_service in
   let open Model.User in
   match user.state with
   | State.Admin ->
     let open Tyxml.Html in
     [ a
-        ~a:[ a_href "/admin/user"; a_class [ "navbar-item" ] ]
+        ~a:
+          [ a_href @@ Endpoint.href ~:Service.User.moderables
+          ; a_class [ "navbar-item" ]
+          ]
         [ txt "Gestion des utilisateurs" ]
     ]
   | _ -> []
 ;;
 
 let connected_navbar user =
+  let open Lib_service in
   let open Tyxml.Html in
   nav
     ~a:[ a_class [ "navbar"; "is-link" ]; a_role [ "navigation" ] ]
@@ -75,16 +87,27 @@ let connected_navbar user =
         ~a:[ a_class [ "navbar-menu"; "is-active" ] ]
         [ div
             ~a:[ a_class [ "navbar-start" ] ]
-            [ a ~a:[ a_href "/"; a_class [ "navbar-item" ] ] [ txt "Accueil" ]
+            [ a
+                ~a:
+                  [ a_href @@ Endpoint.href ~:Service.Global.root
+                  ; a_class [ "navbar-item" ]
+                  ]
+                [ txt "Accueil" ]
             ; a
-                ~a:[ a_href "/user/list"; a_class [ "navbar-item" ] ]
+                ~a:
+                  [ a_href @@ Endpoint.href ~:Service.User.list
+                  ; a_class [ "navbar-item" ]
+                  ]
                 [ txt "Utilisateurs" ]
             ]
         ; div
             ~a:[ a_class [ "navbar-end" ] ]
             (administrator_navbar user
             @ [ a
-                  ~a:[ a_href "/user/leave"; a_class [ "navbar-item" ] ]
+                  ~a:
+                    [ a_href @@ Endpoint.href ~:Service.User.leave
+                    ; a_class [ "navbar-item" ]
+                    ]
                   [ txt "Se déconnecter" ]
               ])
         ]
