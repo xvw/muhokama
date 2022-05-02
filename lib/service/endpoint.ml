@@ -24,6 +24,15 @@ let variable_to_string : type a. a -> a variable -> string =
   | Bool -> string_of_bool x
 ;;
 
+let variable_from_string : type a. string -> a variable -> a option =
+ fun x -> function
+  | String -> Some x
+  | Int -> int_of_string_opt x
+  | Char -> if Int.equal (String.length x) 1 then Some x.[0] else None
+  | Float -> float_of_string_opt x
+  | Bool -> bool_of_string_opt x
+;;
+
 let root = Root
 let string = String
 let int = Int
@@ -54,6 +63,26 @@ let handle_path_link path handler =
     path
 ;;
 
+let handle_path_for path uri handler =
+  let rec aux
+      : type a b c. (b -> c) -> (a, b) path -> string list -> a -> c option
+    =
+   fun continue path uri ->
+    match path, uri with
+    | Root, [] -> fun x -> Some (continue x)
+    | Constant (tail, value), fragment :: xs ->
+      if String.equal value fragment
+      then aux continue tail xs
+      else fun _ -> None
+    | Variable (tail, w), fragment :: xs ->
+      (match variable_from_string fragment w with
+      | None -> fun _ -> None
+      | Some var -> aux (fun acc -> continue (acc var)) tail xs)
+    | _ -> fun _ -> None
+  in
+  aux handler path uri
+;;
+
 type method_ =
   [ `GET
   | `POST
@@ -79,8 +108,8 @@ let get path = GET path
 let post path = POST path
 
 let path_of
-    : type meth.
-      (meth, 'handler_function, 'handler_return) t
+    : type method_.
+      (method_, 'handler_function, 'handler_return) t
       -> ('handler_function, 'handler_return) path
   = function
   | GET p | POST p -> p
@@ -101,7 +130,7 @@ let redirect ?status ?code ?headers = function
         Dream.redirect ?status ?code ?headers request target)
 ;;
 
-let form_method : type meth. (meth, _, _) t -> _ = function
+let form_method : type method_. (method_, _, _) t -> _ = function
   | GET _ -> `Get
   | POST _ -> `Post
 ;;
@@ -110,4 +139,18 @@ let form_action endpoint = handle_link endpoint Fun.id
 
 let form_method_action endpoint =
   handle_link endpoint (fun link -> form_method endpoint, link)
+;;
+
+let handle endpoint given_method given_uri handler =
+  let aux
+      : type endpoint_method.
+        (endpoint_method, 'handler_function, 'handler_return) t -> _
+    =
+   fun endpoint ->
+    match endpoint, given_method with
+    | GET path, `GET -> handle_path_for path given_uri handler
+    | POST path, `POST -> handle_path_for path given_uri handler
+    | _ -> fun _ -> None
+  in
+  aux endpoint
 ;;

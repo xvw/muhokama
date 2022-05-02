@@ -79,7 +79,9 @@ let test_href_link =
 ;;
 
 let test_form_action_method_link =
-  test ~about:"href" ~desc:"ensure that link href are properly generated"
+  test
+    ~about:"form_method_action"
+    ~desc:"ensure that link href are properly generated"
   @@ fun () ->
   let expected =
     [ `Get, "/hello/world"
@@ -104,6 +106,49 @@ let test_form_action_method_link =
   same (list (pair meth_eq string)) ~expected ~computed
 ;;
 
+let test_handle =
+  test ~about:"handle" ~desc:"test endpoint handling"
+  @@ fun () ->
+  let expected =
+    [ Endpoint.handle ~:hello_world `POST [ "hello" ] Fun.id "Hello World"
+    ; Endpoint.handle
+        ~:hello_world
+        `GET
+        (List.rev [ "hello"; "world" ])
+        Fun.id
+        "Hello World"
+    ; Endpoint.handle
+        ~:hello
+        `GET
+        (List.rev [ "hello"; "Antoine" ])
+        Fun.id
+        (fun name -> "Hello " ^ name)
+    ; Endpoint.handle
+        ~:complicated_one
+        `POST
+        (List.rev
+        @@ String.split_on_char
+             '/'
+             "user/new/name/Antoine/age/77/a_char/X/is_active/true/email/the_xhtmlboiz@4chan.com"
+        )
+        Fun.id
+        (Format.asprintf "%s, %d, %c, %b, %s")
+    ]
+  and computed =
+    [ None
+    ; Some "Hello World"
+    ; Some "Hello Antoine"
+    ; Some "Antoine, 77, X, true, the_xhtmlboiz@4chan.com"
+    ]
+  in
+  same (list @@ option string) ~expected ~computed
+;;
+
 let cases =
-  "Endpoint", [ test_handle_link; test_href_link; test_form_action_method_link ]
+  ( "Endpoint"
+  , [ test_handle_link
+    ; test_href_link
+    ; test_form_action_method_link
+    ; test_handle
+    ] )
 ;;

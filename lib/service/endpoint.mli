@@ -162,3 +162,13 @@ val form_action : ('method_, 'handler_function, string) t -> 'handler_function
 val form_method_action
   :  ('method_, 'handler_function, [> `Get | `Post ] * string) t
   -> 'handler_function
+
+(** Perform a handler related to an endpoint iff the endpoint as the proper
+    method and try to extract data from the given uri. *)
+val handle
+  :  ('method_, 'handler_function, 'handler_return) t
+  -> method_
+  -> string list
+  -> ('handler_return -> 'a)
+  -> 'handler_function
+  -> 'a option
