@@ -36,17 +36,17 @@ val user_for_registration
   -> string
   -> string
   -> string
-  -> Model.User.registration_form Try.t
+  -> Models.User.registration_form Try.t
 
-val user_for_connection : string -> string -> Model.User.connection_form Try.t
+val user_for_connection : string -> string -> Models.User.connection_form Try.t
 
 val make_user
-  :  ?state:Model.User.State.t
+  :  ?state:Models.User.State.t
   -> string
   -> string
   -> string
   -> Caqti_lwt.connection
-  -> Model.User.t Try.t Lwt.t
+  -> Models.User.t Try.t Lwt.t
 
 (** {1 Some data} *)
 

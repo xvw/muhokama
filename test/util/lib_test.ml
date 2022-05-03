@@ -77,7 +77,7 @@ module Individual = struct
 end
 
 let user_for_registration name mail pass confirm =
-  Model.User.validate_registration
+  Models.User.validate_registration
     [ "user_name", name
     ; "user_email", mail
     ; "user_password", pass
@@ -85,15 +85,15 @@ let user_for_registration name mail pass confirm =
     ]
 ;;
 
-let make_user ?(state = Model.User.State.Inactive) name mail pass db =
+let make_user ?(state = Models.User.State.Inactive) name mail pass db =
   let open Lwt_util in
   let*? r = return @@ user_for_registration name mail pass pass in
-  let*? () = Model.User.register r db in
-  let*? { id = user_id; _ } = Model.User.get_by_email mail db in
-  let*? () = Model.User.change_state ~user_id state db in
-  Model.User.get_by_email mail db
+  let*? () = Models.User.register r db in
+  let*? { id = user_id; _ } = Models.User.get_by_email mail db in
+  let*? () = Models.User.change_state ~user_id state db in
+  Models.User.get_by_email mail db
 ;;
 
 let user_for_connection mail pass =
-  Model.User.validate_connection [ "user_email", mail; "user_password", pass ]
+  Models.User.validate_connection [ "user_email", mail; "user_password", pass ]
 ;;

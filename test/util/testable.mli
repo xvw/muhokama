@@ -7,4 +7,4 @@ val sha256 : Lib_crypto.Sha256.t Alcotest.testable
 val migration : Lib_migration.Migration.t Alcotest.testable
 val migration_file : Lib_migration.Migration.file Alcotest.testable
 val migration_plan : Lib_migration.Plan.t Alcotest.testable
-val saved_user : Model.User.t Alcotest.testable
+val saved_user : Models.User.t Alcotest.testable

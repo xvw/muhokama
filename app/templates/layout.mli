@@ -17,7 +17,7 @@ val default
   -> ?charset:string
   -> ?additional_meta:[< Html_types.meta_attrib ] Html.attrib list list
   -> ?additional_css:string list
-  -> ?flash_info:Model.Flash_info.t
-  -> ?user:Model.User.t
+  -> ?flash_info:Models.Flash_info.t
+  -> ?user:Models.User.t
   -> [< Html_types.flow5 ] Html.elt list
   -> [> Html_types.html ] Html.elt

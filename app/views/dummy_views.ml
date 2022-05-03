@@ -1,5 +1,5 @@
 let hello_world ?flash_info ?user () =
-  Template.Layout.default
+  Templates.Layout.default
     ~lang:"en"
     ~page_title:"Hello World!"
     ?user

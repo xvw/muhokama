@@ -1,7 +1,7 @@
 (library
- (name model)
+ (name models)
  (package muhokama)
- (modules_without_implementation model)
+ (modules_without_implementation models)
  (libraries
   lwt
   caqti

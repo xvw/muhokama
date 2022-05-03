@@ -8,4 +8,4 @@
   lib_crypto
   lib_migration
   lib_db
-  model))
+  models))

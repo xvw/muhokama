@@ -4,20 +4,20 @@ open Util
 let create request =
   let flash_info = Util.Flash_info.fetch request in
   let csrf_token = Dream.csrf_token request in
-  let view = View.User.create ?flash_info ~csrf_token () in
+  let view = Views.User.create ?flash_info ~csrf_token () in
   Dream.html @@ from_tyxml view
 ;;
 
 let login request =
   let flash_info = Util.Flash_info.fetch request in
   let csrf_token = Dream.csrf_token request in
-  let view = View.User.login ?flash_info ~csrf_token () in
+  let view = Views.User.login ?flash_info ~csrf_token () in
   Dream.html @@ from_tyxml view
 ;;
 
 let save request =
   let open Lwt_util in
-  let open Model.User in
+  let open Models.User in
   let* promise =
     let*? user = handle_form request validate_registration in
     Dream.sql request @@ register user
@@ -37,7 +37,7 @@ let save request =
 
 let auth request =
   let open Lwt_util in
-  let open Model.User in
+  let open Models.User in
   let* promise =
     let*? user_auth = handle_form request validate_connection in
     let*? user = Dream.sql request @@ get_for_connection user_auth in
@@ -62,13 +62,13 @@ let leave request =
 
 let list_active user request =
   let open Lwt_util in
-  let open Model.User in
+  let open Models.User in
   let* promise = Dream.sql request @@ list ~filter:State.active Fun.id in
   Result.fold
     ~ok:(fun users ->
       let flash_info = Util.Flash_info.fetch request in
       let _csrf_token = Dream.csrf_token request in
-      let view = View.User.list_active ?flash_info ~user users () in
+      let view = Views.User.list_active ?flash_info ~user users () in
       Dream.html @@ from_tyxml view)
     ~error:(fun err ->
       Flash_info.error_tree request err;
@@ -78,7 +78,7 @@ let list_active user request =
 
 let list_moderable user request =
   let open Lwt_util in
-  let open Model.User in
+  let open Models.User in
   let* promise = Dream.sql request @@ list ~filter:State.moderable Fun.id in
   Result.fold
     ~ok:(fun users ->
@@ -86,7 +86,7 @@ let list_moderable user request =
       let flash_info = Util.Flash_info.fetch request in
       let csrf_token = Dream.csrf_token request in
       let view =
-        View.User.list_moderable
+        Views.User.list_moderable
           ?flash_info
           ~csrf_token
           ~user
@@ -103,7 +103,7 @@ let list_moderable user request =
 
 let state_change _ request =
   let open Lwt_util in
-  let open Model.User in
+  let open Models.User in
   let* promise =
     let*? state_change = handle_form request validate_state_change in
     Dream.sql request @@ update_state state_change
@@ -139,7 +139,7 @@ let provide_user inner_handler request =
     let* () = Dream.invalidate_session request in
     Dream.redirect request "/user/login"
   | Some user_id ->
-    let open Model.User in
+    let open Models.User in
     let* promise = Dream.sql request @@ get_by_id user_id in
     Result.fold
       ~ok:(fun user ->
@@ -157,14 +157,14 @@ let provide_user inner_handler request =
 ;;
 
 let as_moderator inner_handler user request =
-  let open Model.User in
+  let open Models.User in
   match user.state with
   | State.Admin | State.Moderator -> inner_handler user request
   | _ -> Dream.redirect request "/"
 ;;
 
 let as_administrator inner_handler user request =
-  let open Model.User in
+  let open Models.User in
   match user.state with
   | State.Admin -> inner_handler user request
   | _ -> Dream.redirect request "/"

@@ -10,7 +10,7 @@ let handle_form ?(csrf = true) request formlet =
 ;;
 
 module Flash_info = struct
-  module Model = Model.Flash_info
+  module Model = Models.Flash_info
 
   let inbox = "muhokama-notification"
 
@@ -43,7 +43,7 @@ module Auth = struct
 
   let set_current_user request user =
     let open Lwt_util in
-    let Model.User.{ id; _ } = user in
+    let Models.User.{ id; _ } = user in
     let* () = Dream.set_session_field request inbox id in
     return_ok ()
   ;;

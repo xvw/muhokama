@@ -1,5 +1,5 @@
 open Alcotest
-open Model.User.State
+open Models.User.State
 open Lib_test
 
 let test_all =

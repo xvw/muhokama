@@ -11,11 +11,11 @@ val main_footer : [> Html_types.footer ] Html.elt
 
 (** Returns the navbar when the user is not connected. (Present in the global
     layout) *)
-val navbar : Model.User.t option -> [> Html_types.nav ] Html.elt
+val navbar : Models.User.t option -> [> Html_types.nav ] Html.elt
 
 (** [flash_info potential_info] display (or not) the topbar where flash info are
     displayed. *)
-val flash_info : Model.Flash_info.t option -> [> Html_types.div ] Html.elt
+val flash_info : Models.Flash_info.t option -> [> Html_types.div ] Html.elt
 
 (** Render an user state to a visual tag. *)
-val user_state_tag : Model.User.State.t -> [> Html_types.span ] Html.elt
+val user_state_tag : Models.User.State.t -> [> Html_types.span ] Html.elt

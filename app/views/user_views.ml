@@ -132,7 +132,7 @@ module Create = struct
     let open Tyxml.Html in
     form
       ~a:[ a_method `Post; a_action "/user/new" ]
-      [ Template.Util.csrf_input csrf_token
+      [ Templates.Util.csrf_input csrf_token
       ; user_email_input
       ; user_name_input
       ; user_password_input
@@ -208,7 +208,7 @@ module Connection = struct
     let open Tyxml.Html in
     form
       ~a:[ a_method `Post; a_action "/user/auth" ]
-      [ Template.Util.csrf_input csrf_token
+      [ Templates.Util.csrf_input csrf_token
       ; user_email_input
       ; user_password_input
       ; submit_button
@@ -219,13 +219,13 @@ end
 module List_active = struct
   let user_line user =
     let open Tyxml.Html in
-    let Model.User.{ email; name; state; _ } = user in
+    let Models.User.{ email; name; state; _ } = user in
     tr
       [ td [ txt name ]
       ; td [ txt email ]
       ; td
           ~a:[ a_class [ "has-text-centered" ] ]
-          [ Template.Component.user_state_tag state ]
+          [ Templates.Component.user_state_tag state ]
       ]
   ;;
 
@@ -273,30 +273,30 @@ module List_moderable = struct
   ;;
 
   let action_for = function
-    | Model.User.State.Admin -> []
-    | Model.User.State.Inactive -> [ upgrade_btn ]
+    | Models.User.State.Admin -> []
+    | Models.User.State.Inactive -> [ upgrade_btn ]
     | _ -> [ upgrade_btn; downgrade_btn ]
   ;;
 
   let change_state_form csrf user =
     let open Tyxml.Html in
-    let Model.User.{ state; id; _ } = user in
+    let Models.User.{ state; id; _ } = user in
     form ~a:[ a_method `Post; a_action "/admin/user/state" ]
     @@ [ input ~a:[ a_input_type `Hidden; a_name "user_id"; a_value id ] ()
-       ; Template.Util.csrf_input csrf
+       ; Templates.Util.csrf_input csrf
        ]
     @ action_for state
   ;;
 
   let user_line csrf user =
     let open Tyxml.Html in
-    let Model.User.{ email; name; state; _ } = user in
+    let Models.User.{ email; name; state; _ } = user in
     tr
       [ td [ txt name ]
       ; td [ txt email ]
       ; td
           ~a:[ a_class [ "has-text-centered" ] ]
-          [ Template.Component.user_state_tag state ]
+          [ Templates.Component.user_state_tag state ]
       ; td
           ~a:[ a_class [ "has-text-centered" ] ]
           [ change_state_form csrf user ]
@@ -331,7 +331,7 @@ module List_moderable = struct
 end
 
 let create ?flash_info ~csrf_token () =
-  Template.Layout.default
+  Templates.Layout.default
     ~lang:"fr"
     ~page_title:"Créer un compte"
     ?flash_info
@@ -348,7 +348,7 @@ let create ?flash_info ~csrf_token () =
 ;;
 
 let login ?flash_info ~csrf_token () =
-  Template.Layout.default
+  Templates.Layout.default
     ~lang:"fr"
     ~page_title:"Se connecter"
     ?flash_info
@@ -365,7 +365,7 @@ let login ?flash_info ~csrf_token () =
 ;;
 
 let list_active ?flash_info ?user users () =
-  Template.Layout.default
+  Templates.Layout.default
     ~lang:"fr"
     ~page_title:"Utilisateurs"
     ?flash_info
@@ -383,7 +383,7 @@ let list_active ?flash_info ?user users () =
 ;;
 
 let list_moderable ?flash_info ~csrf_token ?user ~active ~inactive () =
-  Template.Layout.default
+  Templates.Layout.default
     ~lang:"fr"
     ~page_title:"Utilisateurs"
     ?flash_info

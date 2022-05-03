@@ -1,4 +1,4 @@
-open Controller
+open Controllers
 
 let static = Dream.[ get "/css/**" @@ static "assets/css" ]
 
@@ -23,7 +23,7 @@ let routes =
         ]
     ; scope
         "/"
-        [ Controller.User.is_not_authenticated ]
+        [ User.is_not_authenticated ]
         [ scope (* Not connected scope *)
             "/user"
             []

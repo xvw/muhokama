@@ -56,7 +56,7 @@ let unconnected_navbar =
 ;;
 
 let administrator_navbar user =
-  let open Model.User in
+  let open Models.User in
   match user.state with
   | State.Admin ->
     let open Tyxml.Html in
@@ -136,28 +136,28 @@ let flash_info_box class_ flash_content =
 let flash_info =
   let open Tyxml.Html in
   function
-  | Some (Model.Flash_info.Action message) ->
+  | Some (Models.Flash_info.Action message) ->
     flash_info_box "is-success" [ txt message ]
-  | Some (Model.Flash_info.Info message) ->
+  | Some (Models.Flash_info.Info message) ->
     flash_info_box "is-info" [ txt message ]
-  | Some (Model.Flash_info.Alert message) ->
+  | Some (Models.Flash_info.Alert message) ->
     flash_info_box "is-danger" [ txt message ]
-  | Some (Model.Flash_info.Error_tree tree) ->
+  | Some (Models.Flash_info.Error_tree tree) ->
     flash_info_box "is-danger" (error_tree tree)
-  | Some Model.Flash_info.Nothing | None -> div ~a:[ a_class [ "void" ] ] []
+  | Some Models.Flash_info.Nothing | None -> div ~a:[ a_class [ "void" ] ] []
 ;;
 
 let user_state_tag user_state =
   let color =
     match user_state with
-    | Model.User.State.Inactive -> "is-light"
-    | Model.User.State.Member -> "is-info"
-    | Model.User.State.Moderator -> "is-success"
-    | Model.User.State.Admin -> "is-primary"
-    | Model.User.State.Unknown _ -> "is-danger"
+    | Models.User.State.Inactive -> "is-light"
+    | Models.User.State.Member -> "is-info"
+    | Models.User.State.Moderator -> "is-success"
+    | Models.User.State.Admin -> "is-primary"
+    | Models.User.State.Unknown _ -> "is-danger"
   in
   Tyxml.Html.(
     span
       ~a:[ a_class [ "tag"; color ] ]
-      [ txt @@ Model.User.State.to_string user_state ])
+      [ txt @@ Models.User.State.to_string user_state ])
 ;;

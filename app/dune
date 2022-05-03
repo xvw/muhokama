@@ -8,7 +8,7 @@
   preface
   lib_common
   lib_db
-  template
-  view
-  model
-  controller))
+  templates
+  views
+  models
+  controllers))

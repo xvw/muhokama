@@ -2,5 +2,5 @@
     the navigation between files and facilitate their identification, they are
     suffixed by model. This module is used to re-export them. *)
 
-module Global = Global_endpoint
-module User = User_endpoint
+module Global = Global_endpoints
+module User = User_endpoints

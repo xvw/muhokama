@@ -2,7 +2,7 @@
 
 (** The view for a dummy service that just print [Hello World]. *)
 val hello_world
-  :  ?flash_info:Model.Flash_info.t
-  -> ?user:Model.User.t
+  :  ?flash_info:Models.Flash_info.t
+  -> ?user:Models.User.t
   -> unit
   -> Tyxml.Html.doc
