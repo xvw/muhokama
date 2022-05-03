@@ -1,0 +1,5 @@
+(library
+ (name endpoint)
+ (package muhokama)
+ (modules_without_implementation endpoint)
+ (libraries lib_service))
