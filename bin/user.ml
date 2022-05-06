@@ -6,14 +6,14 @@ let list () =
     let*? env = Env.init () in
     let*? pool = Lib_db.connect env in
     Lib_db.use pool
-    @@ Model.User.iter (fun user ->
+    @@ Models.User.iter (fun user ->
            Logs.info (fun pp ->
                pp
                  "%s\t|%s\t|%s\t|%a"
                  user.id
                  user.name
                  user.email
-                 Model.User.State.pp
+                 Models.User.State.pp
                  user.state))
   in
   Termination.handle promise
@@ -24,8 +24,8 @@ let set_user_state user_id user_state =
     let open Lwt_util in
     let*? env = Env.init () in
     let*? pool = Lib_db.connect env in
-    let*? state = Lwt.return (Model.User.State.try_state user_state) in
-    Lib_db.use pool @@ Model.User.change_state ~user_id state
+    let*? state = Lwt.return (Models.User.State.try_state user_state) in
+    Lib_db.use pool @@ Models.User.change_state ~user_id state
   in
   Termination.handle promise
 ;;

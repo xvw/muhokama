@@ -1,0 +1,4 @@
+(library
+ (name lib_service)
+ (package muhokama)
+ (libraries lwt fmt preface dream lib_common))

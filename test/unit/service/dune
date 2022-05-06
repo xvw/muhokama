@@ -1,0 +1,3 @@
+(test
+ (name lib_service_test)
+ (libraries alcotest lib_common lib_service lib_test))
