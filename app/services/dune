@@ -1,0 +1,15 @@
+(library
+ (name services)
+ (package muhokama)
+ (modules_without_implementation services)
+ (libraries
+  logs
+  dream
+  tyxml
+  fmt
+  preface
+  lib_common
+  lib_service
+  endpoints
+  models
+  views))
