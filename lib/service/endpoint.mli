@@ -140,6 +140,11 @@ val handle_link
     function typecheck only if the endpoint is a [GET]. *)
 val href : ([ `GET ], 'handler_function, string) t -> 'handler_function
 
+val handle_href
+  :  ([ `GET ], 'handler_function, 'handler_return) t
+  -> (string -> 'handler_return)
+  -> 'handler_function
+
 (** A Dream version of redirection. *)
 val redirect
   :  ?status:[< Dream.redirection ]
@@ -161,6 +166,11 @@ val form_action : ('method_, 'handler_function, string) t -> 'handler_function
     the uri of the action field.*)
 val form_method_action
   :  ('method_, 'handler_function, [> `Get | `Post ] * string) t
+  -> 'handler_function
+
+val handle_form
+  :  ('method_, 'handler_function, 'handler_return) t
+  -> ([> `Get | `Post ] -> string -> 'handler_return)
   -> 'handler_function
 
 (** Perform a handler related to an endpoint iff the endpoint as the proper

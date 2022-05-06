@@ -1,3 +1,5 @@
+open Lib_service
+
 let main_header =
   let open Tyxml.Html in
   header
@@ -44,11 +46,13 @@ let unconnected_navbar =
         ~a:[ a_class [ "navbar-menu"; "is-active" ] ]
         [ div
             ~a:[ a_class [ "navbar-start" ] ]
-            [ a
-                ~a:[ a_href "/"; a_class [ "navbar-item" ] ]
+            [ Util.a
+                ~a:[ a_class [ "navbar-item" ] ]
+                ~:Endpoints.User.login
                 [ txt "Se connecter" ]
-            ; a
-                ~a:[ a_href "/user/new"; a_class [ "navbar-item" ] ]
+            ; Util.a
+                ~a:[ a_class [ "navbar-item" ] ]
+                ~:Endpoints.User.create
                 [ txt "Créer un compte" ]
             ]
         ]
@@ -60,8 +64,9 @@ let administrator_navbar user =
   match user.state with
   | State.Admin ->
     let open Tyxml.Html in
-    [ a
-        ~a:[ a_href "/admin/user"; a_class [ "navbar-item" ] ]
+    [ Util.a
+        ~a:[ a_class [ "navbar-item" ] ]
+        ~:Endpoints.Admin.user
         [ txt "Gestion des utilisateurs" ]
     ]
   | _ -> []
@@ -75,16 +80,21 @@ let connected_navbar user =
         ~a:[ a_class [ "navbar-menu"; "is-active" ] ]
         [ div
             ~a:[ a_class [ "navbar-start" ] ]
-            [ a ~a:[ a_href "/"; a_class [ "navbar-item" ] ] [ txt "Accueil" ]
-            ; a
-                ~a:[ a_href "/user/list"; a_class [ "navbar-item" ] ]
+            [ Util.a
+                ~a:[ a_class [ "navbar-item" ] ]
+                ~:Endpoints.Global.root
+                [ txt "Accueil" ]
+            ; Util.a
+                ~a:[ a_class [ "navbar-item" ] ]
+                ~:Endpoints.User.list
                 [ txt "Utilisateurs" ]
             ]
         ; div
             ~a:[ a_class [ "navbar-end" ] ]
             (administrator_navbar user
-            @ [ a
-                  ~a:[ a_href "/user/leave"; a_class [ "navbar-item" ] ]
+            @ [ Util.a
+                  ~a:[ a_class [ "navbar-item" ] ]
+                  ~:Endpoints.User.leave
                   [ txt "Se déconnecter" ]
               ])
         ]

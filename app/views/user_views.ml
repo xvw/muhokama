@@ -1,3 +1,5 @@
+open Lib_service
+
 module Create = struct
   let user_email_input =
     let open Tyxml.Html in
@@ -129,11 +131,10 @@ module Create = struct
   ;;
 
   let registration_form csrf_token =
-    let open Tyxml.Html in
-    form
-      ~a:[ a_method `Post; a_action "/user/new" ]
-      [ Templates.Util.csrf_input csrf_token
-      ; user_email_input
+    Templates.Util.form
+      ~:Endpoints.User.save
+      ~csrf_token
+      [ user_email_input
       ; user_name_input
       ; user_password_input
       ; confirm_user_password_input
@@ -205,14 +206,10 @@ module Connection = struct
   ;;
 
   let connection_form csrf_token =
-    let open Tyxml.Html in
-    form
-      ~a:[ a_method `Post; a_action "/user/auth" ]
-      [ Templates.Util.csrf_input csrf_token
-      ; user_email_input
-      ; user_password_input
-      ; submit_button
-      ]
+    Templates.Util.form
+      ~:Endpoints.User.auth
+      ~csrf_token
+      [ user_email_input; user_password_input; submit_button ]
   ;;
 end
 
@@ -278,14 +275,12 @@ module List_moderable = struct
     | _ -> [ upgrade_btn; downgrade_btn ]
   ;;
 
-  let change_state_form csrf user =
+  let change_state_form csrf_token user =
     let open Tyxml.Html in
     let Models.User.{ state; id; _ } = user in
-    form ~a:[ a_method `Post; a_action "/admin/user/state" ]
-    @@ [ input ~a:[ a_input_type `Hidden; a_name "user_id"; a_value id ] ()
-       ; Templates.Util.csrf_input csrf
-       ]
-    @ action_for state
+    Templates.Util.form ~:Endpoints.Admin.user_state_change ~csrf_token
+    @@ (input ~a:[ a_input_type `Hidden; a_name "user_id"; a_value id ] ()
+       :: action_for state)
   ;;
 
   let user_line csrf user =

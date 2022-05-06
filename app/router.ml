@@ -1,38 +1,21 @@
-open Controllers
+let static = Dream.(router [ get "/css/**" @@ static "assets/css" ])
 
-let static = Dream.[ get "/css/**" @@ static "assets/css" ]
-
-let routes =
-  Dream.
-    [ scope
-        "/" (* Connected scope *)
-        [ User.is_authenticated ]
-        [ scope
-            "/user"
-            []
-            [ get "/leave" User.leave
-            ; get "/list" @@ User.provide_user User.list_active
-            ]
-        ; scope
-            "/admin"
-            []
-            [ get "/user" @@ User.provide_administrator User.list_moderable
-            ; post "/user/state" @@ User.provide_administrator User.state_change
-            ]
-        ; get "/" @@ User.provide_user Dummy.hello_world
-        ]
-    ; scope
-        "/"
-        [ User.is_not_authenticated ]
-        [ scope (* Not connected scope *)
-            "/user"
-            []
-            [ get "/new" User.create
-            ; get "/login" User.login
-            ; post "/new" User.save
-            ; post "/auth" User.auth
-            ]
-        ]
+let choose_service next_handler request =
+  let uri = Dream.target request
+  and method_ = Dream.method_ request in
+  Lib_service.Service.choose
+    method_
+    uri
+    [ Services.User.login
+    ; Services.User.create
+    ; Services.User.save
+    ; Services.User.auth
+    ; Services.User.leave
+    ; Services.User.list_active
+    ; Services.Dummy.hello_world
+    ; Services.Admin.user
+    ; Services.Admin.user_state_change
     ]
-  @ static
+    next_handler
+    request
 ;;

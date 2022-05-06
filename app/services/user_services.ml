@@ -73,7 +73,7 @@ let leave =
 
 let list_active =
   Service.failable_with
-    ~:Endpoints.User.auth
+    ~:Endpoints.User.list
     [ user_authenticated ]
     ~attached:user_required
     (fun user request ->

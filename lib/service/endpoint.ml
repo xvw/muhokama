@@ -120,9 +120,12 @@ let handle_link endpoint handler =
   handle_path_link path handler
 ;;
 
-let href = function
-  | GET path -> handle_path_link path Fun.id
+let handle_href endpoint f =
+  match endpoint with
+  | GET path -> handle_path_link path f
 ;;
+
+let href endpoint = handle_href endpoint Fun.id
 
 let redirect ?status ?code ?headers = function
   | GET path ->
@@ -139,6 +142,12 @@ let form_action endpoint = handle_link endpoint Fun.id
 
 let form_method_action endpoint =
   handle_link endpoint (fun link -> form_method endpoint, link)
+;;
+
+let handle_form endpoint f =
+  handle_link endpoint (fun link ->
+      let meth = form_method endpoint in
+      f meth link)
 ;;
 
 let handle endpoint given_method given_uri handler =
