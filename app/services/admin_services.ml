@@ -17,7 +17,7 @@ let user =
       let flash_info = Util.Flash_info.fetch request in
       let csrf_token = Dream.csrf_token request in
       let view =
-        Views.User.list_moderable
+        Views.Admin.users
           ?flash_info
           ~csrf_token
           ~user:admin
