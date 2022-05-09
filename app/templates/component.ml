@@ -66,8 +66,8 @@ let administrator_navbar user =
     let open Tyxml.Html in
     [ Util.a
         ~a:[ a_class [ "navbar-item" ] ]
-        ~:Endpoints.Admin.user
-        [ txt "Gestion des utilisateurs" ]
+        ~:Endpoints.Admin.root
+        [ txt "Gestion" ]
     ]
   | _ -> []
 ;;

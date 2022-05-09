@@ -2,6 +2,9 @@
 
 open Lib_service
 
+(** Currently, just redirect to [user]. *)
+val root : (Dream.request, Dream.response) Service.t
+
 (** Provide the user moderation page. *)
 val user : (Dream.request, Dream.response) Service.t
 

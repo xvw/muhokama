@@ -13,6 +13,7 @@ let choose_service next_handler request =
     ; Services.User.leave
     ; Services.User.list_active
     ; Services.Dummy.hello_world
+    ; Services.Admin.root
     ; Services.Admin.user
     ; Services.Admin.user_state_change
     ]

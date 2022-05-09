@@ -81,12 +81,36 @@ module List_moderable = struct
   ;;
 end
 
-let users ?flash_info ~csrf_token ?user ~active ~inactive () =
+let admin_menu () =
+  let open Tyxml.Html in
+  aside
+    ~a:[ a_class [ "column"; "is-2"; "menu" ] ]
+    [ p ~a:[ a_class [ "menu-label" ] ] [ txt "Général" ]
+    ; ul
+        ~a:[ a_class [ "menu-list" ] ]
+        [ li [ Templates.Util.a ~:Endpoints.Admin.user [ txt "Utilisateurs" ] ]
+        ; li [ Templates.Util.a ~:Endpoints.Admin.root [ txt "Categories" ] ]
+        ]
+    ]
+;;
+
+let admin_layout ?flash_info ~page_title ?user content =
   Templates.Layout.default
     ~lang:"fr"
-    ~page_title:"Utilisateurs"
+    ~page_title
     ?flash_info
     ?user
+    Tyxml.Html.
+      [ admin_menu ()
+      ; div ~a:[ a_class [ "container"; "colum"; "is-10" ] ] content
+      ]
+;;
+
+let users ?flash_info ~csrf_token ?user ~active ~inactive () =
+  admin_layout
+    ?flash_info
+    ?user
+    ~page_title:"Utilisateurs"
     Tyxml.Html.
       [ div
           ~a:[ a_class [ "columns" ] ]
