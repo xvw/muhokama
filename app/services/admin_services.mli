@@ -10,3 +10,9 @@ val user : (Dream.request, Dream.response) Service.t
 
 (** Perform the action of changing state of an user.*)
 val user_state_change : (Dream.request, Dream.response) Service.t
+
+(** Provide the category moderation page. *)
+val category : (Dream.request, Dream.response) Service.t
+
+(** Save a new category. *)
+val new_category : (Dream.request, Dream.response) Service.t

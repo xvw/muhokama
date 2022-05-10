@@ -16,6 +16,8 @@ let choose_service next_handler request =
     ; Services.Admin.root
     ; Services.Admin.user
     ; Services.Admin.user_state_change
+    ; Services.Admin.category
+    ; Services.Admin.new_category
     ]
     next_handler
     request

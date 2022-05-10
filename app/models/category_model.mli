@@ -1,8 +1,8 @@
 (** Defines some model related to a category. *)
 
-(** {1 Types} *)
-
 open Lib_common
+
+(** {1 Types} *)
 
 (** The main type that define a category.*)
 type t = private

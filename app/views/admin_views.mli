@@ -7,3 +7,11 @@ val users
   -> inactive:Models.User.t list
   -> unit
   -> Tyxml.Html.doc
+
+(** A view for dealing with categories. *)
+val categories
+  :  ?flash_info:Models.Flash_info.t
+  -> csrf_token:string
+  -> ?user:Models.User.t
+  -> Models.Category.t list
+  -> Tyxml.Html.doc

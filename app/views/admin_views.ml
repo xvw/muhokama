@@ -81,15 +81,119 @@ module List_moderable = struct
   ;;
 end
 
+module Category = struct
+  let category_name_input =
+    let open Tyxml.Html in
+    div
+      ~a:[ a_class [ "field" ] ]
+      [ label
+          ~a:[ a_class [ "label" ]; a_label_for "create_category_name" ]
+          [ txt "Nom de la catégorie" ]
+      ; div
+          ~a:[ a_class [ "control" ] ]
+          [ input
+              ~a:
+                [ a_input_type `Text
+                ; a_placeholder "programmation"
+                ; a_id "create_category_name"
+                ; a_name "category_name"
+                ; a_class [ "input" ]
+                ]
+              ()
+          ]
+      ; p
+          ~a:[ a_class [ "help" ] ]
+          [ txt
+              "Nom de la catégorie, choisissez quelque chose de concis mais \
+               clair !"
+          ]
+      ]
+  ;;
+
+  let category_description_input =
+    let open Tyxml.Html in
+    div
+      ~a:[ a_class [ "field" ] ]
+      [ label
+          ~a:[ a_class [ "label" ]; a_label_for "create_category_description" ]
+          [ txt "Description de la catégorie" ]
+      ; div
+          ~a:[ a_class [ "control" ] ]
+          [ textarea
+              ~a:
+                [ a_placeholder
+                    "Catégorie relative aux conversations concernant la \
+                     programmation"
+                ; a_id "create_category_description"
+                ; a_name "category_description"
+                ; a_class [ "textarea"; "is-small" ]
+                ]
+              (txt "")
+          ]
+      ; p
+          ~a:[ a_class [ "help" ] ]
+          [ txt "Choisissez une description concise mais clair !" ]
+      ]
+  ;;
+
+  let submit_button =
+    let open Tyxml.Html in
+    div
+      ~a:[ a_class [ "field" ] ]
+      [ div
+          ~a:[ a_class [ "control" ] ]
+          [ input
+              ~a:
+                [ a_input_type `Submit
+                ; a_value "Valider !"
+                ; a_class [ "button"; "is-link" ]
+                ]
+              ()
+          ]
+      ]
+  ;;
+
+  let creation_form csrf_token =
+    Templates.Util.form
+      ~:Endpoints.Admin.new_category
+      ~csrf_token
+      [ category_name_input; category_description_input; submit_button ]
+  ;;
+
+  let category_line category =
+    let open Tyxml.Html in
+    let open Models.Category in
+    tr [ td [ txt category.name ]; td [ txt category.description ] ]
+  ;;
+
+  let all categories =
+    let open Tyxml.Html in
+    let hd = thead [ tr [ th [ txt "Nom" ]; th [ txt "Description" ] ] ] in
+    table
+      ~a:
+        [ a_class
+            [ "table"
+            ; "is-fullwidth"
+            ; "is-narrow"
+            ; "is-striped"
+            ; "is-bordered"
+            ]
+        ]
+      ~thead:hd
+    @@ List.map category_line categories
+  ;;
+end
+
 let admin_menu () =
   let open Tyxml.Html in
   aside
-    ~a:[ a_class [ "column"; "is-2"; "menu" ] ]
+    ~a:[ a_class [ "column"; "menu"; "is-1" ] ]
     [ p ~a:[ a_class [ "menu-label" ] ] [ txt "Général" ]
     ; ul
         ~a:[ a_class [ "menu-list" ] ]
         [ li [ Templates.Util.a ~:Endpoints.Admin.user [ txt "Utilisateurs" ] ]
-        ; li [ Templates.Util.a ~:Endpoints.Admin.root [ txt "Categories" ] ]
+        ; li
+            [ Templates.Util.a ~:Endpoints.Admin.category [ txt "Categories" ] ]
         ]
     ]
 ;;
@@ -101,8 +205,11 @@ let admin_layout ?flash_info ~page_title ?user content =
     ?flash_info
     ?user
     Tyxml.Html.
-      [ admin_menu ()
-      ; div ~a:[ a_class [ "container"; "colum"; "is-10" ] ] content
+      [ div
+          ~a:[ a_class [ "columns" ] ]
+          [ admin_menu ()
+          ; div ~a:[ a_class [ "container"; "column" ] ] content
+          ]
       ]
 ;;
 
@@ -115,7 +222,7 @@ let users ?flash_info ~csrf_token ?user ~active ~inactive () =
       [ div
           ~a:[ a_class [ "columns" ] ]
           [ div
-              ~a:[ a_class [ "column"; "is-full" ] ]
+              ~a:[ a_class [ "column" ] ]
               [ h1 ~a:[ a_class [ "title" ] ] [ txt "Utilisateurs modérables" ]
               ; div
                   ~a:[ a_class [ "columns" ] ]
@@ -132,6 +239,39 @@ let users ?flash_info ~csrf_token ?user ~active ~inactive () =
                           ~a:[ a_class [ "title"; "is-4" ] ]
                           [ txt "Utilisateurs actifs" ]
                       ; List_moderable.all csrf_token active
+                      ]
+                  ]
+              ]
+          ]
+      ]
+;;
+
+let categories ?flash_info ~csrf_token ?user categories =
+  admin_layout
+    ?flash_info
+    ?user
+    ~page_title:"Catégories"
+    Tyxml.Html.
+      [ div
+          ~a:[ a_class [ "columns" ] ]
+          [ div
+              ~a:[ a_class [ "column"; "is-full" ] ]
+              [ h1 ~a:[ a_class [ "title" ] ] [ txt "Gestion des catégories" ]
+              ; div
+                  ~a:[ a_class [ "columns" ] ]
+                  [ div
+                      ~a:[ a_class [ "column"; "is-half" ] ]
+                      [ h2
+                          ~a:[ a_class [ "title"; "is-4" ] ]
+                          [ txt "Créer une nouvelle catégorie" ]
+                      ; Category.creation_form csrf_token
+                      ]
+                  ; div
+                      ~a:[ a_class [ "column"; "is-half" ] ]
+                      [ h2
+                          ~a:[ a_class [ "title"; "is-4" ] ]
+                          [ txt "Catégories existantes" ]
+                      ; Category.all categories
                       ]
                   ]
               ]

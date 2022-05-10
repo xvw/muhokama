@@ -42,8 +42,8 @@ let list callback =
 let get_by_id =
   let query =
     (string ->? tup3 string string string)
-      "SELECT category_id, category_name, category_description WHERE \
-       category_id = ?"
+      "SELECT category_id, category_name, category_description FROM categories \
+       WHERE category_id = ?"
   in
   fun id (module Db : Lib_db.T) ->
     let open Lwt_util in
@@ -55,8 +55,8 @@ let get_by_id =
 let get_by_name =
   let query =
     (string ->? tup3 string string string)
-      "SELECT category_id, category_name, category_description WHERE \
-       category_name = ?"
+      "SELECT category_id, category_name, category_description FROM categories \
+       WHERE category_name = ?"
   in
   fun name (module Db : Lib_db.T) ->
     let open Lwt_util in
