@@ -1,0 +1,11 @@
+up:
+  - |
+     CREATE TABLE IF NOT EXISTS categories (
+       category_id UUID DEFAULT uuid_generate_v4 () PRIMARY KEY,
+       category_name VARCHAR(50) NOT NULL,
+       category_description TEXT NOT NULL
+     )
+  - CREATE UNIQUE INDEX IF NOT EXISTS categories_category_name ON categories(category_name)
+
+down: |
+  DROP TABLE categories

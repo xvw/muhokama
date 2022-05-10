@@ -85,6 +85,11 @@ let user_for_registration name mail pass confirm =
     ]
 ;;
 
+let category_for_creation name desc =
+  Models.Category.validate_creation
+    [ "category_name", name; "category_description", desc ]
+;;
+
 let make_user ?(state = Models.User.State.Inactive) name mail pass db =
   let open Lwt_util in
   let*? r = return @@ user_for_registration name mail pass pass in

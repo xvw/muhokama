@@ -38,6 +38,11 @@ val user_for_registration
   -> string
   -> Models.User.registration_form Try.t
 
+val category_for_creation
+  :  string
+  -> string
+  -> Models.Category.creation_form Try.t
+
 val user_for_connection : string -> string -> Models.User.connection_form Try.t
 
 val make_user

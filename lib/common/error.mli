@@ -57,6 +57,16 @@ module Field : sig
   val pp : 'a Fmt.t -> 'a t Fmt.t
 end
 
+module Category : sig
+  type t =
+    | Name_already_taken of string
+    | Id_not_found of string
+    | Name_not_found of string
+
+  val equal : t -> t -> bool
+  val pp : t Fmt.t
+end
+
 module User : sig
   type t =
     | Email_already_taken of string
@@ -105,6 +115,7 @@ type t =
   | Database of string
   | Field of t Field.t
   | User of User.t
+  | Category of Category.t
   | Form of Form.t
   | Yaml of string
   | Invalid_object of
@@ -151,6 +162,9 @@ val user_id_not_found : string -> t
 val user_not_activated : string -> t
 val user_already_inactive : t
 val user_is_admin : t
+val category_name_already_taken : string -> t
+val category_name_not_found : string -> t
+val category_id_not_found : string -> t
 val invalid_object : name:string -> errors:t Preface.Nonempty_list.t -> t
 val invalid_form : name:string -> errors:t Preface.Nonempty_list.t -> t
 val to_try : t -> ('a, t) Result.t
