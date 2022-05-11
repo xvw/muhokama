@@ -4,4 +4,5 @@
 
 module Dummy = Dummy_views
 module User = User_views
+module Topic = Topic_views
 module Admin = Admin_views

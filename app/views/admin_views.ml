@@ -187,7 +187,7 @@ end
 let admin_menu () =
   let open Tyxml.Html in
   aside
-    ~a:[ a_class [ "column"; "menu"; "is-1" ] ]
+    ~a:[ a_class [ "column"; "menu"; "is-2" ] ]
     [ p ~a:[ a_class [ "menu-label" ] ] [ txt "Général" ]
     ; ul
         ~a:[ a_class [ "menu-list" ] ]
@@ -220,26 +220,20 @@ let users ?flash_info ~csrf_token ?user ~active ~inactive () =
     ~page_title:"Utilisateurs"
     Tyxml.Html.
       [ div
-          ~a:[ a_class [ "columns" ] ]
-          [ div
-              ~a:[ a_class [ "column" ] ]
-              [ h1 ~a:[ a_class [ "title" ] ] [ txt "Utilisateurs modérables" ]
+          [ h1 ~a:[ a_class [ "title" ] ] [ txt "Utilisateurs modérables" ]
+          ; div
+              [ div
+                  ~a:[ a_class [ "mb-6" ] ]
+                  [ h2
+                      ~a:[ a_class [ "title"; "is-4" ] ]
+                      [ txt "Utilisateurs inactifs" ]
+                  ; List_moderable.all csrf_token inactive
+                  ]
               ; div
-                  ~a:[ a_class [ "columns" ] ]
-                  [ div
-                      ~a:[ a_class [ "column"; "is-half" ] ]
-                      [ h2
-                          ~a:[ a_class [ "title"; "is-4" ] ]
-                          [ txt "Utilisateurs inactifs" ]
-                      ; List_moderable.all csrf_token inactive
-                      ]
-                  ; div
-                      ~a:[ a_class [ "column"; "is-half" ] ]
-                      [ h2
-                          ~a:[ a_class [ "title"; "is-4" ] ]
-                          [ txt "Utilisateurs actifs" ]
-                      ; List_moderable.all csrf_token active
-                      ]
+                  [ h2
+                      ~a:[ a_class [ "title"; "is-4" ] ]
+                      [ txt "Utilisateurs actifs" ]
+                  ; List_moderable.all csrf_token active
                   ]
               ]
           ]
@@ -253,27 +247,21 @@ let categories ?flash_info ~csrf_token ?user categories =
     ~page_title:"Catégories"
     Tyxml.Html.
       [ div
-          ~a:[ a_class [ "columns" ] ]
-          [ div
-              ~a:[ a_class [ "column"; "is-full" ] ]
-              [ h1 ~a:[ a_class [ "title" ] ] [ txt "Gestion des catégories" ]
-              ; div
-                  ~a:[ a_class [ "columns" ] ]
-                  [ div
-                      ~a:[ a_class [ "column"; "is-half" ] ]
-                      [ h2
-                          ~a:[ a_class [ "title"; "is-4" ] ]
-                          [ txt "Créer une nouvelle catégorie" ]
-                      ; Category.creation_form csrf_token
-                      ]
-                  ; div
-                      ~a:[ a_class [ "column"; "is-half" ] ]
-                      [ h2
-                          ~a:[ a_class [ "title"; "is-4" ] ]
-                          [ txt "Catégories existantes" ]
-                      ; Category.all categories
-                      ]
+          [ h1 ~a:[ a_class [ "title" ] ] [ txt "Gestion des catégories" ]
+          ; div
+              ~a:[ a_class [ "mb-6" ] ]
+              [ div
+                  [ h2
+                      ~a:[ a_class [ "title"; "is-4" ] ]
+                      [ txt "Catégories existantes" ]
+                  ; Category.all categories
                   ]
+              ]
+          ; div
+              [ h2
+                  ~a:[ a_class [ "title"; "is-4" ] ]
+                  [ txt "Créer une nouvelle catégorie" ]
+              ; Category.creation_form csrf_token
               ]
           ]
       ]

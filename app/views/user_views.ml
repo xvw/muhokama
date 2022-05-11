@@ -253,7 +253,7 @@ let create ?flash_info ~csrf_token () =
       [ div
           ~a:[ a_class [ "columns" ] ]
           [ div
-              ~a:[ a_class [ "column"; "is-half" ] ]
+              ~a:[ a_class [ "column" ] ]
               [ h1 ~a:[ a_class [ "title" ] ] [ txt "Se créer un compte" ]
               ; Create.registration_form csrf_token
               ]
@@ -270,7 +270,7 @@ let login ?flash_info ~csrf_token () =
       [ div
           ~a:[ a_class [ "columns" ] ]
           [ div
-              ~a:[ a_class [ "column"; "is-two-fifths" ] ]
+              ~a:[ a_class [ "column" ] ]
               [ h1 ~a:[ a_class [ "title" ] ] [ txt "Se connecter" ]
               ; Connection.connection_form csrf_token
               ]
