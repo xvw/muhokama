@@ -130,10 +130,12 @@ module List = struct
           [ span ~a:[ a_class [ "is-pulled-right" ] ] [ txt responses ] ]
       ; td
           ~a:[ a_class [ "is-vcentered" ] ]
-          [ span
+          [ Templates.Util.a
+              ~:Endpoints.Topic.by_category
               ~a:
                 [ a_class [ "tag"; "is-info"; "is-medium"; "is-pulled-right" ] ]
               [ txt topic.category_name ]
+              topic.category_name
           ]
       ]
   ;;

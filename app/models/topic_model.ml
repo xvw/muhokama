@@ -197,8 +197,7 @@ let list_by_category category_name callback =
       "SELECT t.topic_id, c.category_name, u.user_name, u.user_email, \
        t.topic_title FROM topics AS t INNER JOIN categories AS c ON \
        t.category_id = c.category_id INNER JOIN users AS u ON t.user_id = \
-       u.user_id %s ORDER BY topic_creation_date DESC WHERE c.category_name = \
-       ?"
+       u.user_id WHERE c.category_name = ? ORDER BY topic_creation_date DESC"
   in
   fun (module Db : Lib_db.T) ->
     let open Lwt_util in

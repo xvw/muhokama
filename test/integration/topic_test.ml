@@ -12,6 +12,108 @@ let test_ensure_there_is_no_topic_at_starting =
       same (Testable.try_ int) ~expected ~computed)
 ;;
 
+let test_list_all_when_there_is_no_topics =
+  integration_test
+    ~about:"list_all"
+    ~desc:"when there is no topic, it should return an empty list"
+    (fun _env db ->
+      Models.Topic.list_all Models.Topic.Listable.(fun x -> x.title) db)
+    (fun computed ->
+      let expected = Ok [] in
+      same (Testable.try_ @@ list string) ~expected ~computed)
+;;
+
+let test_list_by_when_there_is_no_topics =
+  integration_test
+    ~about:"list_by_category"
+    ~desc:"when there is no topic, it should return an empty list"
+    (fun _env db ->
+      Models.Topic.list_by_category
+        "programming"
+        Models.Topic.Listable.(fun x -> x.title)
+        db)
+    (fun computed ->
+      let expected = Ok [] in
+      same (Testable.try_ @@ list string) ~expected ~computed)
+;;
+
+let test_list_all_when_there_is_some_topics =
+  integration_test
+    ~about:"list_all"
+    ~desc:"when there is some topics, it should return it"
+    (fun _env db ->
+      let open Lwt_util in
+      let*? general, programming, _muhokama = create_categories db in
+      let*? grim, xhtmlboy, _xvw, _dplaindoux = create_users db in
+      let*? _ =
+        create_topic
+          general.Models.Category.id
+          grim
+          "An example"
+          "This is my first message"
+          db
+      in
+      let* () = Lwt_unix.sleep 0.5 in
+      let*? _ =
+        create_topic
+          programming.Models.Category.id
+          xhtmlboy
+          "An other example"
+          "This is my first message too"
+          db
+      in
+      Models.Topic.list_all Models.Topic.Listable.(fun x -> x.title) db)
+    (fun computed ->
+      let expected = Ok [ "An other example"; "An example" ] in
+      same (Testable.try_ @@ list string) ~expected ~computed)
+;;
+
+let test_list_by_when_there_is_some_topics =
+  integration_test
+    ~about:"list_by_category"
+    ~desc:"when there is some topics, it should return it"
+    (fun _env db ->
+      let open Lwt_util in
+      let*? general, programming, _muhokama = create_categories db in
+      let*? grim, xhtmlboy, _xvw, _dplaindoux = create_users db in
+      let*? _ =
+        create_topic
+          general.Models.Category.id
+          grim
+          "An example"
+          "This is my first message"
+          db
+      in
+      let* () = Lwt_unix.sleep 0.5 in
+      let*? _ =
+        create_topic
+          programming.Models.Category.id
+          xhtmlboy
+          "An other example"
+          "This is my first message too"
+          db
+      in
+      let*? a =
+        Models.Topic.list_by_category
+          programming.Models.Category.name
+          Models.Topic.Listable.(fun x -> x.title)
+          db
+      in
+      let+? b =
+        Models.Topic.list_by_category
+          general.Models.Category.name
+          Models.Topic.Listable.(fun x -> x.title)
+          db
+      in
+      a, b)
+    (fun computed ->
+      let expected = Ok ([ "An other example" ], [ "An example" ]) in
+      same
+        (Testable.try_ (pair (list string) (list string)))
+        ~expected
+        ~computed)
+;;
+
 let test_try_to_add_some_topics =
   integration_test
     ~about:"create"
@@ -88,5 +190,9 @@ let cases =
   , [ test_ensure_there_is_no_topic_at_starting
     ; test_try_to_add_some_topics
     ; test_add_when_category_does_not_exists
+    ; test_list_all_when_there_is_no_topics
+    ; test_list_all_when_there_is_some_topics
+    ; test_list_by_when_there_is_no_topics
+    ; test_list_by_when_there_is_some_topics
     ] )
 ;;

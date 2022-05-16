@@ -21,6 +21,26 @@ let list =
       redirect_to ~:Endpoints.Global.error request)
 ;;
 
+let list_by_category =
+  Service.failable_with
+    ~:Endpoints.Topic.by_category
+    ~attached:user_required
+    [ user_authenticated ]
+    (fun category user request ->
+      let open Lwt_util in
+      let+? topics =
+        Dream.sql request @@ Models.Topic.list_by_category category Fun.id
+      in
+      user, topics)
+    ~succeed:(fun (user, topics) request ->
+      let flash_info = Flash_info.fetch request in
+      let view = Views.Topic.list ?flash_info ~user topics in
+      Dream.html @@ from_tyxml view)
+    ~failure:(fun err request ->
+      Flash_info.error_tree request err;
+      redirect_to ~:Endpoints.Global.error request)
+;;
+
 let create =
   Service.failable_with
     ~:Endpoints.Topic.create
