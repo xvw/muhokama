@@ -4,15 +4,35 @@ open Lib_common
 
 (** {1 Types} *)
 
-(** The main type that define a topic.*)
-type t = private
-  { id : string
-  ; category : Category_model.t
-  ; user : User_model.t
-  ; creation_date : Ptime.t
-  ; title : string
-  ; content : string
-  }
+(** A topic that can be listable. *)
+module Listable : sig
+  type t = private
+    { id : string
+    ; category_name : string
+    ; user_name : string
+    ; user_email : string
+    ; title : string
+    ; responses : int
+    }
+
+  val pp : t Fmt.t
+  val equal : t -> t -> bool
+end
+
+(** A topic that can be showable. *)
+module Showable : sig
+  type t = private
+    { category_name : string
+    ; user_name : string
+    ; user_email : string
+    ; creation_date : Ptime.t
+    ; title : string
+    ; content : string
+    }
+
+  val pp : t Fmt.t
+  val equal : t -> t -> bool
+end
 
 (** {2 Form}
 
@@ -23,14 +43,6 @@ type t = private
 (** A type that define the validation of a creation formlet. *)
 type creation_form
 
-(** {1 Helpers} *)
-
-(** Pretty-printer for [t]. *)
-val pp : t Fmt.t
-
-(** Equality between [t]. *)
-val equal : t -> t -> bool
-
 (** {1 Actions} *)
 
 (** Count the number of saved topics. *)
@@ -40,11 +52,17 @@ val count : Lib_db.t -> int Try.t Lwt.t
 val create : User_model.t -> creation_form -> Lib_db.t -> string Try.t Lwt.t
 
 (** Retreive a topic by ID. *)
-val get_by_id : string -> Lib_db.t -> t Try.t Lwt.t
+val get_by_id : string -> Lib_db.t -> Showable.t Try.t Lwt.t
 
-(** [list ?filter callback db] compute the list topics (filtered by [filter] on
-    category, by default [filter] is set to [None]). *)
-val list : ?filter:string -> (t -> 'a) -> Lib_db.t -> 'a list Try.t Lwt.t
+(** List all topics. *)
+val list_all : (Listable.t -> 'a) -> Lib_db.t -> 'a list Try.t Lwt.t
+
+(** List all topics by category. *)
+val list_by_category
+  :  string
+  -> (Listable.t -> 'a)
+  -> Lib_db.t
+  -> 'a list Try.t Lwt.t
 
 (** {1 Form validation} *)
 

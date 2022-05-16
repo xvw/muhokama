@@ -44,24 +44,21 @@ let test_try_to_add_some_topics =
       match result with
       | Ok (counter, topic_a, topic_b) ->
         same int ~expected:2 ~computed:counter;
-        same string ~expected:"An example" ~computed:topic_a.Models.Topic.title;
+        same
+          string
+          ~expected:"An example"
+          ~computed:topic_a.Models.Topic.Showable.title;
         same
           string
           ~expected:"This is my first message"
-          ~computed:topic_a.Models.Topic.content;
-        same string ~expected:"grim" ~computed:topic_a.Models.Topic.user.name;
-        same
-          string
-          ~expected:"An other example"
-          ~computed:topic_b.Models.Topic.title;
+          ~computed:topic_a.content;
+        same string ~expected:"grim" ~computed:topic_a.user_name;
+        same string ~expected:"An other example" ~computed:topic_b.title;
         same
           string
           ~expected:"This is my first message too"
-          ~computed:topic_b.Models.Topic.content;
-        same
-          string
-          ~expected:"xhtmlboy"
-          ~computed:topic_b.Models.Topic.user.name
+          ~computed:topic_b.content;
+        same string ~expected:"xhtmlboy" ~computed:topic_b.user_name
       | _ -> assert false)
 ;;
 

@@ -112,9 +112,11 @@ end
 module List = struct
   let line topic =
     let open Tyxml.Html in
-    let open Models.Topic in
-    let src = Gravatar.(url ~default:Identicon ~size:48 topic.user.email) in
-    let alt = "Avatar of " ^ topic.user.name in
+    let open Models.Topic.Listable in
+    let src = Gravatar.(url ~default:Identicon ~size:48 topic.user_email) in
+    let alt = "Avatar of " ^ topic.user_name in
+    let responses_suffix = if topic.responses > 1 then "s" else "" in
+    let responses = Fmt.str "%d réponse%s" topic.responses responses_suffix in
     tr
       [ td
           ~a:[ a_class [ "is-vcentered" ] ]
@@ -125,13 +127,13 @@ module List = struct
           ]
       ; td
           ~a:[ a_class [ "is-vcentered" ] ]
-          [ span ~a:[ a_class [ "is-pulled-right" ] ] [ txt "0 réponse" ] ]
+          [ span ~a:[ a_class [ "is-pulled-right" ] ] [ txt responses ] ]
       ; td
           ~a:[ a_class [ "is-vcentered" ] ]
           [ span
               ~a:
                 [ a_class [ "tag"; "is-info"; "is-medium"; "is-pulled-right" ] ]
-              [ txt topic.category.name ]
+              [ txt topic.category_name ]
           ]
       ]
   ;;
@@ -150,13 +152,14 @@ end
 module Show = struct
   let topic_content topic =
     let open Tyxml.Html in
-    let message_content = topic.Models.Topic.content in
+    let open Models.Topic.Showable in
+    let message_content = topic.content in
     (* FIXME: Maybe get rid of Tyxml.Html.Unsafe*)
     let message_html =
       Omd.of_string message_content |> Omd.to_html |> Unsafe.data
     in
-    let src = Gravatar.(url ~default:Identicon ~size:72 topic.user.email) in
-    let alt = "Avatar of " ^ topic.user.name in
+    let src = Gravatar.(url ~default:Identicon ~size:72 topic.user_email) in
+    let alt = "Avatar of " ^ topic.user_name in
     let (year, month, day), ((hour, min, _), _) =
       Ptime.to_date_time ~tz_offset_s:(3600 * 2) topic.creation_date
     in
@@ -174,7 +177,7 @@ module Show = struct
               ~a:[ a_class [ "media-content" ] ]
               [ p
                   ~a:[ a_class [ "title"; "is-6" ] ]
-                  [ txt @@ "@" ^ topic.user.name ]
+                  [ txt @@ "@" ^ topic.user_name ]
               ; p
                   ~a:[ a_class [ "subtitle"; "is-6" ] ]
                   [ txt @@ "publié le " ^ formatted_date ]
@@ -206,7 +209,7 @@ let list ?flash_info ?user topics =
 ;;
 
 let show ?flash_info ?user topic =
-  let page_title = topic.Models.Topic.title in
+  let page_title = topic.Models.Topic.Showable.title in
   Templates.Layout.default
     ~lang:"fr"
     ~page_title

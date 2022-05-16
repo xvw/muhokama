@@ -10,7 +10,7 @@ let list =
     [ user_authenticated ]
     (fun user request ->
       let open Lwt_util in
-      let+? topics = Dream.sql request @@ Models.Topic.list Fun.id in
+      let+? topics = Dream.sql request @@ Models.Topic.list_all Fun.id in
       user, topics)
     ~succeed:(fun (user, topics) request ->
       let flash_info = Flash_info.fetch request in

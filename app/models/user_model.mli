@@ -43,9 +43,6 @@ val pp : t Fmt.t
 (** Equality between [User.t]. *)
 val equal : t -> t -> bool
 
-(** Produce an user from an SQL representation. *)
-val from_tuple : string * string * string * string -> t
-
 (** {1 Actions} *)
 
 (** Register an user from a [registration_form]. *)

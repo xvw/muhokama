@@ -12,12 +12,12 @@ val create
 val list
   :  ?flash_info:Models.Flash_info.t
   -> ?user:Models.User.t
-  -> Models.Topic.t list
+  -> Models.Topic.Listable.t list
   -> Tyxml.Html.doc
 
 (** A view for showing one topic. *)
 val show
   :  ?flash_info:Models.Flash_info.t
   -> ?user:Models.User.t
-  -> Models.Topic.t
+  -> Models.Topic.Showable.t
   -> Tyxml.Html.doc
