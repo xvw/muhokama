@@ -14,6 +14,13 @@ let csrf_input value =
     input ~a:[ a_input_type `Hidden; a_name "dream.csrf"; a_value value ] ())
 ;;
 
+let format_date date =
+  let (year, month, day), ((hour, min, _), _) =
+    Ptime.to_date_time ~tz_offset_s:(3600 * 2) date
+  in
+  Fmt.str "%04d-%02d-%02d %02d:%02d" year month day hour min
+;;
+
 let a ?(a = []) endpoint ctn =
   Lib_service.Endpoint.handle_href endpoint (fun uri ->
       let a' = a in

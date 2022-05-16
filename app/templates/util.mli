@@ -16,3 +16,5 @@ val form
   -> ('a, 'b, [> Html_types.form ] Tyxml_html.elt) Lib_service.Endpoint.t
   -> [< Html_types.form_content_fun > `Input ] Tyxml_html.elt list
   -> 'b
+
+val format_date : Ptime.t -> string

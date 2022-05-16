@@ -160,12 +160,6 @@ module Show = struct
     in
     let src = Gravatar.(url ~default:Identicon ~size:72 topic.user_email) in
     let alt = "Avatar of " ^ topic.user_name in
-    let (year, month, day), ((hour, min, _), _) =
-      Ptime.to_date_time ~tz_offset_s:(3600 * 2) topic.creation_date
-    in
-    let formatted_date =
-      Fmt.str "%04d-%02d-%02d %02d:%02d" year month day hour min
-    in
     div
       [ h1 ~a:[ a_class [ "title" ] ] [ txt topic.title ]
       ; div
@@ -180,7 +174,10 @@ module Show = struct
                   [ txt @@ "@" ^ topic.user_name ]
               ; p
                   ~a:[ a_class [ "subtitle"; "is-6" ] ]
-                  [ txt @@ "publié le " ^ formatted_date ]
+                  [ txt
+                    @@ "publié le "
+                    ^ Templates.Util.format_date topic.creation_date
+                  ]
               ; div
                   ~a:[ a_class [ "content"; "is-medium"; "media-content" ] ]
                   [ p [ message_html ] ]
