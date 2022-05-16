@@ -208,6 +208,66 @@ module Field = struct
   ;;
 end
 
+module Category = struct
+  type t =
+    | Name_already_taken of string
+    | Id_not_found of string
+    | Name_not_found of string
+    | No_category
+
+  let equal a b =
+    match a, b with
+    | Name_already_taken a, Name_already_taken b -> String.equal a b
+    | Id_not_found a, Id_not_found b -> String.equal a b
+    | Name_not_found a, Name_not_found b -> String.equal a b
+    | No_category, No_category -> true
+    | _ -> false
+  ;;
+
+  let pp ppf = function
+    | Name_already_taken x ->
+      Fmt.pf ppf "Name_already_taken %a" Fmt.(quote string) x
+    | Id_not_found x -> Fmt.pf ppf "Id_not_found %a" Fmt.(quote string) x
+    | Name_not_found x -> Fmt.pf ppf "Name_not_found %a" Fmt.(quote string) x
+    | No_category -> Fmt.pf ppf "No_category"
+  ;;
+
+  let normalize = function
+    | Name_already_taken label ->
+      let message = Some "Category name is already taken" in
+      Leaf { label; message }
+    | Name_not_found label ->
+      let message = Some "Unable to find the category" in
+      Leaf { label; message }
+    | Id_not_found label ->
+      let message = Some "Unable to find the category" in
+      Leaf { label; message }
+    | No_category ->
+      let label = "No category"
+      and message = Some "At least one category must be present" in
+      Leaf { label; message }
+  ;;
+end
+
+module Topic = struct
+  type t = Id_not_found of string
+
+  let equal a b =
+    match a, b with
+    | Id_not_found a, Id_not_found b -> String.equal a b
+  ;;
+
+  let pp ppf = function
+    | Id_not_found a -> Fmt.pf ppf "Id_not_found %a" Fmt.(quote string) a
+  ;;
+
+  let normalize = function
+    | Id_not_found label ->
+      let message = Some "Unable to find the topic" in
+      Leaf { label; message }
+  ;;
+end
+
 module User = struct
   type t =
     | Email_already_taken of string
@@ -374,6 +434,8 @@ type t =
   | Database of string
   | Field of t Field.t
   | User of User.t
+  | Category of Category.t
+  | Topic of Topic.t
   | Form of Form.t
   | Yaml of string
   | Invalid_object of
@@ -459,6 +521,12 @@ let user_is_admin =
   User (User.Invalid_state_change "you can not change administrator state")
 ;;
 
+let category_name_already_taken x = Category (Category.Name_already_taken x)
+let category_name_not_found x = Category (Category.Name_not_found x)
+let category_id_not_found x = Category (Category.Id_not_found x)
+let category_absent = Category Category.No_category
+let topic_id_not_found id = Topic (Topic.Id_not_found id)
+
 let form_error err =
   Form
     (match err with
@@ -486,6 +554,8 @@ let rec equal a b =
     && Preface.Nonempty_list.equal equal a.errors b.errors
   | User a, User b -> User.equal a b
   | Form a, Form b -> Form.equal a b
+  | Category a, Category b -> Category.equal a b
+  | Topic a, Topic b -> Topic.equal a b
   | _ -> false
 ;;
 
@@ -497,6 +567,8 @@ let rec pp ppf = function
   | Yaml err -> Fmt.pf ppf "Error.Yaml (%a)" Fmt.(quote string) err
   | Field f -> Fmt.pf ppf "Error.Field (%a)" (Field.pp pp) f
   | User u -> Fmt.pf ppf "Error.User (%a)" User.pp u
+  | Category c -> Fmt.pf ppf "Error.Category (%a)" Category.pp c
+  | Topic t -> Fmt.pf ppf "Error.Topic (%a)" Topic.pp t
   | Form f -> Fmt.pf ppf "Error.Form (%a)" Form.pp f
   | Invalid_object { name; errors } ->
     Fmt.pf
@@ -538,6 +610,8 @@ let rec normalize = function
   | Field f -> Field.normalize normalize f
   | Form f -> Form.normalize f
   | User u -> User.normalize u
+  | Category c -> Category.normalize c
+  | Topic t -> Topic.normalize t
   | Invalid_object { name; errors } ->
     let label = "Object <" ^ name ^ "> is invalid"
     and tree = Preface.Nonempty_list.(map normalize errors |> to_list) in

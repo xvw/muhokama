@@ -32,6 +32,7 @@ depends: [
   "tyxml" { >= "4.5.0" }
   "yojson" { >= "1.7.0" }
   "ppx_yojson_conv" { >= "0.14.0" }
+  "omd" { >= "2.0.0~alpha2" }
   "odoc" {with-doc}
   "alcotest" {with-test}
   "preface"

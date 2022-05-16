@@ -5,6 +5,8 @@
 (** {1 Storable models} *)
 
 module User = User_model
+module Category = Category_model
+module Topic = Topic_model
 
 (** {1 Non-storable models} *)
 

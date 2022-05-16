@@ -38,6 +38,11 @@ val user_for_registration
   -> string
   -> Models.User.registration_form Try.t
 
+val category_for_creation
+  :  string
+  -> string
+  -> Models.Category.creation_form Try.t
+
 val user_for_connection : string -> string -> Models.User.connection_form Try.t
 
 val make_user
@@ -47,6 +52,28 @@ val make_user
   -> string
   -> Caqti_lwt.connection
   -> Models.User.t Try.t Lwt.t
+
+val create_category
+  :  string
+  -> string
+  -> Caqti_lwt.connection
+  -> unit Try.t Lwt.t
+
+val create_categories
+  :  Caqti_lwt.connection
+  -> (Models.Category.t * Models.Category.t * Models.Category.t) Try.t Lwt.t
+
+val create_users
+  :  Caqti_lwt.connection
+  -> (Models.User.t * Models.User.t * Models.User.t * Models.User.t) Try.t Lwt.t
+
+val create_topic
+  :  string
+  -> Models.User.t
+  -> string
+  -> string
+  -> Caqti_lwt.connection
+  -> string Try.t Lwt.t
 
 (** {1 Some data} *)
 

@@ -50,7 +50,7 @@ let default
        ; Component.main_header
        ; main
            [ section
-               ~a:[ a_class [ "section"; "main-content" ] ]
+               ~a:[ a_class [ "section"; "main-content"; "container" ] ]
                [ Component.flash_info flash_info; div content ]
            ]
        ; Component.main_footer

@@ -1,0 +1,12 @@
+up:
+  - |
+     CREATE TABLE IF NOT EXISTS messages (
+       message_id UUID DEFAULT uuid_generate_v4 () PRIMARY KEY,
+       topic_id UUID NOT NULL REFERENCES topics(topic_id),
+       user_id UUID NOT NULL REFERENCES users(user_id),
+       message_creation_date TIMESTAMP WITH TIME ZONE NOT NULL,
+       topic_content TEXT NOT NULL
+     )
+
+down:
+  - DROP TABLE messages

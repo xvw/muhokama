@@ -6,10 +6,16 @@ let main_header =
     ~a:[ a_class [ "hero"; "is-primary"; "is-small"; "is-info" ] ]
     [ div
         ~a:[ a_class [ "hero-body" ] ]
-        [ h1 ~a:[ a_class [ "title"; "is-1" ] ] [ txt "Muhokama" ]
-        ; h2
-            ~a:[ a_class [ "subtitle" ] ]
-            [ txt "Ça veut dire "; i [ txt "discussion" ]; txt " en Ouzbek" ]
+        [ div
+            ~a:[ a_class [ "container" ] ]
+            [ h1 ~a:[ a_class [ "title"; "is-1" ] ] [ txt "Muhokama" ]
+            ; h2
+                ~a:[ a_class [ "subtitle" ] ]
+                [ txt "Ça veut dire "
+                ; i [ txt "discussion" ]
+                ; txt " en Ouzbek"
+                ]
+            ]
         ]
     ]
 ;;
@@ -43,7 +49,7 @@ let unconnected_navbar =
   nav
     ~a:[ a_class [ "navbar"; "is-link" ]; a_role [ "navigation" ] ]
     [ div
-        ~a:[ a_class [ "navbar-menu"; "is-active" ] ]
+        ~a:[ a_class [ "navbar-menu"; "is-active"; "container" ] ]
         [ div
             ~a:[ a_class [ "navbar-start" ] ]
             [ Util.a
@@ -66,8 +72,8 @@ let administrator_navbar user =
     let open Tyxml.Html in
     [ Util.a
         ~a:[ a_class [ "navbar-item" ] ]
-        ~:Endpoints.Admin.user
-        [ txt "Gestion des utilisateurs" ]
+        ~:Endpoints.Admin.root
+        [ txt "Gestion" ]
     ]
   | _ -> []
 ;;
@@ -77,7 +83,7 @@ let connected_navbar user =
   nav
     ~a:[ a_class [ "navbar"; "is-link" ]; a_role [ "navigation" ] ]
     [ div
-        ~a:[ a_class [ "navbar-menu"; "is-active" ] ]
+        ~a:[ a_class [ "navbar-menu"; "is-active"; "container" ] ]
         [ div
             ~a:[ a_class [ "navbar-start" ] ]
             [ Util.a
@@ -88,6 +94,10 @@ let connected_navbar user =
                 ~a:[ a_class [ "navbar-item" ] ]
                 ~:Endpoints.User.list
                 [ txt "Utilisateurs" ]
+            ; Util.a
+                ~a:[ a_class [ "navbar-item" ] ]
+                ~:Endpoints.Topic.create
+                [ txt "Créer un fil de conversation" ]
             ]
         ; div
             ~a:[ a_class [ "navbar-end" ] ]

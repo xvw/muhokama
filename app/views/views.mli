@@ -2,5 +2,7 @@
     the navigation between files and facilitate their identification, they are
     suffixed by view. This module is used to re-export them. *)
 
-module Dummy = Dummy_views
+module Global = Global_views
 module User = User_views
+module Topic = Topic_views
+module Admin = Admin_views

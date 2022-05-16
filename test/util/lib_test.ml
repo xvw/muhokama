@@ -85,6 +85,11 @@ let user_for_registration name mail pass confirm =
     ]
 ;;
 
+let category_for_creation name desc =
+  Models.Category.validate_creation
+    [ "category_name", name; "category_description", desc ]
+;;
+
 let make_user ?(state = Models.User.State.Inactive) name mail pass db =
   let open Lwt_util in
   let*? r = return @@ user_for_registration name mail pass pass in
@@ -96,4 +101,72 @@ let make_user ?(state = Models.User.State.Inactive) name mail pass db =
 
 let user_for_connection mail pass =
   Models.User.validate_connection [ "user_email", mail; "user_password", pass ]
+;;
+
+let topic_for_creation category_id title content =
+  Models.Topic.validate_creation
+    [ "category_id", category_id
+    ; "topic_title", title
+    ; "topic_content", content
+    ]
+;;
+
+let create_category name desc db =
+  let open Lwt_util in
+  let*? c = Lwt.return @@ category_for_creation name desc in
+  Models.Category.create c db
+;;
+
+let create_topic category_id user title content db =
+  let open Lwt_util in
+  let*? t = Lwt.return @@ topic_for_creation category_id title content in
+  Models.Topic.create user t db
+;;
+
+let create_categories db =
+  let open Lwt_util in
+  let*? () = create_category "general" "general purpose" db in
+  let*? () = create_category "programming" "programming purpose" db in
+  let*? () = create_category "muhokama" "about muhokama" db in
+  let*? general = Models.Category.get_by_name "general" db in
+  let*? programming = Models.Category.get_by_name "programming" db in
+  let*? muhokama = Models.Category.get_by_name "muhokama" db in
+  Lwt.return_ok (general, programming, muhokama)
+;;
+
+let create_users db =
+  let open Lwt_util in
+  let*? grim =
+    make_user
+      ~state:Models.User.State.Moderator
+      "grim"
+      "grim@muhokama.com"
+      "grimpwd12345"
+      db
+  in
+  let*? xhtmlboy =
+    make_user
+      ~state:Models.User.State.Moderator
+      "xhtmlboy"
+      "xhmlboy@muhokama.com"
+      "xhtmlboypwd12345"
+      db
+  in
+  let*? xvw =
+    make_user
+      ~state:Models.User.State.Admin
+      "xvw"
+      "xvw@muhokama.com"
+      "xvwpwd12345"
+      db
+  in
+  let*? dplaindoux =
+    make_user
+      ~state:Models.User.State.Moderator
+      "dplaindoux"
+      "dplaindoux@muhokama.com"
+      "dplaindouxpwd12345"
+      db
+  in
+  Lwt.return_ok (grim, xhtmlboy, xvw, dplaindoux)
 ;;
