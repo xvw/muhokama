@@ -1,0 +1,13 @@
+up:
+  - |
+     CREATE TABLE IF NOT EXISTS topics (
+       topic_id UUID DEFAULT uuid_generate_v4 () PRIMARY KEY,
+       category_id UUID NOT NULL REFERENCES categories(category_id),
+       user_id UUID NOT NULL REFERENCES users(user_id),
+       topic_creation_date TIMESTAMP WITH TIME ZONE NOT NULL,
+       topic_title VARCHAR(255) NOT NULL,
+       topic_content TEXT NOT NULL
+     )
+
+down:
+  - DROP TABLE topics

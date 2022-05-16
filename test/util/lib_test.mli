@@ -53,6 +53,28 @@ val make_user
   -> Caqti_lwt.connection
   -> Models.User.t Try.t Lwt.t
 
+val create_category
+  :  string
+  -> string
+  -> Caqti_lwt.connection
+  -> unit Try.t Lwt.t
+
+val create_categories
+  :  Caqti_lwt.connection
+  -> (Models.Category.t * Models.Category.t * Models.Category.t) Try.t Lwt.t
+
+val create_users
+  :  Caqti_lwt.connection
+  -> (Models.User.t * Models.User.t * Models.User.t * Models.User.t) Try.t Lwt.t
+
+val create_topic
+  :  string
+  -> Models.User.t
+  -> string
+  -> string
+  -> Caqti_lwt.connection
+  -> string Try.t Lwt.t
+
 (** {1 Some data} *)
 
 module Individual : sig

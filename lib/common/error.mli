@@ -62,6 +62,14 @@ module Category : sig
     | Name_already_taken of string
     | Id_not_found of string
     | Name_not_found of string
+    | No_category
+
+  val equal : t -> t -> bool
+  val pp : t Fmt.t
+end
+
+module Topic : sig
+  type t = Id_not_found of string
 
   val equal : t -> t -> bool
   val pp : t Fmt.t
@@ -116,6 +124,7 @@ type t =
   | Field of t Field.t
   | User of User.t
   | Category of Category.t
+  | Topic of Topic.t
   | Form of Form.t
   | Yaml of string
   | Invalid_object of
@@ -165,6 +174,8 @@ val user_is_admin : t
 val category_name_already_taken : string -> t
 val category_name_not_found : string -> t
 val category_id_not_found : string -> t
+val category_absent : t
+val topic_id_not_found : string -> t
 val invalid_object : name:string -> errors:t Preface.Nonempty_list.t -> t
 val invalid_form : name:string -> errors:t Preface.Nonempty_list.t -> t
 val to_try : t -> ('a, t) Result.t

@@ -1,3 +1,4 @@
+open Lib_common
 open Lib_service
 
 module Create = struct
@@ -98,12 +99,90 @@ module Create = struct
 
   let creation_form csrf_token categories =
     Templates.Util.form
-      ~:Endpoints.Topic.create
+      ~:Endpoints.Topic.save
       ~csrf_token
       [ category_select categories
       ; topic_title_input
       ; topic_content_input
       ; submit_button
+      ]
+  ;;
+end
+
+module List = struct
+  let line topic =
+    let open Tyxml.Html in
+    let open Models.Topic in
+    let src = Gravatar.(url ~default:Identicon ~size:48 topic.user.email) in
+    let alt = "Avatar of " ^ topic.user.name in
+    tr
+      [ td
+          ~a:[ a_class [ "is-vcentered" ] ]
+          [ img ~a:[ a_class [ "image"; "is-48x48" ] ] ~src ~alt () ]
+      ; td
+          ~a:[ a_class [ "is-vcentered"; "is-fullwidth" ] ]
+          [ Templates.Util.a ~:Endpoints.Topic.show [ txt topic.title ] topic.id
+          ]
+      ; td
+          ~a:[ a_class [ "is-vcentered" ] ]
+          [ span ~a:[ a_class [ "is-pulled-right" ] ] [ txt "0 réponse" ] ]
+      ; td
+          ~a:[ a_class [ "is-vcentered" ] ]
+          [ span
+              ~a:
+                [ a_class [ "tag"; "is-info"; "is-medium"; "is-pulled-right" ] ]
+              [ txt topic.category.name ]
+          ]
+      ]
+  ;;
+
+  let all topics =
+    let open Tyxml.Html in
+    table
+      ~a:
+        [ a_class
+            [ "table"; "is-fullwidth"; "is-stripped"; "content"; "is-medium" ]
+        ]
+    @@ List.map line topics
+  ;;
+end
+
+module Show = struct
+  let topic_content topic =
+    let open Tyxml.Html in
+    let message_content = topic.Models.Topic.content in
+    (* FIXME: Maybe get rid of Tyxml.Html.Unsafe*)
+    let message_html =
+      Omd.of_string message_content |> Omd.to_html |> Unsafe.data
+    in
+    let src = Gravatar.(url ~default:Identicon ~size:72 topic.user.email) in
+    let alt = "Avatar of " ^ topic.user.name in
+    let (year, month, day), ((hour, min, _), _) =
+      Ptime.to_date_time ~tz_offset_s:(3600 * 2) topic.creation_date
+    in
+    let formatted_date =
+      Fmt.str "%04d-%02d-%02d %02d:%02d" year month day hour min
+    in
+    div
+      [ h1 ~a:[ a_class [ "title" ] ] [ txt topic.title ]
+      ; div
+          ~a:[ a_class [ "media" ] ]
+          [ div
+              ~a:[ a_class [ "media-left" ] ]
+              [ img ~a:[ a_class [ "image" ] ] ~src ~alt () ]
+          ; div
+              ~a:[ a_class [ "media-content" ] ]
+              [ p
+                  ~a:[ a_class [ "title"; "is-6" ] ]
+                  [ txt @@ "@" ^ topic.user.name ]
+              ; p
+                  ~a:[ a_class [ "subtitle"; "is-6" ] ]
+                  [ txt @@ "publié le " ^ formatted_date ]
+              ; div
+                  ~a:[ a_class [ "content"; "is-medium"; "media-content" ] ]
+                  [ p [ message_html ] ]
+              ]
+          ]
       ]
   ;;
 end
@@ -115,4 +194,23 @@ let create ?flash_info ~csrf_token ?user categories =
     ?flash_info
     ?user
     Tyxml.Html.[ div [ Create.creation_form csrf_token categories ] ]
+;;
+
+let list ?flash_info ?user topics =
+  Templates.Layout.default
+    ~lang:"fr"
+    ~page_title:"Accueil"
+    ?flash_info
+    ?user
+    Tyxml.Html.[ div [ List.all topics ] ]
+;;
+
+let show ?flash_info ?user topic =
+  let page_title = topic.Models.Topic.title in
+  Templates.Layout.default
+    ~lang:"fr"
+    ~page_title
+    ?flash_info
+    ?user
+    [ Show.topic_content topic ]
 ;;

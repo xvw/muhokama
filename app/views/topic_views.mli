@@ -7,3 +7,17 @@ val create
   -> ?user:Models.User.t
   -> Models.Category.t Preface.Nonempty_list.t
   -> Tyxml.Html.doc
+
+(** A view for listing topics. *)
+val list
+  :  ?flash_info:Models.Flash_info.t
+  -> ?user:Models.User.t
+  -> Models.Topic.t list
+  -> Tyxml.Html.doc
+
+(** A view for showing one topic. *)
+val show
+  :  ?flash_info:Models.Flash_info.t
+  -> ?user:Models.User.t
+  -> Models.Topic.t
+  -> Tyxml.Html.doc

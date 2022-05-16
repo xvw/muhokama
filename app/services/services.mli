@@ -2,6 +2,7 @@
     the navigation between files and facilitate their identification, they are
     suffixed by model. This module is used to re-export them. *)
 
-module Dummy = Dummy_services
+module Global = Global_services
 module User = User_services
+module Topic = Topic_services
 module Admin = Admin_services

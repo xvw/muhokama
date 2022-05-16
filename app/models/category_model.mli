@@ -28,6 +28,9 @@ val pp : t Fmt.t
 (** Equality between [t]. *)
 val equal : t -> t -> bool
 
+(** Producing a category from a tuple. *)
+val from_tuple : string * string * string -> t
+
 (** {1 Actions} *)
 
 (** Count the number of saved categories. *)
