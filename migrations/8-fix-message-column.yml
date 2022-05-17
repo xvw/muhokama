@@ -1,0 +1,5 @@
+up:
+  - ALTER TABLE messages RENAME COLUMN topic_content TO message_content
+
+down:
+  - ALTER TABLE messages RENAME COLUMN message_content TO topic_content

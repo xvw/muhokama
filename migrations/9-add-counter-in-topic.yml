@@ -1,0 +1,10 @@
+up:
+  - ALTER TABLE topics ADD topic_counter INTEGER NOT NULL DEFAULT 0
+  - |
+     UPDATE topics
+     SET topic_counter = (
+       SELECT COUNT(*) FROM messages
+       WHERE messages.topic_id = topics.topic_id)
+
+down:
+    - ALTER TABLE topics DROP COLUMN topic_counter
