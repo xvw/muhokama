@@ -16,3 +16,5 @@ val use
   :  (Caqti_lwt.connection, Caqti_error.t) Caqti_lwt.Pool.t
   -> (Caqti_lwt.connection -> 'a Try.t Lwt.t)
   -> 'a Try.t Lwt.t
+
+val transaction : (t -> 'a Try.t Lwt.t) -> t -> 'a Try.t Lwt.t
