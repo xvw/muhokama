@@ -43,23 +43,12 @@ let test_transaction =
       in
       match task with
       | Ok () -> return_ok (-1, "transaction should fail")
-      | Error (Error.Database message) ->
+      | Error (Error.Database _message) ->
         let*? c = Models.Category.count db in
-        return_ok (c, message)
+        return_ok (c, "correct error")
       | _ -> return_ok (-1, "unknown error"))
     (fun computed ->
-      let expected =
-        Ok
-          ( 0
-          , "Request to <postgresql://muhokama:_@localhost:5432/muhokama_test> \
-             failed: ERROR:  column \"categoryame\" of relation \"categories\" \
-             does not exist\n\
-             LINE 1: INSERT INTO categories (categoryame, \
-             category_description) V...\n\
-            \                                ^\n\
-            \ Query: \"INSERT INTO categories (categoryame, \
-             category_description) VALUES ($1, $2)\"." )
-      in
+      let expected = Ok (0, "correct error") in
       same (Testable.try_ @@ pair int string) ~expected ~computed)
 ;;
 
