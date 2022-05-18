@@ -16,3 +16,6 @@ val save : (Dream.request, Dream.response) Service.t
 
 (** Show one topic. *)
 val show : (Dream.request, Dream.response) Service.t
+
+(** Answer to a topic. *)
+val answer : (Dream.request, Dream.response) Service.t

@@ -18,6 +18,8 @@ val list
 (** A view for showing one topic. *)
 val show
   :  ?flash_info:Models.Flash_info.t
-  -> ?user:Models.User.t
+  -> csrf_token:string
+  -> user:Models.User.t
   -> Models.Topic.Showable.t
+  -> Models.Message.t list
   -> Tyxml.Html.doc

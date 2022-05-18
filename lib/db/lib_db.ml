@@ -74,3 +74,18 @@ let use pool callback =
   in
   Lwt.catch promise catch_handler
 ;;
+
+let transaction callback (module Db : T) =
+  let open Lwt_util in
+  let* task =
+    let*? () = try_ @@ Db.start () in
+    let*? result = callback () in
+    let+? () = try_ @@ Db.commit () in
+    result
+  in
+  match task with
+  | Ok result -> return_ok result
+  | Error err ->
+    let*? () = try_ @@ Db.rollback () in
+    return @@ Error err
+;;

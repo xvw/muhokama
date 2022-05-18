@@ -1,0 +1,8 @@
+up:
+  - ALTER TABLE topics ADD topic_update_date TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+  - |
+     UPDATE topics
+     SET topic_update_date = topic_creation_date
+
+down:
+  - ALTER TABLE topics DROP COLUMN topic_update_date

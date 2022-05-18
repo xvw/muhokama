@@ -23,15 +23,24 @@ let from_tuple_with_error err =
 ;;
 
 let count =
-  let query = (unit ->! int) @@ "SELECT COUNT(*) FROM categories" in
+  let query =
+    (unit ->! int) {sql|
+      SELECT COUNT(*) FROM categories
+    |sql}
+  in
   fun (module Db : Lib_db.T) -> Lib_db.try_ @@ Db.find query ()
 ;;
 
 let list callback =
   let query =
     (unit ->* tup3 string string string)
-      "SELECT category_id, category_name, category_description FROM categories \
-       ORDER BY category_name"
+      {sql|
+          SELECT
+            category_id,
+            category_name,
+            category_description
+          FROM categories ORDER BY category_name
+      |sql}
   in
   fun (module Db : Lib_db.T) ->
     let open Lwt_util in
@@ -42,8 +51,13 @@ let list callback =
 let get_by_id =
   let query =
     (string ->? tup3 string string string)
-      "SELECT category_id, category_name, category_description FROM categories \
-       WHERE category_id = ?"
+      {sql|
+          SELECT
+            category_id,
+            category_name,
+            category_description
+          FROM categories WHERE category_id = ?
+      |sql}
   in
   fun id (module Db : Lib_db.T) ->
     let open Lwt_util in
@@ -55,8 +69,13 @@ let get_by_id =
 let get_by_name =
   let query =
     (string ->? tup3 string string string)
-      "SELECT category_id, category_name, category_description FROM categories \
-       WHERE category_name = ?"
+      {sql|
+          SELECT
+            category_id,
+            category_name,
+            category_description
+          FROM categories WHERE category_name = ?
+      |sql}
   in
   fun name (module Db : Lib_db.T) ->
     let open Lwt_util in
@@ -67,7 +86,11 @@ let get_by_name =
 
 let report_non_integrity_violation =
   let query =
-    (string ->! int) "SELECT COUNT(*) FROM categories WHERE category_name = ? "
+    (string ->! int)
+      {sql|
+          SELECT COUNT(*) FROM categories
+          WHERE category_name = ?
+      |sql}
   in
   fun name (module Db : Lib_db.T) ->
     let open Lwt_util in
@@ -80,8 +103,12 @@ let report_non_integrity_violation =
 let create =
   let query =
     (tup2 string string ->. unit)
-      "INSERT INTO categories (category_name, category_description) VALUES (?, \
-       ?)"
+      {sql|
+        INSERT INTO categories
+           (category_name, category_description)
+         VALUES
+           (?, ?)
+      |sql}
   in
   fun { creation_name = name; creation_description = description }
       (module Db : Lib_db.T) ->

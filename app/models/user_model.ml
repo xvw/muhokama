@@ -45,8 +45,11 @@ let from_tuple_with_error err =
 let report_non_integrity_violation =
   let query =
     (tup2 string string ->! tup2 int int)
-    @@ "SELECT (SELECT COUNT(*) FROM users WHERE user_name = ?), (SELECT \
-        COUNT(*) FROM users WHERE user_email = ?)"
+      {sql|
+          SELECT
+            (SELECT COUNT(*) FROM users WHERE user_name = ?),
+            (SELECT COUNT(*) FROM users WHERE user_email = ?)
+      |sql}
   in
   fun ~name ~email (module Db : Lib_db.T) ->
     let open Lwt_util in
@@ -61,8 +64,15 @@ let report_non_integrity_violation =
 let register =
   let query =
     (tup3 string string string ->. unit)
-    @@ "INSERT INTO users (user_name, user_email, user_password, user_state) \
-        VALUES (?, ?, ?, 'inactive')"
+      {sql|
+          INSERT INTO users (
+            user_name,
+            user_email,
+            user_password,
+            user_state
+          )
+          VALUES (?, ?, ?, 'inactive')
+      |sql}
   in
   fun { registration_name = name
       ; registration_email = email
@@ -79,7 +89,9 @@ let count ?(filter = State.all) =
   let query =
     (unit ->! int)
     @@ Fmt.str
-         "SELECT COUNT(*) FROM users WHERE (%a)"
+         {sql|
+           SELECT COUNT(*) FROM users WHERE (%a)
+         |sql}
          (State.pp_filter ())
          filter
   in
@@ -90,8 +102,17 @@ let list ?(filter = State.all) ?(like = "%") callback =
   let query =
     (tup2 string string ->* tup4 string string string string)
     @@ Fmt.str
-         "SELECT user_id, user_name, user_email, user_state FROM users WHERE \
-          (%a) AND (user_name LIKE ? OR user_email LIKE ?) ORDER BY user_name"
+         {sql|
+           SELECT
+             user_id,
+             user_name,
+             user_email,
+             user_state
+           FROM users
+           WHERE (%a)
+             AND (user_name LIKE ? OR user_email LIKE ?)
+           ORDER BY user_name
+         |sql}
          (State.pp_filter ())
          filter
   in
@@ -105,7 +126,14 @@ let list ?(filter = State.all) ?(like = "%") callback =
 let iter =
   let query =
     (unit ->* tup4 string string string string)
-    @@ "SELECT user_id, user_name, user_email, user_state FROM users"
+      {sql|
+          SELECT
+            user_id,
+            user_name,
+            user_email,
+            user_state
+         FROM users
+      |sql}
   in
   fun callback (module Db : Lib_db.T) ->
     Db.iter_s query Preface.Fun.(Lwt.return_ok % callback % from_tuple) ()
@@ -114,8 +142,13 @@ let iter =
 
 let change_state =
   let query =
-    (tup2 string string ->. unit) ~oneshot:true
-    @@ "UPDATE users SET user_state = ? WHERE user_id = ?"
+    (tup2 string string ->. unit)
+      ~oneshot:true
+      {sql|
+          UPDATE users
+          SET user_state = ?
+          WHERE user_id = ?
+      |sql}
   in
   fun ~user_id state (module Db : Lib_db.T) ->
     let state_str = State.to_string state in
@@ -127,8 +160,15 @@ let activate user_id = change_state ~user_id State.Member
 let get_by_email =
   let query =
     (string ->? tup4 string string string string)
-    @@ "SELECT user_id, user_name, user_email, user_state FROM users WHERE \
-        user_email = ?"
+      {sql|
+          SELECT
+            user_id,
+            user_name,
+            user_email,
+            user_state
+          FROM users
+          WHERE user_email = ?
+      |sql}
   in
   fun email (module Db : Lib_db.T) ->
     let open Lwt_util in
@@ -139,8 +179,15 @@ let get_by_email =
 let get_by_id =
   let query =
     (string ->? tup4 string string string string)
-    @@ "SELECT user_id, user_name, user_email, user_state FROM users WHERE \
-        user_id = ?"
+      {sql|
+          SELECT
+            user_id,
+            user_name,
+            user_email,
+            user_state
+          FROM users
+          WHERE user_id = ?
+      |sql}
   in
   fun id (module Db : Lib_db.T) ->
     let open Lwt_util in
@@ -151,8 +198,16 @@ let get_by_id =
 let get_by_email_and_password =
   let query =
     (tup2 string string ->? tup4 string string string string)
-    @@ "SELECT user_id, user_name, user_email, user_state FROM users WHERE \
-        user_email = ? AND user_password = ?"
+      {sql|
+          SELECT
+            user_id,
+            user_name,
+            user_email,
+            user_state
+          FROM users
+          WHERE user_email = ?
+            AND user_password = ?
+      |sql}
   in
   fun email pass (module Db : Lib_db.T) ->
     let open Lwt_util in

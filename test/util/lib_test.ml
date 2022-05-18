@@ -111,6 +111,10 @@ let topic_for_creation category_id title content =
     ]
 ;;
 
+let message_for_creation message_content =
+  Models.Message.validate_creation [ "message_content", message_content ]
+;;
+
 let create_category name desc db =
   let open Lwt_util in
   let*? c = Lwt.return @@ category_for_creation name desc in
@@ -121,6 +125,12 @@ let create_topic category_id user title content db =
   let open Lwt_util in
   let*? t = Lwt.return @@ topic_for_creation category_id title content in
   Models.Topic.create user t db
+;;
+
+let create_message user topic_id content db =
+  let open Lwt_util in
+  let*? t = Lwt.return @@ message_for_creation content in
+  Models.Message.create user topic_id t db
 ;;
 
 let create_categories db =

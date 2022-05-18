@@ -75,6 +75,13 @@ val create_topic
   -> Caqti_lwt.connection
   -> string Try.t Lwt.t
 
+val create_message
+  :  Models.User.t
+  -> string
+  -> string
+  -> Caqti_lwt.connection
+  -> string Try.t Lwt.t
+
 (** {1 Some data} *)
 
 module Individual : sig
