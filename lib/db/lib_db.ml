@@ -79,7 +79,7 @@ let transaction callback (module Db : T) =
   let open Lwt_util in
   let* task =
     let*? () = try_ @@ Db.start () in
-    let*? result = callback (module Db : T) in
+    let*? result = callback () in
     let+? () = try_ @@ Db.commit () in
     result
   in

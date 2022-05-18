@@ -1,3 +1,4 @@
+open Lib_common
 open Lib_service
 
 let main_header =
@@ -180,4 +181,10 @@ let user_state_tag user_state =
     span
       ~a:[ a_class [ "tag"; color ] ]
       [ txt @@ Models.User.State.to_string user_state ])
+;;
+
+let avatar ?(default = Gravatar.Identicon) ?(size = 72) ~email ~username () =
+  let src = Gravatar.(url ~default ~size email) in
+  let alt = "Avatar of " ^ username in
+  Tyxml.Html.(img ~a:[ a_class [ "image" ] ] ~src ~alt ())
 ;;

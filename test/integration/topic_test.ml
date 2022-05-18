@@ -53,7 +53,7 @@ let test_list_all_when_there_is_some_topics =
           "This is my first message"
           db
       in
-      let* () = Lwt_unix.sleep 0.5 in
+      let* () = Lwt_unix.sleep 0.1 in
       let*? _ =
         create_topic
           programming.Models.Category.id
@@ -84,7 +84,7 @@ let test_list_by_when_there_is_some_topics =
           "This is my first message"
           db
       in
-      let* () = Lwt_unix.sleep 0.5 in
+      let* () = Lwt_unix.sleep 0.1 in
       let*? _ =
         create_topic
           programming.Models.Category.id

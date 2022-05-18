@@ -35,7 +35,7 @@ let test_transaction =
       let open Lwt_util in
       let* task =
         Lib_db.transaction
-          (fun db ->
+          (fun () ->
             let*? () = valid_query "foo" "bar" db in
             let*? () = invalid_query "bar" "baz" db in
             return_ok ())

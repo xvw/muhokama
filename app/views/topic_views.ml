@@ -132,8 +132,7 @@ module List = struct
           ~a:[ a_class [ "is-vcentered" ] ]
           [ Templates.Util.a
               ~:Endpoints.Topic.by_category
-              ~a:
-                [ a_class [ "tag"; "is-info"; "is-medium"; "is-pulled-right" ] ]
+              ~a:[ a_class [ "button"; "is-info"; "is-pulled-right" ] ]
               [ txt topic.category_name ]
               topic.category_name
           ]
@@ -152,40 +151,139 @@ module List = struct
 end
 
 module Show = struct
-  let topic_content topic =
+  let show_content user_name user_email creation_date message =
     let open Tyxml.Html in
-    let open Models.Topic.Showable in
-    let message_content = topic.content in
     (* FIXME: Maybe get rid of Tyxml.Html.Unsafe*)
-    let message_html =
-      Omd.of_string message_content |> Omd.to_html |> Unsafe.data
-    in
-    let src = Gravatar.(url ~default:Identicon ~size:72 topic.user_email) in
-    let alt = "Avatar of " ^ topic.user_name in
+    let message_html = Omd.of_string message |> Omd.to_html |> Unsafe.data in
     div
-      [ h1 ~a:[ a_class [ "title" ] ] [ txt topic.title ]
+      ~a:[ a_class [ "media" ] ]
+      [ div
+          ~a:[ a_class [ "media-left" ] ]
+          [ Templates.Component.avatar ~email:user_email ~username:user_name ()
+          ]
       ; div
-          ~a:[ a_class [ "media" ] ]
+          ~a:[ a_class [ "media-content" ] ]
+          [ p ~a:[ a_class [ "title"; "is-6" ] ] [ txt @@ "@" ^ user_name ]
+          ; p
+              ~a:[ a_class [ "subtitle"; "is-6" ] ]
+              [ txt @@ "publié le " ^ Templates.Util.format_date creation_date ]
+          ; div
+              ~a:[ a_class [ "content"; "is-medium"; "media-content" ] ]
+              [ p [ message_html ] ]
+          ]
+      ]
+  ;;
+
+  let message_content_input =
+    let open Tyxml.Html in
+    div
+      ~a:[ a_class [ "field" ] ]
+      [ div
+          ~a:[ a_class [ "control" ] ]
+          [ textarea
+              ~a:
+                [ a_placeholder "Ecrivez ici votre message (en Markdown) ..."
+                ; a_id "create_topic_content"
+                ; a_rows 8
+                ; a_name "message_content"
+                ; a_class [ "textarea"; "is-large" ]
+                ]
+              (txt "")
+          ]
+      ]
+  ;;
+
+  let submit_button =
+    let open Tyxml.Html in
+    div
+      ~a:[ a_class [ "field" ] ]
+      [ div
+          ~a:[ a_class [ "control" ] ]
+          [ input
+              ~a:
+                [ a_input_type `Submit
+                ; a_value "Répondre au fil !"
+                ; a_class [ "button"; "is-link" ]
+                ]
+              ()
+          ]
+      ]
+  ;;
+
+  let message_form csrf_token user topic =
+    let open Tyxml.Html in
+    let topic_id = topic.Models.Topic.Showable.id in
+    div
+      [ h2 ~a:[ a_class [ "title"; "mt-6" ] ] [ txt "Composer une réponse" ]
+      ; div
+          ~a:[ a_class [ "media" ]; a_id "answer" ]
           [ div
               ~a:[ a_class [ "media-left" ] ]
-              [ img ~a:[ a_class [ "image" ] ] ~src ~alt () ]
+              [ Templates.Component.avatar
+                  ~email:user.Models.User.email
+                  ~username:user.name
+                  ()
+              ]
           ; div
               ~a:[ a_class [ "media-content" ] ]
-              [ p
-                  ~a:[ a_class [ "title"; "is-6" ] ]
-                  [ txt @@ "@" ^ topic.user_name ]
-              ; p
-                  ~a:[ a_class [ "subtitle"; "is-6" ] ]
-                  [ txt
-                    @@ "publié le "
-                    ^ Templates.Util.format_date topic.creation_date
-                  ]
-              ; div
-                  ~a:[ a_class [ "content"; "is-medium"; "media-content" ] ]
-                  [ p [ message_html ] ]
+              [ Templates.Util.form
+                  ~:Endpoints.Topic.answer
+                  ~csrf_token
+                  [ message_content_input; submit_button ]
+                  topic_id
               ]
           ]
       ]
+  ;;
+
+  let topic_content topic =
+    let open Tyxml.Html in
+    let open Models.Topic.Showable in
+    div
+      [ div
+          ~a:[ a_class [ "columns" ] ]
+          [ div
+              ~a:[ a_class [ "column"; "is-half" ] ]
+              [ h1 ~a:[ a_class [ "title" ] ] [ txt topic.title ] ]
+          ; div
+              ~a:[ a_class [ "column"; "is-half" ] ]
+              [ a
+                  ~a:
+                    [ a_href "#answer"
+                    ; a_class
+                        [ "button"
+                        ; "is-success"
+                        ; "is-medium"
+                        ; "is-pulled-right"
+                        ]
+                    ]
+                  [ txt "Répondre au fil" ]
+              ]
+          ]
+      ; show_content
+          topic.user_name
+          topic.user_email
+          topic.creation_date
+          topic.content
+      ]
+  ;;
+
+  let thread csrf_token user topic messages =
+    let open Tyxml.Html in
+    (topic_content topic
+    :: Stdlib.List.map
+         (fun message ->
+           div
+             ~a:[ a_id message.Models.Message.id ]
+             [ hr ~a:[ a_class [ "mt-6"; "mb-6" ] ] ()
+             ; show_content
+                 message.user_name
+                 message.user_email
+                 message.creation_date
+                 message.content
+             ])
+         messages)
+    @ [ message_form csrf_token user topic ]
   ;;
 end
 
@@ -207,12 +305,12 @@ let list ?flash_info ?user topics =
     Tyxml.Html.[ div [ List.all topics ] ]
 ;;
 
-let show ?flash_info ?user topic =
+let show ?flash_info ~csrf_token ~user topic messages =
   let page_title = topic.Models.Topic.Showable.title in
   Templates.Layout.default
     ~lang:"fr"
     ~page_title
     ?flash_info
-    ?user
-    [ Show.topic_content topic ]
+    ~user
+    (Show.thread csrf_token user topic messages)
 ;;

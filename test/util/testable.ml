@@ -33,3 +33,9 @@ let saved_user =
   let open Models in
   Alcotest.testable User.pp User.equal
 ;;
+
+let ptime =
+  let pp = Ptime.pp_human ()
+  and equal = Ptime.equal in
+  Alcotest.testable pp equal
+;;

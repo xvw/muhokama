@@ -127,9 +127,12 @@ let handle_href endpoint f =
 
 let href endpoint = handle_href endpoint Fun.id
 
-let redirect ?status ?code ?headers = function
+let redirect ?anchor ?status ?code ?headers = function
   | GET path ->
     handle_path_link path (fun target request ->
+        let target =
+          Option.fold ~none:target ~some:(fun x -> target ^ "#" ^ x) anchor
+        in
         Dream.redirect ?status ?code ?headers request target)
 ;;
 

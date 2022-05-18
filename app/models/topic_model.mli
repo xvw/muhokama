@@ -22,7 +22,8 @@ end
 (** A topic that can be showable. *)
 module Showable : sig
   type t = private
-    { category_name : string
+    { id : string
+    ; category_name : string
     ; user_name : string
     ; user_email : string
     ; creation_date : Ptime.t

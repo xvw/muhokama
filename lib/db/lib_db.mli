@@ -17,4 +17,4 @@ val use
   -> (Caqti_lwt.connection -> 'a Try.t Lwt.t)
   -> 'a Try.t Lwt.t
 
-val transaction : (t -> 'a Try.t Lwt.t) -> t -> 'a Try.t Lwt.t
+val transaction : (unit -> 'a Try.t Lwt.t) -> t -> 'a Try.t Lwt.t

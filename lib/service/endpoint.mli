@@ -147,7 +147,8 @@ val handle_href
 
 (** A Dream version of redirection. *)
 val redirect
-  :  ?status:[< Dream.redirection ]
+  :  ?anchor:string
+  -> ?status:[< Dream.redirection ]
   -> ?code:int
   -> ?headers:(string * string) list
   -> ( [ `GET ]

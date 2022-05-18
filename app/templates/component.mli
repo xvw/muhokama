@@ -19,3 +19,11 @@ val flash_info : Models.Flash_info.t option -> [> Html_types.div ] Html.elt
 
 (** Render an user state to a visual tag. *)
 val user_state_tag : Models.User.State.t -> [> Html_types.span ] Html.elt
+
+val avatar
+  :  ?default:Lib_common.Gravatar.default_style
+  -> ?size:int
+  -> email:string
+  -> username:string
+  -> unit
+  -> [> Html_types.img ] Html.elt

@@ -7,7 +7,8 @@ val from_tyxml : Tyxml.Html.doc -> string
 
 (** Redirect to a given endpoint. *)
 val redirect_to
-  :  ?status:[< Dream.redirection ]
+  :  ?anchor:string
+  -> ?status:[< Dream.redirection ]
   -> ?code:int
   -> ?headers:(string * string) list
   -> ( [ `GET ]
