@@ -232,8 +232,8 @@ module List_active = struct
       thead
         [ tr
             [ th [ txt "Nom d'utilisateur" ]
-            ; th [ txt "Courrier electronique" ]
-            ; th ~a:[ a_class [ "has-text-centered" ] ] [ txt "Status" ]
+            ; th [ txt "Courrier électronique" ]
+            ; th ~a:[ a_class [ "has-text-centered" ] ] [ txt "Statut" ]
             ]
         ]
     in

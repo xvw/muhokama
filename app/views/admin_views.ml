@@ -60,8 +60,8 @@ module List_moderable = struct
       thead
         [ tr
             [ th [ txt "Nom d'utilisateur" ]
-            ; th [ txt "Courrier electronique" ]
-            ; th ~a:[ a_class [ "has-text-centered" ] ] [ txt "Status" ]
+            ; th [ txt "Courrier électronique" ]
+            ; th ~a:[ a_class [ "has-text-centered" ] ] [ txt "Statut" ]
             ; th ~a:[ a_class [ "has-text-centered" ] ] [ txt "Action" ]
             ]
         ]
@@ -132,7 +132,7 @@ module Category = struct
           ]
       ; p
           ~a:[ a_class [ "help" ] ]
-          [ txt "Choisissez une description concise mais clair !" ]
+          [ txt "Choisissez une description concise mais claire !" ]
       ]
   ;;
 
@@ -193,7 +193,7 @@ let admin_menu () =
         ~a:[ a_class [ "menu-list" ] ]
         [ li [ Templates.Util.a ~:Endpoints.Admin.user [ txt "Utilisateurs" ] ]
         ; li
-            [ Templates.Util.a ~:Endpoints.Admin.category [ txt "Categories" ] ]
+            [ Templates.Util.a ~:Endpoints.Admin.category [ txt "Catégories" ] ]
         ]
     ]
 ;;
