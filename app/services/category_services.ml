@@ -3,7 +3,7 @@ open Lib_service
 open Util
 open Middlewares
 
-let list_ =
+let list =
   Service.failable_with
     ~:Endpoints.Category.list
     [user_authenticated]
