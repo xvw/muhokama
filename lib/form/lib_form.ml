@@ -120,8 +120,8 @@ let ( <?> ) a b x =
 
 let ( & ) a b =
   let open Validate in
-  let+ a
-  and+ b in
+  let+ a = a
+  and+ b = b in
   a, b
 ;;
 

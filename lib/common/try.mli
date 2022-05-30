@@ -32,6 +32,7 @@ val form
 
 module Infix : sig
   type nonrec 'a t = 'a t
+
   include Preface.Specs.Applicative.INFIX with type 'a t := 'a t
   include Preface.Specs.Monad.INFIX with type 'a t := 'a t
 end
@@ -40,6 +41,7 @@ end
 
 module Syntax : sig
   type nonrec 'a t = 'a t
+
   include Preface.Specs.Applicative.SYNTAX with type 'a t := 'a t
   include Preface.Specs.Monad.SYNTAX with type 'a t := 'a t
 end
