@@ -34,7 +34,7 @@ depends: [
   "ppx_yojson_conv" { >= "0.14.0" }
   "odoc" {with-doc}
   "alcotest" {with-test}
-  "preface"
+  "preface" { >= "1.0.0" }
 ]
 
 build: [

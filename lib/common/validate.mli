@@ -29,6 +29,7 @@ val bind : ('a -> 'b t) -> 'a t -> 'b t
 (** {1 Infix operators} *)
 
 module Infix : sig
+  type nonrec 'a t = 'a t
   include Preface.Specs.Alt.INFIX with type 'a t := 'a t
   include Preface.Specs.Applicative.INFIX with type 'a t := 'a t
   include Preface.Specs.Monad.INFIX with type 'a t := 'a t
@@ -39,12 +40,13 @@ end
 (** {1 Syntax operators} *)
 
 module Syntax : sig
+  type nonrec 'a t = 'a t
   include Preface.Specs.Applicative.SYNTAX with type 'a t := 'a t
   include Preface.Specs.Monad.SYNTAX with type 'a t := 'a t
 end
 
-include module type of Infix
-include module type of Syntax
+include module type of Infix with type 'a t := 'a t
+include module type of Syntax with type 'a t := 'a t
 
 (** {1 Predefined validators} *)
 

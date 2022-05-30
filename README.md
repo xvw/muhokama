@@ -21,7 +21,7 @@ recommended:
 
 ``` shellsession
 opam update
-opam switch create . ocaml-base-compiler.4.13.1 --deps-only -y
+opam switch create . ocaml-base-compiler.4.14.0 --deps-only -y
 eval $(opam env)
 ```
 
