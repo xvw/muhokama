@@ -8,7 +8,7 @@ let sql_pool env =
 ;;
 
 let run ~port env =
-  Dream.run ~port
+  Dream.run ~port ~interface:"0.0.0.0"
   @@ Dream.logger
   @@ sql_pool env
   @@ Dream.sql_sessions
