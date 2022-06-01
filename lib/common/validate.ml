@@ -37,19 +37,22 @@ let bind = Monad.bind
 
 module Infix = struct
   include Alt.Infix
-  include Applicative.Infix
-  include Monad.Infix
+
+  include (
+    Applicative.Infix : Preface.Specs.Applicative.INFIX with type 'a t := 'a t)
+
+  include (Monad.Infix : Preface.Specs.Monad.INFIX with type 'a t := 'a t)
 
   let ( & ) = ( >=> )
 end
 
 module Syntax = struct
   include Applicative.Syntax
-  include Monad.Syntax
+  include (Monad.Syntax : Preface.Specs.Monad.SYNTAX with type 'a t := 'a t)
 end
 
-include Infix
-include Syntax
+include (Infix : module type of Infix with type 'a t := 'a t)
+include (Syntax : module type of Syntax with type 'a t := 'a t)
 
 let from_predicate ?(message = "The predicate is not validated") p x =
   if p x
