@@ -102,7 +102,7 @@ let connected_navbar user =
             ; Util.a
                 ~a:[ a_class ["navbar-item"] ]
                 ~:Endpoints.Category.list
-                [ txt "Liste des categories" ]
+                [ txt "Catégories" ]
             ]
         ; div
             ~a:[ a_class [ "navbar-end" ] ]
