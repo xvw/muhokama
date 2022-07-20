@@ -152,14 +152,14 @@ let categories ?flash_info ~csrf_token ?user categories =
                   [ h2
                       ~a:[ a_class [ "title"; "is-4" ] ]
                       [ txt "Catégories existantes" ]
-                  ; Category.all categories
+                  ; all categories
                   ]
               ]
           ; div
               [ h2
                   ~a:[ a_class [ "title"; "is-4" ] ]
                   [ txt "Créer une nouvelle catégorie" ]
-              ; Category.creation_form csrf_token
+              ; creation_form csrf_token
               ]
           ]
       ]

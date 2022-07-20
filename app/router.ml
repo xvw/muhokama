@@ -25,7 +25,7 @@ let choose_service next_handler request =
     ; Services.Admin.new_category
     ; Services.Global.error
     ; Services.Global.root
-    ; Services.Category.list
+    ; Services.Category.topics_count_by_categories
     ]
     next_handler
     request

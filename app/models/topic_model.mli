@@ -49,6 +49,9 @@ type creation_form
 (** Count the number of saved topics. *)
 val count : Lib_db.t -> int Try.t Lwt.t
 
+(** Count the number of saved topics grouped by category. *)
+val count_by_categories : Lib_db.t -> (string * string * int) list Try.t Lwt.t
+
 (** Create a new topic. *)
 val create : User_model.t -> creation_form -> Lib_db.t -> string Try.t Lwt.t
 
