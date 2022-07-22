@@ -14,7 +14,7 @@ let topics_count_by_categories =
       user, count_topics_by_categories)
     ~succeed:(fun (user, count_topics_by_categories) request ->
       let flash_info = Util.Flash_info.fetch request in
-      let view = Views.Category.categories_by_topics_count ?flash_info ~user:user count_topics_by_categories in
+      let view = Views.Category.by_topics_count ?flash_info ~user:user count_topics_by_categories in
       Dream.html @@ from_tyxml view)
     ~failure:(fun err request ->
       Flash_info.error_tree request err;

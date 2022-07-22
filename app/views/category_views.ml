@@ -101,48 +101,25 @@ let all categories =
   @@ List.map category_line categories
 ;;
 
-let categories ?flash_info ?user categories =
-    Templates.Layout.default
-    ?flash_info
-    ?user
-    ~lang:"fr"
-    ~page_title:"Catégories"
-    Tyxml.Html.
-      [ div
-          [ h1 ~a:[ a_class [ "title" ] ] [ txt "Liste des catégories" ]
-          ; div
-              ~a:[ a_class [ "mb-6" ] ]
-              [ div
-                  [ h2
-                      ~a:[ a_class [ "title"; "is-4" ] ]
-                      [ txt "Catégories existantes" ]
-                  ; all categories
-                  ]
-              ]
-          ]
-      ]
-;;
-
-let category_topics_count_line cnt_topic_by_category =
-  let (category_name,category_descr,topic_cnt) = cnt_topic_by_category in
+let by_topic_count_line (name, desc, counter) =
   let open Tyxml.Html in
   tr [ 
     td [ 
-      p ~a:[a_class ["title is-4"]] [ txt category_name ];
-      p ~a:[a_class ["subtitle"]] [ txt category_descr ]
+      p ~a:[a_class ["title is-4"]] [ txt name ];
+      p ~a:[a_class ["subtitle"]] [ txt desc ]
     ]; 
     td [
-    if topic_cnt > 0 then
+    if counter > 0 then
         Templates.Util.a 
-          ~:Endpoints.Topic.by_category [txt (string_of_int topic_cnt)] category_name
+          ~:Endpoints.Topic.by_category [txt (string_of_int counter)] name
     else
-      txt (string_of_int topic_cnt)
+      txt (string_of_int counter)
     ]
   ]
 
 
 
-let categories_by_topics_count ?flash_info ?user cnt_topics_by_categories =
+let by_topics_count ?flash_info ?user cnt_topics_by_categories =
   let open Tyxml.Html in
   let hd = thead [ tr [ th [ txt "Catégories" ]; th [ txt "Nombre de topics" ] ] ] in
   Templates.Layout.default
@@ -158,7 +135,7 @@ let categories_by_topics_count ?flash_info ?user cnt_topics_by_categories =
               [
                 table
                 ~thead: hd
-                @@ List.map category_topics_count_line cnt_topics_by_categories
+                @@ List.map by_topic_count_line cnt_topics_by_categories
               ]
           ]
       ]
