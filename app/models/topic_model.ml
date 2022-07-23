@@ -160,6 +160,25 @@ let count =
   fun (module Db : Lib_db.T) -> Lib_db.try_ @@ Db.find query ()
 ;;
 
+let count_by_categories =
+  let query =
+    (unit ->* (tup3 string string int)) {sql|
+      SELECT 
+        category_name,
+        category_description, 
+        COUNT(*)
+      FROM topics AS t
+        INNER JOIN categories AS c ON t.category_id = c.category_id
+      GROUP BY c.category_name, c.category_description
+      ORDER BY c.category_name
+    |sql}
+  in
+  fun (module Db : Lib_db.T) ->
+    let open Lwt_util in
+    let+? list = Lib_db.try_ @@ Db.collect_list query () in
+    list
+;;
+
 let create =
   let query =
     (tup4 string string string string ->! string)

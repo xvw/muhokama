@@ -6,3 +6,4 @@ module Global = Global_services
 module User = User_services
 module Topic = Topic_services
 module Admin = Admin_services
+module Category = Category_services
