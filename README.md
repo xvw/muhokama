@@ -47,13 +47,13 @@ a password to be entered in a prompter, and two databases:
 The configuration is provisioned by environment variables:
 
 ``` sh
-export PGSQL_HOST=localhost
-export PGSQL_PORT=5432
-export PGSQL_DB=muhokama_dev
-export PGSQL_USER=muhokama
-export PGSQL_PASS=muhokama
+export POSTGRESQL_ADDON_HOST=localhost
+export POSTGRESQL_ADDON_PORT=5432
+export POSTGRESQL_ADDON_DB=muhokama_dev
+export POSTGRESQL_ADDON_USER=muhokama
+export POSTGRESQL_ADDON_PASSWORD=muhokama
 export LOG_LEVEL=debug
-export PGSQL_CONNECTION_POOL=20
+export POSTGRESQL_ADDON_CONNECTION_POOL=5
 ```
 
 ### Running integration test
@@ -80,3 +80,22 @@ subcommand can display its `man` page using the `--help` flag.
 | `./bin/muhokama.exe server.launch`| Starts the application on the default port (`4000`). It is possible to add the `--port X` flag to change this value. |
 | `./bin/muhokama.exe user.list` | Lists all registered users (regardless of their status) |
 | `./bin/muhokama.exe user.set-state -U USER_ID -S USER_STATE` | Changes the status (`inactive`, ` member`,  `moderator` `admin`) of a user via its ID ( `UUID` ). |
+
+### Deploy on clever cloud
+
+1. Create a docker application with a postgreSQL add-on
+2. Add the following environment variable to the docker application
+  - CC_DOCKER_EXPOSED_HTTP_PORT="4000"
+  - PGSQL_CONNECTION_POOL="5"
+
+> "5" is the maximum connections for free databases, you can adapt `PGSQL_CONNECTION_POOL` in accordance to the [pool of your plan](https://www.clever-cloud.com/doc/deploy/addon/postgresql/postgresql/#plans)
+
+3. In **Information** of the docker application, check the following options:
+  - Zero downtime deployment
+  - Enable dedicated build instance (Must be minimum S)
+  - Cancel ongoing deployment on new push
+  - Force HTTPS
+
+4. Add a git remote `git remote add clever <Deployment URL>`
+
+5. Push your first deployment `git push clever main:master`

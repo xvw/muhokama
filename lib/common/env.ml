@@ -82,12 +82,12 @@ let validate =
   let open Validate in
   let open Free in
   make_environment
-  <$> required string "PGSQL_HOST"
-  <*> required (int & bounded_to 1 65535) "PGSQL_PORT"
-  <*> required string "PGSQL_DB"
-  <*> (optional int "PGSQL_CONNECTION_POOL" >? 20)
-  <*> required string "PGSQL_USER"
-  <*> required string "PGSQL_PASS"
+  <$> required string "POSTGRESQL_ADDON_HOST"
+  <*> required (int & bounded_to 1 65535) "POSTGRESQL_ADDON_PORT"
+  <*> required string "POSTGRESQL_ADDON_DB"
+  <*> (optional int "POSTGRESQL_ADDON_CONNECTION_POOL" >? 5)
+  <*> required string "POSTGRESQL_ADDON_USER"
+  <*> required string "POSTGRESQL_ADDON_PASSWORD"
   <*> (optional string_to_log "LOG_LEVEL" >? Logs.Info)
 ;;
 

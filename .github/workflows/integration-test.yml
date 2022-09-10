@@ -4,13 +4,13 @@ on:
   push:
 
 env:
-  PGSQL_HOST: localhost
-  PGSQL_PORT: 5432
-  PGSQL_DB: postgres
-  PGSQL_USER: postgres
-  PGSQL_PASS: postgres
+  POSTGRESQL_ADDON_HOST: localhost
+  POSTGRESQL_ADDON_PORT: 5432
+  POSTGRESQL_ADDON_DB: postgres
+  POSTGRESQL_ADDON_USER: postgres
+  POSTGRESQL_ADDON_PASSWORD: postgres
   LOG_LEVEL: debug
-  PGSQL_CONNECTION_POOL: 20
+  POSTGRESQL_ADDON_CONNECTION_POOL: 20
 
 jobs:
   build_opam:

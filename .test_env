@@ -1,7 +1,7 @@
-export PGSQL_HOST=localhost
-export PGSQL_PORT=5432
-export PGSQL_DB=muhokama_test
-export PGSQL_USER=muhokama
-export PGSQL_PASS=muhokama
-export LOG_LEVEL=debug
-export PGSQL_CONNECTION_POOL=20
+export POSTGRESQL_ADDON_HOST = localhost
+export POSTGRESQL_ADDON_PORT = 5432
+export POSTGRESQL_ADDON_DB = muhokama_test
+export POSTGRESQL_ADDON_USER = muhokama
+export POSTGRESQL_ADDON_PASSWORD = muhokama
+export LOG_LEVEL = debug
+export POSTGRESQL_ADDON_CONNECTION_POOL = 20
