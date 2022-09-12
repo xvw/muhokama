@@ -34,12 +34,12 @@ let get_migrations_files migration_dir =
     files
     |> List.map Migration.is_valid_filename
     |> List.sort (fun left right ->
-           match left, right with
-           | ( Migration.Valid_name_scheme { index = a; _ }
-             , Migration.Valid_name_scheme { index = b; _ } ) -> Int.compare a b
-           | Migration.Valid_name_scheme _, _ ->
-             Int.max_int (* put invalid file at the begining *)
-           | _ -> Int.min_int)
+         match left, right with
+         | ( Migration.Valid_name_scheme { index = a; _ }
+           , Migration.Valid_name_scheme { index = b; _ } ) -> Int.compare a b
+         | Migration.Valid_name_scheme _, _ ->
+           Int.max_int (* put invalid file at the begining *)
+         | _ -> Int.min_int)
     |> return
 ;;
 

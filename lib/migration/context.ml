@@ -80,7 +80,7 @@ let compute_backward ctx current target =
   and state =
     Migration_map.find_opt target ctx
     |> Option.fold ~none:(0, Sha256.neutral) ~some:(fun m ->
-           Migration.(m.index, hash m))
+         Migration.(m.index, hash m))
   in
   Plan.Backward (steps, state)
 ;;
@@ -109,6 +109,6 @@ let valid_checksum given_index given_hash ctx =
     ctx
     |> Migration_map.find_opt given_index
     |> Option.fold ~none ~some:(fun x ->
-           let stored_hash = Migration.hash x |> Sha256.to_string in
-           if String.equal stored_hash given_hash then Try.ok () else none))
+         let stored_hash = Migration.hash x |> Sha256.to_string in
+         if String.equal stored_hash given_hash then Try.ok () else none))
 ;;

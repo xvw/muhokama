@@ -74,7 +74,7 @@ let optional assoc key f =
   |> List.assoc_opt key
   |> Option.(
        fold ~none:(valid None) ~some:(fun value ->
-           Option.some <$> (f value |> Error.collapse_for_field key)))
+         Option.some <$> (f value |> Error.collapse_for_field key)))
 ;;
 
 let required assoc key f =

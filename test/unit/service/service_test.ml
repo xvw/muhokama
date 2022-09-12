@@ -11,8 +11,8 @@ module P = struct
     }
 
   let equal
-      { request = r_a; content = c_a; status = s_a }
-      { request = r_b; content = c_b; status = s_b }
+    { request = r_a; content = c_a; status = s_a }
+    { request = r_b; content = c_b; status = s_b }
     =
     MS.equal String.equal r_a r_b && String.equal c_a c_b && Int.equal s_a s_b
   ;;
@@ -83,8 +83,8 @@ module S = struct
       ~:E.hello_to
       []
       (fun name nickname request ->
-        let content = Format.asprintf "Hello, %s! (%s)" name nickname in
-        Lwt.return P.{ request; content; status = 200 })
+      let content = Format.asprintf "Hello, %s! (%s)" name nickname in
+      Lwt.return P.{ request; content; status = 200 })
   ;;
 
   let leave =
@@ -93,8 +93,8 @@ module S = struct
       ~:E.leave
       []
       (fun nickname request ->
-        let content = Format.asprintf "Goodbye, %s!" nickname in
-        Lwt.return P.{ request; content; status = 200 })
+      let content = Format.asprintf "Goodbye, %s!" nickname in
+      Lwt.return P.{ request; content; status = 200 })
   ;;
 
   let show =
@@ -112,14 +112,14 @@ module S = struct
       ~succeed
       ~failure
       (fun name age nickname _request ->
-        Lwt.return
-          (if String.equal name String.empty
-          then Error "name too short"
-          else if String.equal nickname String.empty
-          then Error "nickname too short"
-          else if age < 0
-          then Error "age too low"
-          else Ok (name, age)))
+      Lwt.return
+        (if String.equal name String.empty
+        then Error "name too short"
+        else if String.equal nickname String.empty
+        then Error "nickname too short"
+        else if age < 0
+        then Error "age too low"
+        else Ok (name, age)))
   ;;
 end
 

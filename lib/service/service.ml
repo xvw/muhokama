@@ -145,27 +145,27 @@ let choose method_ given_uri services fallback request =
     | [] -> fallback request
     | Straight { endpoint; middlewares; handler } :: services ->
       (match Endpoint.handle endpoint method_ uri Fun.id handler with
-      | Some handler -> (reduce_middlewares handler middlewares) request
-      | None -> aux services)
+       | Some handler -> (reduce_middlewares handler middlewares) request
+       | None -> aux services)
     | Straight_attached { endpoint; middlewares; handler; attached } :: services
       ->
       (match Endpoint.handle endpoint method_ uri Fun.id handler with
-      | Some callback ->
-        let inner_handler request = attached callback request in
-        (reduce_middlewares inner_handler middlewares) request
-      | None -> aux services)
+       | Some callback ->
+         let inner_handler request = attached callback request in
+         (reduce_middlewares inner_handler middlewares) request
+       | None -> aux services)
     | Failable
         { endpoint; handler; middlewares; succeed_callback; failure_callback }
       :: services ->
       (match Endpoint.handle endpoint method_ uri Fun.id handler with
-      | Some callback ->
-        let full_handler request =
-          Lwt.bind (callback request) (function
-              | Ok x -> succeed_callback x request
-              | Error err -> failure_callback err request)
-        in
-        (reduce_middlewares full_handler middlewares) request
-      | None -> aux services)
+       | Some callback ->
+         let full_handler request =
+           Lwt.bind (callback request) (function
+             | Ok x -> succeed_callback x request
+             | Error err -> failure_callback err request)
+         in
+         (reduce_middlewares full_handler middlewares) request
+       | None -> aux services)
     | Failable_with_attachment
         { endpoint
         ; handler
@@ -176,15 +176,15 @@ let choose method_ given_uri services fallback request =
         }
       :: services ->
       (match Endpoint.handle endpoint method_ uri Fun.id handler with
-      | Some callback ->
-        let inner_handler attachment request =
-          Lwt.bind (callback attachment request) (function
-              | Ok x -> succeed_callback x request
-              | Error err -> failure_callback err request)
-        in
-        let full_handler request = attached inner_handler request in
-        (reduce_middlewares full_handler middlewares) request
-      | None -> aux services)
+       | Some callback ->
+         let inner_handler attachment request =
+           Lwt.bind (callback attachment request) (function
+             | Ok x -> succeed_callback x request
+             | Error err -> failure_callback err request)
+         in
+         let full_handler request = attached inner_handler request in
+         (reduce_middlewares full_handler middlewares) request
+       | None -> aux services)
   in
   aux services
 ;;

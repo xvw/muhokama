@@ -118,8 +118,8 @@ let create =
 ;;
 
 let validate_creation
-    ?(name_field = "category_name")
-    ?(description_field = "category_description")
+  ?(name_field = "category_name")
+  ?(description_field = "category_description")
   =
   let open Lib_form in
   let formlet s =
@@ -131,8 +131,8 @@ let validate_creation
 ;;
 
 let equal
-    { id = id_a; name = name_a; description = description_a }
-    { id = id_b; name = name_b; description = description_b }
+  { id = id_a; name = name_a; description = description_a }
+  { id = id_b; name = name_b; description = description_b }
   =
   String.equal id_a id_b
   && String.equal name_a name_b

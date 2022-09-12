@@ -50,9 +50,9 @@ let create =
       let open Lwt_util in
       let+ categories = Dream.sql request @@ Models.Category.list Fun.id in
       Result.bind categories (fun categories ->
-          match Preface.Nonempty_list.from_list categories with
-          | None -> Error.(to_try category_absent)
-          | Some xs -> Ok (user, xs)))
+        match Preface.Nonempty_list.from_list categories with
+        | None -> Error.(to_try category_absent)
+        | Some xs -> Ok (user, xs)))
     ~succeed:(fun (user, categories) request ->
       let flash_info = Flash_info.fetch request in
       let csrf_token = Dream.csrf_token request in

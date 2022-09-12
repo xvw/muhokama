@@ -22,10 +22,10 @@ let make_uri_with ~user ~password ~host ~port ~database =
 let connect_with ~max_size ~user ~password ~host ~port ~database =
   let uri = make_uri_with ~user ~password ~host ~port ~database in
   (match Caqti_lwt.connect_pool ~max_size uri with
-  | Ok pool -> Try.ok pool
-  | Error err ->
-    let message = Caqti_error.show err in
-    Error.to_try @@ Database message)
+   | Ok pool -> Try.ok pool
+   | Error err ->
+     let message = Caqti_error.show err in
+     Error.to_try @@ Database message)
   |> Lwt.return
 ;;
 

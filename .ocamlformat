@@ -1,4 +1,4 @@
-version = 0.22.4
+version = 0.23.0
 profile = janestreet
 break-infix = fit-or-vertical
 parse-docstrings = true

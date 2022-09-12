@@ -23,7 +23,7 @@ let category_name_input =
         ~a:[ a_class [ "help" ] ]
         [ txt
             "Nom de la catégorie, choisissez quelque chose de concis mais \
-              clair !"
+             clair !"
         ]
     ]
 ;;
@@ -41,7 +41,7 @@ let category_description_input =
             ~a:
               [ a_placeholder
                   "Catégorie relative aux conversations concernant la \
-                    programmation"
+                   programmation"
               ; a_id "create_category_description"
               ; a_name "category_description"
               ; a_class [ "textarea"; "is-small" ]
@@ -90,12 +90,7 @@ let all categories =
   table
     ~a:
       [ a_class
-          [ "table"
-          ; "is-fullwidth"
-          ; "is-narrow"
-          ; "is-striped"
-          ; "is-bordered"
-          ]
+          [ "table"; "is-fullwidth"; "is-narrow"; "is-striped"; "is-bordered" ]
       ]
     ~thead:hd
   @@ List.map category_line categories
@@ -103,39 +98,41 @@ let all categories =
 
 let by_topic_count_line (name, desc, counter) =
   let open Tyxml.Html in
-  tr [ 
-    td [ 
-      p ~a:[a_class ["title is-4"]] [ txt name ];
-      p ~a:[a_class ["subtitle"]] [ txt desc ]
-    ]; 
-    td [
-    if counter > 0 then
-        Templates.Util.a 
-          ~:Endpoints.Topic.by_category [txt (string_of_int counter)] name
-    else
-      txt (string_of_int counter)
+  tr
+    [ td
+        [ p ~a:[ a_class [ "title is-4" ] ] [ txt name ]
+        ; p ~a:[ a_class [ "subtitle" ] ] [ txt desc ]
+        ]
+    ; td
+        [ (if counter > 0
+          then
+            Templates.Util.a
+              ~:Endpoints.Topic.by_category
+              [ txt (string_of_int counter) ]
+              name
+          else txt (string_of_int counter))
+        ]
     ]
-  ]
-
-
+;;
 
 let by_topics_count ?flash_info ?user cnt_topics_by_categories =
   let open Tyxml.Html in
-  let hd = thead [ tr [ th [ txt "Catégories" ]; th [ txt "Nombre de topics" ] ] ] in
+  let hd =
+    thead [ tr [ th [ txt "Catégories" ]; th [ txt "Nombre de topics" ] ] ]
+  in
   Templates.Layout.default
     ?flash_info
     ?user
     ~lang:"fr"
     ~page_title:"Catégories"
     Tyxml.Html.
-      [
-        div ~a:[ a_class [ "mb-2" ] ]
-          [
-            div ~a:[ a_class [ "content" ] ]
-              [
-                table
-                ~thead: hd
+      [ div
+          ~a:[ a_class [ "mb-2" ] ]
+          [ div
+              ~a:[ a_class [ "content" ] ]
+              [ table ~thead:hd
                 @@ List.map by_topic_count_line cnt_topics_by_categories
               ]
           ]
       ]
+;;

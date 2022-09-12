@@ -185,8 +185,8 @@ let test_get_for_connection_when_there_is_a_candidate_user =
       let+? computed = Models.User.get_for_connection obj db in
       computed, witness_user)
     (function
-      | Error _ -> assert false
-      | Ok (computed, expected) -> same Testable.saved_user ~expected ~computed)
+     | Error _ -> assert false
+     | Ok (computed, expected) -> same Testable.saved_user ~expected ~computed)
 ;;
 
 let test_list_active_when_no_user =

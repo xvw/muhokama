@@ -7,14 +7,14 @@ let list () =
     let*? pool = Lib_db.connect env in
     Lib_db.use pool
     @@ Models.User.iter (fun user ->
-           Logs.info (fun pp ->
-               pp
-                 "%s\t|%s\t|%s\t|%a"
-                 user.id
-                 user.name
-                 user.email
-                 Models.User.State.pp
-                 user.state))
+         Logs.info (fun pp ->
+           pp
+             "%s\t|%s\t|%s\t|%a"
+             user.id
+             user.name
+             user.email
+             Models.User.State.pp
+             user.state))
   in
   Termination.handle promise
 ;;

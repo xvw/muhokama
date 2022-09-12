@@ -35,18 +35,13 @@ let test_create_a_valid_user =
     ~about:"run"
     ~desc:"When all data are given, the result should be valid"
     (fun () ->
-      let json_user =
-        Individual.json
-          ~id:"xvw"
-          ~age:32
-          ~name:"Vdw"
-          ~email:"xavier@mail.com"
-          ()
-      in
-      let expected =
-        Ok (Individual.make "xvw" (Some 32) (Some "Vdw") "xavier@mail.com")
-      and computed = Individual.from_jsnonm json_user in
-      same (Testable.try_ Individual.testable) ~expected ~computed)
+    let json_user =
+      Individual.json ~id:"xvw" ~age:32 ~name:"Vdw" ~email:"xavier@mail.com" ()
+    in
+    let expected =
+      Ok (Individual.make "xvw" (Some 32) (Some "Vdw") "xavier@mail.com")
+    and computed = Individual.from_jsnonm json_user in
+    same (Testable.try_ Individual.testable) ~expected ~computed)
 ;;
 
 let test_create_a_valid_user_without_optional_values =
@@ -54,10 +49,10 @@ let test_create_a_valid_user_without_optional_values =
     ~about:"run"
     ~desc:"When all data required are given, the result should be valid"
     (fun () ->
-      let json_user = Individual.json ~id:"xvw" ~email:"xavier@mail.com" () in
-      let expected = Ok (Individual.make "xvw" None None "xavier@mail.com")
-      and computed = Individual.from_jsnonm json_user in
-      same (Testable.try_ Individual.testable) ~expected ~computed)
+    let json_user = Individual.json ~id:"xvw" ~email:"xavier@mail.com" () in
+    let expected = Ok (Individual.make "xvw" None None "xavier@mail.com")
+    and computed = Individual.from_jsnonm json_user in
+    same (Testable.try_ Individual.testable) ~expected ~computed)
 ;;
 
 let test_create_an_invalid_user_without_any_values =
@@ -65,19 +60,19 @@ let test_create_an_invalid_user_without_any_values =
     ~about:"run"
     ~desc:"When no data is given, the result should be invalid"
     (fun () ->
-      let json_user = Individual.json () in
-      let expected =
-        Try.error
-          Error.(
-            Invalid_object
-              { name = "user"
-              ; errors =
-                  nel
-                    (Field (Missing { name = "id" }))
-                    [ Field (Missing { name = "email" }) ]
-              })
-      and computed = Individual.from_jsnonm json_user in
-      same (Testable.try_ Individual.testable) ~expected ~computed)
+    let json_user = Individual.json () in
+    let expected =
+      Try.error
+        Error.(
+          Invalid_object
+            { name = "user"
+            ; errors =
+                nel
+                  (Field (Missing { name = "id" }))
+                  [ Field (Missing { name = "email" }) ]
+            })
+    and computed = Individual.from_jsnonm json_user in
+    same (Testable.try_ Individual.testable) ~expected ~computed)
 ;;
 
 let cases =
