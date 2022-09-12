@@ -20,9 +20,6 @@ FROM alpine:3 as final
 
 RUN apk add --no-cache libev-dev gmp-dev libpq-dev libressl-dev
 
-ENV LOG_LEVEL=info
-ENV PGSQL_CONNECTION_POOL=20
-
 EXPOSE 4000
 
 WORKDIR /app
@@ -32,5 +29,4 @@ ADD migrations /app/migrations
 
 COPY --from=builder /build/bin/muhokama.exe /usr/bin/muhokama.exe
 
-ENTRYPOINT [ "muhokama.exe" ]
-CMD [ "server.launch" ]
+CMD muhokama.exe db.migrate && muhokama.exe server.launch
