@@ -530,12 +530,12 @@ let topic_id_not_found id = Topic (Topic.Id_not_found id)
 let form_error err =
   Form
     (match err with
-    | `Expired (f, e) -> Form.Expired (f, e)
-    | `Wrong_session f -> Form.Wrong_session f
-    | `Invalid_token f -> Form.Invalid_token f
-    | `Missing_token f -> Form.Missing_token f
-    | `Many_tokens f -> Form.Many_tokens f
-    | `Wrong_content_type -> Form.Wrong_content_type)
+     | `Expired (f, e) -> Form.Expired (f, e)
+     | `Wrong_session f -> Form.Wrong_session f
+     | `Invalid_token f -> Form.Invalid_token f
+     | `Missing_token f -> Form.Missing_token f
+     | `Many_tokens f -> Form.Many_tokens f
+     | `Wrong_content_type -> Form.Wrong_content_type)
 ;;
 
 let rec equal a b =

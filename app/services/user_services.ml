@@ -8,10 +8,10 @@ let login =
     ~:Endpoints.User.login
     [ user_not_authenticated ]
     (fun request ->
-      let flash_info = Flash_info.fetch request in
-      let csrf_token = Dream.csrf_token request in
-      let view = Views.User.login ?flash_info ~csrf_token () in
-      Dream.html @@ from_tyxml view)
+    let flash_info = Flash_info.fetch request in
+    let csrf_token = Dream.csrf_token request in
+    let view = Views.User.login ?flash_info ~csrf_token () in
+    Dream.html @@ from_tyxml view)
 ;;
 
 let create =
@@ -19,10 +19,10 @@ let create =
     ~:Endpoints.User.create
     [ user_not_authenticated ]
     (fun request ->
-      let flash_info = Flash_info.fetch request in
-      let csrf_token = Dream.csrf_token request in
-      let view = Views.User.create ?flash_info ~csrf_token () in
-      Dream.html @@ from_tyxml view)
+    let flash_info = Flash_info.fetch request in
+    let csrf_token = Dream.csrf_token request in
+    let view = Views.User.create ?flash_info ~csrf_token () in
+    Dream.html @@ from_tyxml view)
 ;;
 
 let save =
@@ -65,10 +65,10 @@ let auth =
 
 let leave =
   Service.straight ~:Endpoints.User.leave [ user_authenticated ] (fun request ->
-      let open Lwt_util in
-      let* () = Dream.invalidate_session request in
-      Flash_info.action request "Vous avez été déconneté !";
-      redirect_to ~:Endpoints.User.login request)
+    let open Lwt_util in
+    let* () = Dream.invalidate_session request in
+    Flash_info.action request "Vous avez été déconneté !";
+    redirect_to ~:Endpoints.User.login request)
 ;;
 
 let list_active =

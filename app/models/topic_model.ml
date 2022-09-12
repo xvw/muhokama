@@ -13,26 +13,26 @@ module Listable = struct
     }
 
   let from_tuple
-      (id, (category_name, (user_name, (user_email, (title, responses)))))
+    (id, (category_name, (user_name, (user_email, (title, responses)))))
     =
     { id; category_name; user_name; user_email; title; responses }
   ;;
 
   let equal
-      { id = i_a
-      ; category_name = c_a
-      ; user_name = un_a
-      ; user_email = ue_a
-      ; title = t_a
-      ; responses = r_a
-      }
-      { id = i_b
-      ; category_name = c_b
-      ; user_name = un_b
-      ; user_email = ue_b
-      ; title = t_b
-      ; responses = r_b
-      }
+    { id = i_a
+    ; category_name = c_a
+    ; user_name = un_a
+    ; user_email = ue_a
+    ; title = t_a
+    ; responses = r_a
+    }
+    { id = i_b
+    ; category_name = c_b
+    ; user_name = un_b
+    ; user_email = ue_b
+    ; title = t_b
+    ; responses = r_b
+    }
     =
     String.equal i_a i_b
     && String.equal c_a c_b
@@ -73,9 +73,9 @@ module Showable = struct
     }
 
   let from_tuple
-      ( id
-      , ( category_name
-        , (user_name, (user_email, (creation_date, (title, content)))) ) )
+    ( id
+    , ( category_name
+      , (user_name, (user_email, (creation_date, (title, content)))) ) )
     =
     { id; category_name; user_name; user_email; creation_date; title; content }
   ;;
@@ -87,22 +87,22 @@ module Showable = struct
   ;;
 
   let equal
-      { id = id_a
-      ; category_name = c_a
-      ; user_name = un_a
-      ; user_email = ue_a
-      ; creation_date = d_a
-      ; title = t_a
-      ; content = ct_a
-      }
-      { id = id_b
-      ; category_name = c_b
-      ; user_name = un_b
-      ; user_email = ue_b
-      ; creation_date = d_b
-      ; title = t_b
-      ; content = ct_b
-      }
+    { id = id_a
+    ; category_name = c_a
+    ; user_name = un_a
+    ; user_email = ue_a
+    ; creation_date = d_a
+    ; title = t_a
+    ; content = ct_a
+    }
+    { id = id_b
+    ; category_name = c_b
+    ; user_name = un_b
+    ; user_email = ue_b
+    ; creation_date = d_b
+    ; title = t_b
+    ; content = ct_b
+    }
     =
     String.equal id_a id_b
     && String.equal c_a c_b
@@ -114,15 +114,8 @@ module Showable = struct
   ;;
 
   let pp
-      ppf
-      { id
-      ; category_name
-      ; user_name
-      ; user_email
-      ; creation_date
-      ; title
-      ; content
-      }
+    ppf
+    { id; category_name; user_name; user_email; creation_date; title; content }
     =
     Fmt.pf
       ppf
@@ -162,7 +155,8 @@ let count =
 
 let count_by_categories =
   let query =
-    (unit ->* (tup3 string string int)) {sql|
+    (unit ->* tup3 string string int)
+      {sql|
       SELECT 
         category_name,
         category_description, 
@@ -282,9 +276,9 @@ let list_by_category category_name callback =
 ;;
 
 let validate_creation
-    ?(category_id_field = "category_id")
-    ?(title_field = "topic_title")
-    ?(content_field = "topic_content")
+  ?(category_id_field = "category_id")
+  ?(title_field = "topic_title")
+  ?(content_field = "topic_content")
   =
   let open Lib_form in
   let formlet s =

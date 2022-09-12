@@ -32,16 +32,16 @@ let equal a b =
 ;;
 
 let pp_aux
-    pp_h
-    ppf
-    { pgsql_host
-    ; pgsql_port
-    ; pgsql_db
-    ; pgsql_connection_pool
-    ; pgsql_user
-    ; pgsql_pass
-    ; log_level
-    }
+  pp_h
+  ppf
+  { pgsql_host
+  ; pgsql_port
+  ; pgsql_db
+  ; pgsql_connection_pool
+  ; pgsql_user
+  ; pgsql_pass
+  ; log_level
+  }
   =
   Format.fprintf
     ppf
@@ -60,13 +60,13 @@ let pp_aux
 let pp = pp_aux (fun ppf _ -> Format.fprintf ppf "***")
 
 let make_environment
-    pgsql_host
-    pgsql_port
-    pgsql_db
-    pgsql_connection_pool
-    pgsql_user
-    pgsql_pass
-    log_level
+  pgsql_host
+  pgsql_port
+  pgsql_db
+  pgsql_connection_pool
+  pgsql_user
+  pgsql_pass
+  log_level
   =
   { pgsql_host
   ; pgsql_port

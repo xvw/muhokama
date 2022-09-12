@@ -7,9 +7,9 @@ let test_all =
     ~about:"all & pp_filter"
     ~desc:"test for [all] and [pp_filter]"
     (fun () ->
-      let computed = Fmt.str "%a" (pp_filter ()) all
-      and expected = "true" in
-      same string ~expected ~computed)
+    let computed = Fmt.str "%a" (pp_filter ()) all
+    and expected = "true" in
+    same string ~expected ~computed)
 ;;
 
 let test_active =
@@ -17,12 +17,12 @@ let test_active =
     ~about:"active & pp_filter"
     ~desc:"test for [active] and [pp_filter]"
     (fun () ->
-      let computed = Fmt.str "%a" (pp_filter ()) active
-      and expected =
-        "user_state = 'member' OR user_state = 'moderator' OR user_state = \
-         'admin'"
-      in
-      same string ~expected ~computed)
+    let computed = Fmt.str "%a" (pp_filter ()) active
+    and expected =
+      "user_state = 'member' OR user_state = 'moderator' OR user_state = \
+       'admin'"
+    in
+    same string ~expected ~computed)
 ;;
 
 let test_moderable =
@@ -30,9 +30,9 @@ let test_moderable =
     ~about:"moderable & pp_filter"
     ~desc:"test for [moderable] and [pp_filter]"
     (fun () ->
-      let computed = Fmt.str "%a" (pp_filter ()) moderable
-      and expected = "user_state <> 'admin'" in
-      same string ~expected ~computed)
+    let computed = Fmt.str "%a" (pp_filter ()) moderable
+    and expected = "user_state <> 'admin'" in
+    same string ~expected ~computed)
 ;;
 
 let test_admin =
@@ -40,9 +40,9 @@ let test_admin =
     ~about:"admin & pp_filter"
     ~desc:"test for [admin] and [pp_filter]"
     (fun () ->
-      let computed = Fmt.str "%a" (pp_filter ()) admin
-      and expected = "user_state = 'admin'" in
-      same string ~expected ~computed)
+    let computed = Fmt.str "%a" (pp_filter ()) admin
+    and expected = "user_state = 'admin'" in
+    same string ~expected ~computed)
 ;;
 
 let test_moderator =
@@ -50,9 +50,9 @@ let test_moderator =
     ~about:"moderator & pp_filter"
     ~desc:"test for [moderator] and [pp_filter]"
     (fun () ->
-      let computed = Fmt.str "%a" (pp_filter ()) moderator
-      and expected = "user_state = 'moderator'" in
-      same string ~expected ~computed)
+    let computed = Fmt.str "%a" (pp_filter ()) moderator
+    and expected = "user_state = 'moderator'" in
+    same string ~expected ~computed)
 ;;
 
 let test_member =
@@ -60,9 +60,9 @@ let test_member =
     ~about:"member & pp_filter"
     ~desc:"test for [member] and [pp_filter]"
     (fun () ->
-      let computed = Fmt.str "%a" (pp_filter ()) member
-      and expected = "user_state = 'member'" in
-      same string ~expected ~computed)
+    let computed = Fmt.str "%a" (pp_filter ()) member
+    and expected = "user_state = 'member'" in
+    same string ~expected ~computed)
 ;;
 
 let test_inactive =
@@ -70,9 +70,9 @@ let test_inactive =
     ~about:"inactive & pp_filter"
     ~desc:"test for [inactive] and [pp_filter]"
     (fun () ->
-      let computed = Fmt.str "%a" (pp_filter ()) inactive
-      and expected = "user_state = 'inactive'" in
-      same string ~expected ~computed)
+    let computed = Fmt.str "%a" (pp_filter ()) inactive
+    and expected = "user_state = 'inactive'" in
+    same string ~expected ~computed)
 ;;
 
 let test_with_power =
@@ -80,9 +80,9 @@ let test_with_power =
     ~about:"with_power & pp_filter"
     ~desc:"test for [with_power] and [pp_filter]"
     (fun () ->
-      let computed = Fmt.str "%a" (pp_filter ()) with_power
-      and expected = "user_state = 'moderator' OR user_state = 'admin'" in
-      same string ~expected ~computed)
+    let computed = Fmt.str "%a" (pp_filter ()) with_power
+    and expected = "user_state = 'moderator' OR user_state = 'admin'" in
+    same string ~expected ~computed)
 ;;
 
 let cases =

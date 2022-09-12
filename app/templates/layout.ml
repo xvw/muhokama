@@ -26,15 +26,15 @@ let compute_head prefix suffix charset additional_meta additional_css =
 ;;
 
 let default
-    ~lang
-    ~page_title
-    ?(prefix_title = Some "Muhokama - ")
-    ?(charset = "utf-8")
-    ?(additional_meta = [])
-    ?(additional_css = [])
-    ?flash_info
-    ?user
-    content
+  ~lang
+  ~page_title
+  ?(prefix_title = Some "Muhokama - ")
+  ?(charset = "utf-8")
+  ?(additional_meta = [])
+  ?(additional_css = [])
+  ?flash_info
+  ?user
+  content
   =
   let open Tyxml.Html in
   html

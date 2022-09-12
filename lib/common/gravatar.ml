@@ -25,7 +25,7 @@ let size_to_query_string =
 
 let default_style_to_query_string =
   Option.fold ~none:[] ~some:(fun style ->
-      [ Fmt.str "d=%s" @@ default_style_to_string style ])
+    [ Fmt.str "d=%s" @@ default_style_to_string style ])
 ;;
 
 let url ?default ?size email =

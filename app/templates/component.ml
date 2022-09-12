@@ -100,7 +100,7 @@ let connected_navbar user =
                 ~:Endpoints.Topic.create
                 [ txt "Créer un fil de conversation" ]
             ; Util.a
-                ~a:[ a_class ["navbar-item"] ]
+                ~a:[ a_class [ "navbar-item" ] ]
                 ~:Endpoints.Category.list
                 [ txt "Catégories" ]
             ]

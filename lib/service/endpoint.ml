@@ -65,7 +65,7 @@ let handle_path_link path handler =
 
 let handle_path_for path uri handler =
   let rec aux
-      : type a b c. (b -> c) -> (a, b) path -> string list -> a -> c option
+    : type a b c. (b -> c) -> (a, b) path -> string list -> a -> c option
     =
    fun continue path uri ->
     match path, uri with
@@ -76,8 +76,8 @@ let handle_path_for path uri handler =
       else fun _ -> None
     | Variable (tail, w), fragment :: xs ->
       (match variable_from_string fragment w with
-      | None -> fun _ -> None
-      | Some var -> aux (fun acc -> continue (acc var)) tail xs)
+       | None -> fun _ -> None
+       | Some var -> aux (fun acc -> continue (acc var)) tail xs)
     | _ -> fun _ -> None
   in
   aux handler path uri
@@ -108,9 +108,9 @@ let get path = GET path
 let post path = POST path
 
 let path_of
-    : type method_.
-      (method_, 'handler_function, 'handler_return) t
-      -> ('handler_function, 'handler_return) path
+  : type method_.
+    (method_, 'handler_function, 'handler_return) t
+    -> ('handler_function, 'handler_return) path
   = function
   | GET p | POST p -> p
 ;;
@@ -130,10 +130,10 @@ let href endpoint = handle_href endpoint Fun.id
 let redirect ?anchor ?status ?code ?headers = function
   | GET path ->
     handle_path_link path (fun target request ->
-        let target =
-          Option.fold ~none:target ~some:(fun x -> target ^ "#" ^ x) anchor
-        in
-        Dream.redirect ?status ?code ?headers request target)
+      let target =
+        Option.fold ~none:target ~some:(fun x -> target ^ "#" ^ x) anchor
+      in
+      Dream.redirect ?status ?code ?headers request target)
 ;;
 
 let form_method : type method_. (method_, _, _) t -> _ = function
@@ -149,14 +149,14 @@ let form_method_action endpoint =
 
 let handle_form endpoint f =
   handle_link endpoint (fun link ->
-      let meth = form_method endpoint in
-      f meth link)
+    let meth = form_method endpoint in
+    f meth link)
 ;;
 
 let handle endpoint given_method given_uri handler =
   let aux
-      : type endpoint_method.
-        (endpoint_method, 'handler_function, 'handler_return) t -> _
+    : type endpoint_method.
+      (endpoint_method, 'handler_function, 'handler_return) t -> _
     =
    fun endpoint ->
     match endpoint, given_method with

@@ -5,7 +5,7 @@ open Middlewares
 
 let root =
   Service.straight ~:Endpoints.Admin.root [] (fun request ->
-      Util.redirect_to ~:Endpoints.Admin.user request)
+    Util.redirect_to ~:Endpoints.Admin.user request)
 ;;
 
 let user =

@@ -85,18 +85,18 @@ let get_by_topic_id callback =
 ;;
 
 let equal
-    { id = id_a
-    ; user_name = un_a
-    ; user_email = ue_a
-    ; creation_date = cd_a
-    ; content = c_a
-    }
-    { id = id_b
-    ; user_name = un_b
-    ; user_email = ue_b
-    ; creation_date = cd_b
-    ; content = c_b
-    }
+  { id = id_a
+  ; user_name = un_a
+  ; user_email = ue_a
+  ; creation_date = cd_a
+  ; content = c_a
+  }
+  { id = id_b
+  ; user_name = un_b
+  ; user_email = ue_b
+  ; creation_date = cd_b
+  ; content = c_b
+  }
   =
   String.equal id_a id_b
   && String.equal un_a un_b

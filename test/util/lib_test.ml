@@ -6,32 +6,32 @@ let test ?(speed = `Quick) ~about ~desc f =
 ;;
 
 let integration_test
-    ?(migrations_path = "../../../../migrations")
-    ?(speed = `Slow)
-    ~about
-    ~desc
-    f
-    e
+  ?(migrations_path = "../../../../migrations")
+  ?(speed = `Slow)
+  ~about
+  ~desc
+  f
+  e
   =
   test ~speed ~about ~desc (fun () ->
-      let promise =
-        let open Lwt_util in
-        let*? env = Env.init () in
-        let*? pool = Lib_db.connect env in
-        Lib_db.use pool (fun db ->
-            let open Lib_migration in
-            let*? () = Migrate.run migrations_path (Some 0) db in
-            let*? () = Migrate.run migrations_path None db in
-            let+? result = f env db in
-            db, result)
+    let promise =
+      let open Lwt_util in
+      let*? env = Env.init () in
+      let*? pool = Lib_db.connect env in
+      Lib_db.use pool (fun db ->
+        let open Lib_migration in
+        let*? () = Migrate.run migrations_path (Some 0) db in
+        let*? () = Migrate.run migrations_path None db in
+        let+? result = f env db in
+        db, result)
+    in
+    match Lwt_main.run promise with
+    | Error err -> e (Error err)
+    | Ok (db, result) ->
+      let _ =
+        Lwt_main.run @@ Lib_migration.Migrate.run migrations_path (Some 0) db
       in
-      match Lwt_main.run promise with
-      | Error err -> e (Error err)
-      | Ok (db, result) ->
-        let _ =
-          Lwt_main.run @@ Lib_migration.Migrate.run migrations_path (Some 0) db
-        in
-        e (Ok result))
+      e (Ok result))
 ;;
 
 let same testable ~expected ~computed =

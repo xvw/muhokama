@@ -216,8 +216,8 @@ let get_by_email_and_password =
 ;;
 
 let get_for_connection
-    { connection_email = email; connection_password = password }
-    db
+  { connection_email = email; connection_password = password }
+  db
   =
   let open Lwt_util in
   let password = Sha256.to_string password in
@@ -257,10 +257,10 @@ let required_password ~password_field source =
 ;;
 
 let validate_registration
-    ?(name_field = "user_name")
-    ?(email_field = "user_email")
-    ?(password_field = "user_password")
-    ?(confirm_password_field = "confirm_user_password")
+  ?(name_field = "user_name")
+  ?(email_field = "user_email")
+  ?(password_field = "user_password")
+  ?(confirm_password_field = "confirm_user_password")
   =
   let open Lib_form in
   let formlet s =
@@ -277,8 +277,8 @@ let validate_registration
 ;;
 
 let validate_connection
-    ?(email_field = "user_email")
-    ?(password_field = "user_password")
+  ?(email_field = "user_email")
+  ?(password_field = "user_password")
   =
   let open Lib_form in
   let formlet s =
@@ -314,8 +314,8 @@ let validate_state_change ?(id_field = "user_id") ?(action_field = "action") =
 ;;
 
 let equal
-    { id = id_a; name = name_a; email = email_a; state = state_a }
-    { id = id_b; name = name_b; email = email_b; state = state_b }
+  { id = id_a; name = name_a; email = email_a; state = state_a }
+  { id = id_b; name = name_b; email = email_b; state = state_b }
   =
   String.equal id_a id_b
   && String.equal name_a name_b
