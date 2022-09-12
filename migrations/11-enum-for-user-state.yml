@@ -2,8 +2,8 @@ up:
   - |
     UPDATE users
     SET user_state = 'inactive'
-    WHERE user_state not in (VALUES ('member'),('inactive'),('administrator'),('moderator'))
-  - CREATE TYPE enum_member_state AS ENUM ('inactive','member', 'moderator', 'administrator')
+    WHERE user_state not in (VALUES ('member'),('inactive'),('admin'),('moderator'))
+  - CREATE TYPE enum_member_state AS ENUM ('inactive','member', 'moderator', 'admin')
   - ALTER TABLE users ALTER COLUMN user_state DROP DEFAULT
   - |
     ALTER TABLE users ALTER COLUMN user_state TYPE enum_member_state 
