@@ -1,0 +1,16 @@
+up:
+  - |
+    UPDATE users
+    SET user_state = 'inactive'
+    WHERE user_state not in (VALUES ('member'),('inactive'),('administrator'),('moderator'))
+  - CREATE TYPE enum_member_state AS ENUM ('inactive','member', 'moderator', 'administrator')
+  - ALTER TABLE users ALTER COLUMN user_state DROP DEFAULT
+  - |
+    ALTER TABLE users ALTER COLUMN user_state TYPE enum_member_state 
+    USING user_state::text::enum_member_state
+  - ALTER TABLE users ALTER COLUMN user_state SET DEFAULT 'inactive'
+
+down:
+  - ALTER TABLE users ALTER COLUMN user_state TYPE VARCHAR(255)
+  - ALTER TABLE users ALTER COLUMN user_state SET DEFAULT 'inactive'
+  - DROP TYPE IF EXISTS enum_member_state
