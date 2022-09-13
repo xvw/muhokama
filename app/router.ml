@@ -1,4 +1,10 @@
-let static = Dream.(router [ get "/css/**" @@ static "assets/css" ])
+let static =
+  Dream.(
+    router
+      [ get "/css/**" @@ static "assets/css"
+      ; get "/js/**" @@ static "assets/js"
+      ])
+;;
 
 let choose_service next_handler request =
   let uri = Dream.target request

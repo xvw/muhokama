@@ -14,6 +14,7 @@ let compute_title prefix suffix =
 
 let compute_stylesheet additional_css =
   Util.stylesheet "https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css"
+  :: Util.stylesheet "/css/hljs.css"
   :: Util.stylesheet "/css/style.css"
   :: List.map Util.stylesheet additional_css
 ;;
@@ -22,7 +23,9 @@ let compute_head prefix suffix charset additional_meta additional_css =
   let open Tyxml.Html in
   head
     (compute_title prefix suffix)
-    (compute_meta charset additional_meta @ compute_stylesheet additional_css)
+    (compute_meta charset additional_meta
+    @ compute_stylesheet additional_css
+    @ [ script ~a:[ a_src "/js/hljs.js" ] (txt "") ])
 ;;
 
 let default
@@ -54,5 +57,6 @@ let default
                [ Component.flash_info flash_info; div content ]
            ]
        ; Component.main_footer
+       ; script @@ txt "hljs.highlightAll();"
        ])
 ;;
