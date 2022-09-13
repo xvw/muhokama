@@ -16,6 +16,13 @@ module Flash_info = struct
 
   let inbox = "muhokama-notification"
 
+  let fallback request =
+    request
+    |> Dream.flash_messages
+    |> List.assoc_opt inbox
+    |> Option.fold ~none:() ~some:(Dream.add_flash_message request inbox)
+  ;;
+
   let process request notif =
     let flash_message = notif |> Model.serialize in
     Dream.add_flash_message request inbox flash_message
