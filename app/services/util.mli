@@ -48,6 +48,9 @@ module Flash_info : sig
   (** [fetch request] will fetch the current flash info from the [request]
       handler. *)
   val fetch : Dream.request -> Models.Flash_info.t option
+
+  (** [fallback request] will persist the flash messages for the next request. *)
+  val fallback : Dream.request -> unit
 end
 
 module Auth : sig

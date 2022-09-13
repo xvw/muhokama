@@ -2,8 +2,9 @@ open Lib_service
 open Util
 
 let root =
-  Service.straight ~:Endpoints.Global.root []
-  @@ Util.redirect_to ~:Endpoints.Topic.root
+  Service.straight ~:Endpoints.Global.root [] (fun request ->
+    Flash_info.fallback request;
+    Util.redirect_to ~:Endpoints.Topic.root request)
 ;;
 
 let error =
