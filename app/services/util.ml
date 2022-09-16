@@ -59,3 +59,30 @@ module Auth = struct
 
   let get_connected_user_id request = Dream.session_field request inbox
 end
+
+let rec md_map_inline = function
+  | Omd.Html (attr, v) -> Omd.Code (attr, v)
+  | Omd.Concat (attr, content) ->
+    Omd.Concat (attr, List.map md_map_inline content)
+  | Omd.Emph (attr, content) -> Omd.Emph (attr, md_map_inline content)
+  | Omd.Strong (attr, content) -> Omd.Strong (attr, md_map_inline content)
+  | regular_inline -> regular_inline
+;;
+
+let rec md_map_block = function
+  | Omd.Paragraph (attr, content) -> Omd.Paragraph (attr, md_map_inline content)
+  | Omd.Heading (attr, level, content) ->
+    Omd.Heading (attr, level, md_map_inline content)
+  | Omd.Blockquote (attr, blocks) ->
+    Omd.Blockquote (attr, List.map md_map_block blocks)
+  | Omd.List (attr, ty, space, blocks) ->
+    Omd.List (attr, ty, space, List.map (List.map md_map_block) blocks)
+  | Omd.Html_block (attr, v) -> Omd.Code_block (attr, "html", v)
+  | regular_block -> regular_block
+;;
+
+let markdown_to_html message =
+  let doc = Omd.of_string message in
+  let new_doc = List.map md_map_block doc in
+  Omd.to_html new_doc
+;;

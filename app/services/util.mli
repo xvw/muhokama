@@ -60,3 +60,6 @@ module Auth : sig
   (** Resolves the current connected user.*)
   val get_connected_user_id : Dream.request -> string option
 end
+
+(** Process a text string into HTML using [OMD]. *)
+val markdown_to_html : string -> string

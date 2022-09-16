@@ -96,8 +96,14 @@ let show =
     ~succeed:(fun (user, topic, messages) request ->
       let flash_info = Flash_info.fetch request in
       let csrf_token = Dream.csrf_token request in
+      let html_topic =
+        Models.Topic.Showable.map_content markdown_to_html topic
+      in
+      let html_messages =
+        List.map (Models.Message.map_content markdown_to_html) messages
+      in
       let view =
-        Views.Topic.show ?flash_info ~csrf_token ~user topic messages
+        Views.Topic.show ?flash_info ~csrf_token ~user html_topic html_messages
       in
       Dream.html @@ from_tyxml view)
     ~failure:(fun err request ->
