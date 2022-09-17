@@ -85,8 +85,8 @@ subcommand can display its `man` page using the `--help` flag.
 
 1. Create a docker application with a postgreSQL add-on
 2. Add the following environment variable to the docker application
-  - CC_DOCKER_EXPOSED_HTTP_PORT="4000"
-  - POSTGRESQL_ADDON_CONNECTION_POOL="5"
+  - `CC_DOCKER_EXPOSED_HTTP_PORT="4000"`
+  - `POSTGRESQL_ADDON_CONNECTION_POOL="5"`
 
 > "5" is the maximum connections for free databases, you can adapt `PGSQL_CONNECTION_POOL` in accordance to the [pool of your plan](https://www.clever-cloud.com/doc/deploy/addon/postgresql/postgresql/#plans)
 

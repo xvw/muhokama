@@ -42,7 +42,7 @@ utop:
 
 # Retreive dependencies
 deps:
-	opam install . --deps-only --with-doc --with-test -y
+	opam install . --locked --deps-only --with-doc --with-test -y
 
 # Retrieves development dependencies
 dev-deps:
