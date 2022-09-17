@@ -10,7 +10,7 @@ USER opam
 
 COPY --chown=opam muhokama.opam /build/muhokama.opam
 
-RUN cd /build && opam install . --deps-only --with-test -y
+RUN cd /build && opam install . --locked --deps-only --with-test -y
 
 COPY --chown=opam . /build/
 
