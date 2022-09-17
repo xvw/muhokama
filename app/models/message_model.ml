@@ -12,6 +12,8 @@ type t =
 
 type creation_form = { creation_content : string }
 
+let map_content f message = { message with content = f message.content }
+
 let count =
   let query =
     (unit ->! int) {sql|

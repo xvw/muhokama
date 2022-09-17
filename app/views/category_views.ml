@@ -81,7 +81,10 @@ let creation_form csrf_token =
 let category_line category =
   let open Tyxml.Html in
   let open Models.Category in
-  tr [ td [ txt category.name ]; td [ txt category.description ] ]
+  tr
+    [ td [ txt @@ Lib_common.Html.escape_special_chars category.name ]
+    ; td [ txt @@ Lib_common.Html.escape_special_chars category.description ]
+    ]
 ;;
 
 let all categories =

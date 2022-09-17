@@ -133,7 +133,8 @@ module List = struct
           [ Templates.Util.a
               ~:Endpoints.Topic.by_category
               ~a:[ a_class [ "button"; "is-info"; "is-pulled-right" ] ]
-              [ txt topic.category_name ]
+              [ txt @@ Lib_common.Html.escape_special_chars topic.category_name
+              ]
               topic.category_name
           ]
       ]
@@ -154,7 +155,7 @@ module Show = struct
   let show_content user_name user_email creation_date message =
     let open Tyxml.Html in
     (* FIXME: Maybe get rid of Tyxml.Html.Unsafe*)
-    let message_html = Omd.of_string message |> Omd.to_html |> Unsafe.data in
+    let message_html = Unsafe.data message in
     div
       ~a:[ a_class [ "media" ] ]
       [ div

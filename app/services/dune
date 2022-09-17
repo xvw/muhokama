@@ -5,6 +5,7 @@
  (libraries
   logs
   dream
+  omd
   tyxml
   fmt
   preface

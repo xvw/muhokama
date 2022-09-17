@@ -44,8 +44,8 @@ module List_moderable = struct
     let open Tyxml.Html in
     let Models.User.{ email; name; state; _ } = user in
     tr
-      [ td [ txt name ]
-      ; td [ txt email ]
+      [ td [ txt @@ Lib_common.Html.escape_special_chars name ]
+      ; td [ txt @@ Lib_common.Html.escape_special_chars email ]
       ; td
           ~a:[ a_class [ "has-text-centered" ] ]
           [ Templates.Component.user_state_tag state ]

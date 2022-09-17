@@ -42,6 +42,9 @@ val create
   -> Lib_db.t
   -> string Try.t Lwt.t
 
+(** Map a function over the message content. *)
+val map_content : (string -> string) -> t -> t
+
 (** Get a list of messages by topics ordered by creation date. *)
 val get_by_topic_id : (t -> 'a) -> string -> Lib_db.t -> 'a list Try.t Lwt.t
 

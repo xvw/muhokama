@@ -72,6 +72,8 @@ module Showable = struct
     ; content : string
     }
 
+  let map_content f topic = { topic with content = f topic.content }
+
   let from_tuple
     ( id
     , ( category_name
@@ -157,9 +159,9 @@ let count_by_categories =
   let query =
     (unit ->* tup3 string string int)
       {sql|
-      SELECT 
+      SELECT
         category_name,
-        category_description, 
+        category_description,
         COUNT(*)
       FROM topics AS t
         INNER JOIN categories AS c ON t.category_id = c.category_id

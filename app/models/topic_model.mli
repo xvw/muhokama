@@ -33,6 +33,7 @@ module Showable : sig
 
   val pp : t Fmt.t
   val equal : t -> t -> bool
+  val map_content : (string -> string) -> t -> t
 end
 
 (** {2 Form}
