@@ -339,3 +339,4 @@ let pp ppf { id; name; email; state } =
 ;;
 
 let is_active { state; _ } = State.is_active state
+let can_moderate { state; _ } = State.can_moderate state

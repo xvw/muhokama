@@ -185,6 +185,59 @@ let test_add_when_category_does_not_exists =
       same (Testable.try_ string) ~expected ~computed)
 ;;
 
+let test_list_all_when_there_is_some_archived_topics =
+  integration_test
+    ~about:"list_all & archive"
+    ~desc:"when there is some archived topics, it should return discard-it"
+    (fun _env db ->
+      let open Lwt_util in
+      let*? general, programming, _muhokama = create_categories db in
+      let*? grim, xhtmlboy, _xvw, _dplaindoux = create_users db in
+      let*? id =
+        create_topic
+          general.Models.Category.id
+          grim
+          "An example"
+          "This is my first message"
+          db
+      in
+      let*? () = Models.Topic.archive id db in
+      let* () = Lwt_unix.sleep 0.1 in
+      let*? _ =
+        create_topic
+          programming.Models.Category.id
+          xhtmlboy
+          "An other example"
+          "This is my first message too"
+          db
+      in
+      let* () = Lwt_unix.sleep 0.1 in
+      let*? id =
+        create_topic
+          programming.Models.Category.id
+          xhtmlboy
+          "An other other example"
+          "This is my second message"
+          db
+      in
+      let* () = Lwt_unix.sleep 0.1 in
+      let*? _ =
+        create_topic
+          programming.Models.Category.id
+          xhtmlboy
+          "An other other other example"
+          "This is my third message"
+          db
+      in
+      let*? () = Models.Topic.archive id db in
+      Models.Topic.list_all Models.Topic.Listable.(fun x -> x.title) db)
+    (fun computed ->
+      let expected =
+        Ok [ "An other other other example"; "An other example" ]
+      in
+      same (Testable.try_ @@ list string) ~expected ~computed)
+;;
+
 let cases =
   ( "Topic"
   , [ test_ensure_there_is_no_topic_at_starting
@@ -194,5 +247,6 @@ let cases =
     ; test_list_all_when_there_is_some_topics
     ; test_list_by_when_there_is_no_topics
     ; test_list_by_when_there_is_some_topics
+    ; test_list_all_when_there_is_some_archived_topics
     ] )
 ;;

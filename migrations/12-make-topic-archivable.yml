@@ -1,0 +1,6 @@
+up:
+  - ALTER TABLE topics ADD COLUMN topic_archived BOOLEAN NOT NULL DEFAULT FALSE
+  - CREATE INDEX topics_topic_archived ON topics(topic_archived)
+down:
+  - DROP INDEX topics_topic_archived
+  - ALTER TABLE topics DROP COLUMN topic_archived

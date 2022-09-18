@@ -237,29 +237,38 @@ module Show = struct
       ]
   ;;
 
-  let topic_content topic =
+  let archive_button user topic =
+    if Models.User.can_moderate user
+    then
+      let open Tyxml.Html in
+      [ Templates.Util.a
+          ~:Endpoints.Topic.archive
+          ~a:
+            [ a_href "#answer"; a_class [ "button"; "is-danger"; "is-medium" ] ]
+          [ txt "Archiver" ]
+          topic.Models.Topic.Showable.id
+      ]
+    else []
+  ;;
+
+  let topic_content user topic =
     let open Tyxml.Html in
     let open Models.Topic.Showable in
     div
       [ div
           ~a:[ a_class [ "columns" ] ]
           [ div
-              ~a:[ a_class [ "column"; "is-half" ] ]
+              ~a:[ a_class [ "column" ] ]
               [ h1 ~a:[ a_class [ "title" ] ] [ txt topic.title ] ]
           ; div
-              ~a:[ a_class [ "column"; "is-half" ] ]
-              [ a
-                  ~a:
-                    [ a_href "#answer"
-                    ; a_class
-                        [ "button"
-                        ; "is-success"
-                        ; "is-medium"
-                        ; "is-pulled-right"
-                        ]
-                    ]
-                  [ txt "Répondre au fil" ]
-              ]
+              ~a:[ a_class [ "column"; "is-narrow"; "is-hidden-mobile" ] ]
+              (a
+                 ~a:
+                   [ a_href "#answer"
+                   ; a_class [ "button"; "is-success"; "is-medium" ]
+                   ]
+                 [ txt "Répondre au fil" ]
+              :: archive_button user topic)
           ]
       ; show_content
           topic.user_name
@@ -271,7 +280,7 @@ module Show = struct
 
   let thread csrf_token user topic messages =
     let open Tyxml.Html in
-    (topic_content topic
+    (topic_content user topic
     :: Stdlib.List.map
          (fun message ->
            div

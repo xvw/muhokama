@@ -62,6 +62,9 @@ val get_by_id : string -> Lib_db.t -> Showable.t Try.t Lwt.t
 (** List all topics. *)
 val list_all : (Listable.t -> 'a) -> Lib_db.t -> 'a list Try.t Lwt.t
 
+(** Archive a topic. *)
+val archive : string -> Lib_db.t -> unit Try.t Lwt.t
+
 (** List all topics by category. *)
 val list_by_category
   :  string

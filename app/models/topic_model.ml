@@ -175,6 +175,15 @@ let count_by_categories =
     list
 ;;
 
+let archive =
+  let query =
+    (string ->. unit)
+      ~oneshot:true
+      {sql|UPDATE topics SET topic_archived = TRUE WHERE topic_id = ? |sql}
+  in
+  fun topic_id (module Db : Lib_db.T) -> Lib_db.try_ @@ Db.exec query topic_id
+;;
+
 let create =
   let query =
     (tup4 string string string string ->! string)
@@ -218,7 +227,7 @@ let get_by_id =
           FROM topics AS t
             INNER JOIN categories AS c ON t.category_id = c.category_id
             INNER JOIN users AS u ON t.user_id = u.user_id
-          WHERE topic_id = ?
+          WHERE t.topic_id = ? AND t.topic_archived = FALSE
       |sql}
   in
   fun id (module Db : Lib_db.T) ->
@@ -243,6 +252,7 @@ let list_all callback =
           FROM topics AS t
             INNER JOIN categories AS c ON t.category_id = c.category_id
             INNER JOIN users AS u ON t.user_id = u.user_id
+          WHERE t.topic_archived = FALSE
           ORDER BY topic_update_date DESC
       |sql}
   in

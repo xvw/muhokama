@@ -129,3 +129,30 @@ let answer =
       Flash_info.error_tree request err;
       redirect_to ~:Endpoints.Global.root request)
 ;;
+
+let archive =
+  Service.failable_with
+    ~:Endpoints.Topic.archive
+    ~attached:user_required
+    [ user_authenticated ]
+    (fun topic_id user request ->
+      let open Lwt_util in
+      if Models.User.can_moderate user
+      then
+        let*? () = Dream.sql request @@ Models.Topic.archive topic_id in
+        return_ok @@ `Moderated
+      else
+        (* We do not want to display an error
+           if the user has no right *)
+        return_ok @@ `Cant_moderate topic_id)
+    ~succeed:(fun result request ->
+      match result with
+      | `Cant_moderate topic_id ->
+        redirect_to ~:Endpoints.Topic.show topic_id request
+      | `Moderated ->
+        Flash_info.action request "Topic archivé";
+        redirect_to ~:Endpoints.Topic.root request)
+    ~failure:(fun err request ->
+      Flash_info.error_tree request err;
+      redirect_to ~:Endpoints.Topic.root request)
+;;

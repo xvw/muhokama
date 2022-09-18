@@ -37,6 +37,9 @@ type state_change_form
 (** [is_active user] returns true if an user is active. *)
 val is_active : t -> bool
 
+(** [can_moderate user] return true if an user can moderate. *)
+val can_moderate : t -> bool
+
 (** Pretty-printer for [User.t]. *)
 val pp : t Fmt.t
 

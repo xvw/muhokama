@@ -16,6 +16,7 @@ val validate_state : string -> t Validate.t
 val try_state : string -> t Try.t
 val from_string : string -> t
 val is_active : t -> bool
+val can_moderate : t -> bool
 
 (** A comparison where [Unknown] < [Inactive] < [Member] < [Moderator] <
     [Admin]. *)
