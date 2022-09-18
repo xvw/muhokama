@@ -4,7 +4,7 @@ RUN opam repo add opam git+https://github.com/ocaml/opam-repository
 RUN opam install dune
 
 USER root
-RUN apk add --no-cache libev-dev gmp-dev pkgconfig libpq-dev libressl-dev
+RUN apk add --no-cache libev-dev gmp-dev pkgconfig libpq-dev libressl-dev cmake
 
 USER opam
 
