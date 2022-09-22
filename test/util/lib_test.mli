@@ -75,6 +75,14 @@ val create_topic
   -> Caqti_lwt.connection
   -> string Try.t Lwt.t
 
+val update_topic
+  :  string
+  -> string
+  -> string
+  -> string
+  -> Caqti_lwt.connection
+  -> unit Try.t Lwt.t
+
 val create_message
   :  Models.User.t
   -> string

@@ -4,6 +4,7 @@ open Caqti_type.Std
 
 type t =
   { id : string
+  ; user_id : string
   ; user_name : string
   ; user_email : string
   ; creation_date : Ptime.t
@@ -59,17 +60,20 @@ let create =
       (module Db)
 ;;
 
-let from_tuple (id, (user_name, (user_email, (creation_date, content)))) =
-  { id; user_name; user_email; creation_date; content }
+let from_tuple
+  (id, (user_id, (user_name, (user_email, (creation_date, content)))))
+  =
+  { id; user_id; user_name; user_email; creation_date; content }
 ;;
 
 let get_by_topic_id callback =
   let ( & ) = tup2 in
   let query =
-    (string ->* (string & string & string & ptime & string))
+    (string ->* (string & string & string & string & ptime & string))
       {sql|
           SELECT
             m.message_id,
+            u.user_id,
             u.user_name,
             u.user_email,
             m.message_creation_date,
@@ -88,12 +92,14 @@ let get_by_topic_id callback =
 
 let equal
   { id = id_a
+  ; user_id = ui_a
   ; user_name = un_a
   ; user_email = ue_a
   ; creation_date = cd_a
   ; content = c_a
   }
   { id = id_b
+  ; user_id = ui_b
   ; user_name = un_b
   ; user_email = ue_b
   ; creation_date = cd_b
@@ -105,15 +111,18 @@ let equal
   && String.equal ue_a ue_b
   && Ptime.equal cd_a cd_b
   && String.equal c_a c_b
+  && String.equal ui_a ui_b
 ;;
 
-let pp ppf { id; user_name; user_email; creation_date; content } =
+let pp ppf { id; user_id; user_name; user_email; creation_date; content } =
   Fmt.pf
     ppf
-    "Message {id = %a; user_name = %a; user_email = %a; creation_date = %a; \
-     content = %a}"
+    "Message {id = %a; user_id = %a; user_name = %a; user_email = %a; \
+     creation_date = %a; content = %a}"
     Fmt.(quote string)
     id
+    Fmt.(quote string)
+    user_id
     Fmt.(quote string)
     user_name
     Fmt.(quote string)

@@ -40,6 +40,10 @@ val is_active : t -> bool
 (** [can_moderate user] return true if an user can moderate. *)
 val can_moderate : t -> bool
 
+(** [can_edit user ~owner_id:string] return true if the user is, at least, a
+    moderator, or if it has the same if of owner_id. *)
+val can_edit : t -> owner_id:string -> bool
+
 (** Pretty-printer for [User.t]. *)
 val pp : t Fmt.t
 

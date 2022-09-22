@@ -7,6 +7,7 @@ open Lib_common
 (** Describe a message. *)
 type t = private
   { id : string
+  ; user_id : string
   ; user_name : string
   ; user_email : string
   ; creation_date : Ptime.t

@@ -11,8 +11,14 @@ val list_by_category : (Dream.request, Dream.response) Service.t
 (** Prompte a topic creation page. *)
 val create : (Dream.request, Dream.response) Service.t
 
+(** Prompte a topic update page. *)
+val edit : (Dream.request, Dream.response) Service.t
+
 (** Save a new topic. *)
 val save : (Dream.request, Dream.response) Service.t
+
+(** Update a topic. *)
+val save_edit : (Dream.request, Dream.response) Service.t
 
 (** Show one topic. *)
 val show : (Dream.request, Dream.response) Service.t
