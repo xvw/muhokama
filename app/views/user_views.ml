@@ -216,10 +216,9 @@ end
 module List_active = struct
   let user_line user =
     let open Tyxml.Html in
-    let Models.User.{ email; name; state; _ } = user in
+    let Models.User.{ name; state; _ } = user in
     tr
       [ td [ txt name ]
-      ; td [ txt email ]
       ; td
           ~a:[ a_class [ "has-text-centered" ] ]
           [ Templates.Component.user_state_tag state ]
@@ -232,7 +231,6 @@ module List_active = struct
       thead
         [ tr
             [ th [ txt "Nom d'utilisateur" ]
-            ; th [ txt "Courrier électronique" ]
             ; th ~a:[ a_class [ "has-text-centered" ] ] [ txt "Statut" ]
             ]
         ]
