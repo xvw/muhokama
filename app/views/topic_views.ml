@@ -375,9 +375,14 @@ let topic_form
   ?pre_content
   categories
   =
+  let page_title =
+    if Option.is_none topic_id
+    then "Créer un nouveau topic"
+    else "Éditer un message"
+  in
   Templates.Layout.default
     ~lang:"fr"
-    ~page_title:"Créer un nouveau topic"
+    ~page_title
     ?flash_info
     ?user
     Tyxml.Html.
@@ -436,3 +441,8 @@ let show ?flash_info ~csrf_token ~user topic messages =
     ~user
     (Show.thread csrf_token user topic messages)
 ;;
+
+(* let edit_message ?flash_info ~csrf_token ~user topic message = *)
+(*   let page_title = "Éditer " ^ topic.Models.Topic.Showable.title in *)
+(*   Templates.Layout.default ~lang:"fr" ~page_title ?flash_info ~user [] *)
+(* ;; *)

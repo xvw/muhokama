@@ -60,6 +60,38 @@ let create =
       (module Db)
 ;;
 
+let archive =
+  let delete_message_query =
+    (tup2 string string ->. unit)
+      {sql|
+          UPDATE messages
+          SET message_archived = TRUE
+          WHERE message_id = ? AND topic_id = ?
+       |sql}
+  and update_topic_query =
+    (tup2 string string ->. unit)
+      {sql|
+          UPDATE topics
+          SET
+            topic_counter = COALESCE(topic_counter, 1) - 1,
+            topic_update_date = COALESCE(
+              (SELECT MAX(message_creation_date) FROM messages WHERE topic_id = ?),
+              topic_creation_date)
+           WHERE topic_id = ?
+     |sql}
+  in
+  fun ~topic_id ~message_id (module Db : Lib_db.T) ->
+    let open Lwt_util in
+    let*? _topic = Topic_model.get_by_id topic_id (module Db) in
+    Lib_db.transaction
+      (fun () ->
+        let*? () =
+          Db.exec delete_message_query (message_id, topic_id) |> Lib_db.try_
+        in
+        Db.exec update_topic_query (topic_id, topic_id) |> Lib_db.try_)
+      (module Db)
+;;
+
 let from_tuple
   (id, (user_id, (user_name, (user_email, (creation_date, content)))))
   =
@@ -80,7 +112,7 @@ let get_by_topic_id callback =
             m.message_content
           FROM messages AS m
             INNER JOIN users AS u ON m.user_id = u.user_id
-          WHERE m.topic_id = ?
+          WHERE m.topic_id = ? AND m.message_archived = FALSE
           ORDER BY m.message_creation_date ASC
       |sql}
   in

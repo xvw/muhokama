@@ -194,3 +194,9 @@ let create_users db =
   in
   Lwt.return_ok (grim, xhtmlboy, xvw, dplaindoux)
 ;;
+
+let delayed ?(time = 0.1) block =
+  let open Lwt_util in
+  let* () = Lwt_unix.sleep time in
+  block ()
+;;

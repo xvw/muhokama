@@ -43,6 +43,13 @@ val create
   -> Lib_db.t
   -> string Try.t Lwt.t
 
+(** Archive a message of a topic. *)
+val archive
+  :  topic_id:string
+  -> message_id:string
+  -> Lib_db.t
+  -> unit Try.t Lwt.t
+
 (** Map a function over the message content. *)
 val map_content : (string -> string) -> t -> t
 

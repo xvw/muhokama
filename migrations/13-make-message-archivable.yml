@@ -1,0 +1,6 @@
+up:
+  - ALTER TABLE messages ADD COLUMN message_archived BOOLEAN NOT NULL DEFAULT FALSE
+  - CREATE INDEX messages_message_archived ON messages(message_archived)
+down:
+  - DROP INDEX messages_message_archived
+  - ALTER TABLE messages DROP COLUMN message_archived

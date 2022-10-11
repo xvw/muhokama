@@ -21,6 +21,9 @@ val integration_test
 (** An helper for checking equalities.*)
 val same : 'a Alcotest.testable -> expected:'a -> computed:'a -> unit
 
+(** [delayed ~time f] will perform [f] after awaiting [time]. *)
+val delayed : ?time:float -> (unit -> 'a Lwt.t) -> 'a Lwt.t
+
 (** {1 Testables} *)
 
 module Testable = Testable
