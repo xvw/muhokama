@@ -111,6 +111,14 @@ let topic_for_creation category_id title content =
     ]
 ;;
 
+let topic_for_modification category_id title content =
+  Models.Topic.validate_update
+    [ "category_id", category_id
+    ; "topic_title", title
+    ; "topic_content", content
+    ]
+;;
+
 let message_for_creation message_content =
   Models.Message.validate_creation [ "message_content", message_content ]
 ;;
@@ -125,6 +133,12 @@ let create_topic category_id user title content db =
   let open Lwt_util in
   let*? t = Lwt.return @@ topic_for_creation category_id title content in
   Models.Topic.create user t db
+;;
+
+let update_topic topic_id category_id title content db =
+  let open Lwt_util in
+  let*? t = Lwt.return @@ topic_for_modification category_id title content in
+  Models.Topic.update topic_id t db
 ;;
 
 let create_message user topic_id content db =
@@ -179,4 +193,10 @@ let create_users db =
       db
   in
   Lwt.return_ok (grim, xhtmlboy, xvw, dplaindoux)
+;;
+
+let delayed ?(time = 0.1) block =
+  let open Lwt_util in
+  let* () = Lwt_unix.sleep time in
+  block ()
 ;;

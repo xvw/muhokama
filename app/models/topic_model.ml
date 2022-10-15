@@ -64,7 +64,9 @@ end
 module Showable = struct
   type t =
     { id : string
+    ; category_id : string
     ; category_name : string
+    ; user_id : string
     ; user_name : string
     ; user_email : string
     ; creation_date : Ptime.t
@@ -76,10 +78,21 @@ module Showable = struct
 
   let from_tuple
     ( id
-    , ( category_name
-      , (user_name, (user_email, (creation_date, (title, content)))) ) )
+    , ( category_id
+      , ( category_name
+        , (user_id, (user_name, (user_email, (creation_date, (title, content)))))
+        ) ) )
     =
-    { id; category_name; user_name; user_email; creation_date; title; content }
+    { id
+    ; category_id
+    ; category_name
+    ; user_id
+    ; user_name
+    ; user_email
+    ; creation_date
+    ; title
+    ; content
+    }
   ;;
 
   let from_tuple_with_error err =
@@ -90,7 +103,9 @@ module Showable = struct
 
   let equal
     { id = id_a
+    ; category_id = ci_a
     ; category_name = c_a
+    ; user_id = ui_a
     ; user_name = un_a
     ; user_email = ue_a
     ; creation_date = d_a
@@ -98,7 +113,9 @@ module Showable = struct
     ; content = ct_a
     }
     { id = id_b
+    ; category_id = ci_b
     ; category_name = c_b
+    ; user_id = ui_b
     ; user_name = un_b
     ; user_email = ue_b
     ; creation_date = d_b
@@ -108,25 +125,41 @@ module Showable = struct
     =
     String.equal id_a id_b
     && String.equal c_a c_b
+    && String.equal ui_a ui_b
     && String.equal un_a un_b
     && String.equal ue_a ue_b
     && String.equal t_a t_b
     && String.equal ct_a ct_b
     && Ptime.equal d_a d_b
+    && String.equal ci_a ci_b
   ;;
 
   let pp
     ppf
-    { id; category_name; user_name; user_email; creation_date; title; content }
+    { id
+    ; category_id
+    ; category_name
+    ; user_id
+    ; user_name
+    ; user_email
+    ; creation_date
+    ; title
+    ; content
+    }
     =
     Fmt.pf
       ppf
-      "Topic.showable { id = %a; category_name = %a; user_name = %a; \
-       user_email = %a; creation_date = %a title = %a; content = %a }"
+      "Topic.showable { id = %a; category_id = %a; category_name = %a; user_id \
+       = %a;  user_name = %a; user_email = %a; creation_date = %a title = %a; \
+       content = %a }"
       Fmt.(quote string)
       id
       Fmt.(quote string)
+      category_id
+      Fmt.(quote string)
       category_name
+      Fmt.(quote string)
+      user_id
       Fmt.(quote string)
       user_name
       Fmt.(quote string)
@@ -145,6 +178,8 @@ type creation_form =
   ; creation_title : string
   ; creation_content : string
   }
+
+type update_form = creation_form
 
 let count =
   let query =
@@ -175,6 +210,15 @@ let count_by_categories =
     list
 ;;
 
+let archive =
+  let query =
+    (string ->. unit)
+      ~oneshot:true
+      {sql|UPDATE topics SET topic_archived = TRUE WHERE topic_id = ? |sql}
+  in
+  fun topic_id (module Db : Lib_db.T) -> Lib_db.try_ @@ Db.exec query topic_id
+;;
+
 let create =
   let query =
     (tup4 string string string string ->! string)
@@ -202,14 +246,47 @@ let create =
     |> Lib_db.try_
 ;;
 
+let update =
+  let query =
+    (tup4 string string string string ->. unit)
+      {sql|
+          UPDATE topics
+          SET topic_title = ?,
+              topic_content = ?,
+              category_id = ?
+          WHERE topic_id = ?
+      |sql}
+  in
+  fun topic_id
+      { creation_category_id; creation_title; creation_content }
+      (module Db : Lib_db.T) ->
+    let open Lwt_util in
+    let*? _ = Category_model.get_by_id creation_category_id (module Db) in
+    Db.exec
+      query
+      (creation_title, creation_content, creation_category_id, topic_id)
+    |> Lib_db.try_
+;;
+
 let get_by_id =
   let ( & ) = tup2 in
   let query =
-    (string ->? (string & string & string & string & ptime & string & string))
+    (string
+    ->? (string
+        & string
+        & string
+        & string
+        & string
+        & string
+        & ptime
+        & string
+        & string))
       {sql|
           SELECT
             t.topic_id,
+            c.category_id,
             c.category_name,
+            u.user_id,
             u.user_name,
             u.user_email,
             t.topic_creation_date,
@@ -218,7 +295,7 @@ let get_by_id =
           FROM topics AS t
             INNER JOIN categories AS c ON t.category_id = c.category_id
             INNER JOIN users AS u ON t.user_id = u.user_id
-          WHERE topic_id = ?
+          WHERE t.topic_id = ? AND t.topic_archived = FALSE
       |sql}
   in
   fun id (module Db : Lib_db.T) ->
@@ -243,6 +320,7 @@ let list_all callback =
           FROM topics AS t
             INNER JOIN categories AS c ON t.category_id = c.category_id
             INNER JOIN users AS u ON t.user_id = u.user_id
+          WHERE t.topic_archived = FALSE
           ORDER BY topic_update_date DESC
       |sql}
   in
@@ -277,10 +355,11 @@ let list_by_category category_name callback =
     List.map Preface.Fun.(callback % Listable.from_tuple) list
 ;;
 
-let validate_creation
+let validatation
   ?(category_id_field = "category_id")
   ?(title_field = "topic_title")
   ?(content_field = "topic_content")
+  name
   =
   let open Lib_form in
   let formlet s =
@@ -292,5 +371,13 @@ let validate_creation
     ; creation_content = content
     }
   in
-  run ~name:"Topic.creation" formlet
+  run ~name formlet
+;;
+
+let validate_creation ?category_id_field ?title_field ?content_field =
+  validatation ?category_id_field ?title_field ?content_field "Topic.creation"
+;;
+
+let validate_update ?category_id_field ?title_field ?content_field =
+  validatation ?category_id_field ?title_field ?content_field "Topic.update"
 ;;

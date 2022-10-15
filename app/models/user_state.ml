@@ -138,3 +138,8 @@ let pp_filter ?(prefix = "") () ppf filter =
     "%s"
     (String.trim @@ join_user_state prefix @@ compute_filter filter)
 ;;
+
+let can_moderate = function
+  | Moderator | Admin -> true
+  | _ -> false
+;;

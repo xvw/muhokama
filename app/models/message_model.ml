@@ -4,6 +4,7 @@ open Caqti_type.Std
 
 type t =
   { id : string
+  ; user_id : string
   ; user_name : string
   ; user_email : string
   ; creation_date : Ptime.t
@@ -11,6 +12,7 @@ type t =
   }
 
 type creation_form = { creation_content : string }
+type update_form = creation_form
 
 let map_content f message = { message with content = f message.content }
 
@@ -59,24 +61,79 @@ let create =
       (module Db)
 ;;
 
-let from_tuple (id, (user_name, (user_email, (creation_date, content)))) =
-  { id; user_name; user_email; creation_date; content }
+let update =
+  let update_message_query =
+    (tup3 string string string ->. unit)
+      {sql|
+        UPDATE messages
+        SET message_content = ?
+        WHERE message_id = ? AND topic_id = ?
+    |sql}
+  in
+  fun ~topic_id ~message_id { creation_content } (module Db : Lib_db.T) ->
+    let open Lwt_util in
+    let*? _topic = Topic_model.get_by_id topic_id (module Db) in
+    Db.exec update_message_query (creation_content, message_id, topic_id)
+    |> Lib_db.try_
+;;
+
+let archive =
+  let delete_message_query =
+    (tup2 string string ->. unit)
+      {sql|
+          UPDATE messages
+          SET message_archived = TRUE
+          WHERE message_id = ? AND topic_id = ?
+       |sql}
+  and update_topic_query =
+    (tup2 string string ->. unit)
+      {sql|
+          UPDATE topics
+          SET
+            topic_counter = COALESCE(topic_counter, 1) - 1,
+            topic_update_date = COALESCE(
+              (SELECT MAX(message_creation_date) FROM messages WHERE topic_id = ?),
+              topic_creation_date)
+           WHERE topic_id = ?
+     |sql}
+  in
+  fun ~topic_id ~message_id (module Db : Lib_db.T) ->
+    let open Lwt_util in
+    let*? _topic = Topic_model.get_by_id topic_id (module Db) in
+    Lib_db.transaction
+      (fun () ->
+        let*? () =
+          Db.exec delete_message_query (message_id, topic_id) |> Lib_db.try_
+        in
+        Db.exec update_topic_query (topic_id, topic_id) |> Lib_db.try_)
+      (module Db)
+;;
+
+let from_tuple
+  (id, (user_id, (user_name, (user_email, (creation_date, content)))))
+  =
+  { id; user_id; user_name; user_email; creation_date; content }
+;;
+
+let message_repr =
+  let ( & ) = tup2 in
+  string & string & string & string & ptime & string
 ;;
 
 let get_by_topic_id callback =
-  let ( & ) = tup2 in
   let query =
-    (string ->* (string & string & string & ptime & string))
+    (string ->* message_repr)
       {sql|
           SELECT
             m.message_id,
+            u.user_id,
             u.user_name,
             u.user_email,
             m.message_creation_date,
             m.message_content
           FROM messages AS m
             INNER JOIN users AS u ON m.user_id = u.user_id
-          WHERE m.topic_id = ?
+          WHERE m.topic_id = ? AND m.message_archived = FALSE
           ORDER BY m.message_creation_date ASC
       |sql}
   in
@@ -86,14 +143,40 @@ let get_by_topic_id callback =
     List.map Preface.Fun.(callback % from_tuple) list
 ;;
 
+let get_by_topic_and_message_id =
+  let query =
+    (tup2 string string ->? message_repr)
+      {sql|
+        SELECT
+         m.message_id,
+         u.user_id,
+         u.user_name,
+         u.user_email,
+         m.message_creation_date,
+         m.message_content
+        FROM messages AS m
+          INNER JOIN users as u ON m.user_id = u.user_id
+        WHERE m.topic_id = ? AND m.message_id = ? AND m.message_archived = FALSE
+      |sql}
+  in
+  fun ~topic_id ~message_id (module Db : Lib_db.T) ->
+    let open Lwt_util in
+    let+? potential_result =
+      Db.find_opt query (topic_id, message_id) |> Lib_db.try_
+    in
+    Option.map from_tuple potential_result
+;;
+
 let equal
   { id = id_a
+  ; user_id = ui_a
   ; user_name = un_a
   ; user_email = ue_a
   ; creation_date = cd_a
   ; content = c_a
   }
   { id = id_b
+  ; user_id = ui_b
   ; user_name = un_b
   ; user_email = ue_b
   ; creation_date = cd_b
@@ -105,15 +188,18 @@ let equal
   && String.equal ue_a ue_b
   && Ptime.equal cd_a cd_b
   && String.equal c_a c_b
+  && String.equal ui_a ui_b
 ;;
 
-let pp ppf { id; user_name; user_email; creation_date; content } =
+let pp ppf { id; user_id; user_name; user_email; creation_date; content } =
   Fmt.pf
     ppf
-    "Message {id = %a; user_name = %a; user_email = %a; creation_date = %a; \
-     content = %a}"
+    "Message {id = %a; user_id = %a; user_name = %a; user_email = %a; \
+     creation_date = %a; content = %a}"
     Fmt.(quote string)
     id
+    Fmt.(quote string)
+    user_id
     Fmt.(quote string)
     user_name
     Fmt.(quote string)
@@ -124,11 +210,19 @@ let pp ppf { id; user_name; user_email; creation_date; content } =
     content
 ;;
 
-let validate_creation ?(content_field = "message_content") =
+let validatation ?(content_field = "message_content") name =
   let open Lib_form in
   let formlet s =
     let+ content = required s content_field not_blank in
     { creation_content = content }
   in
-  run ~name:"Message.creation" formlet
+  run ~name formlet
+;;
+
+let validate_creation ?content_field =
+  validatation ?content_field "Message.creation"
+;;
+
+let validate_update ?content_field =
+  validatation ?content_field "Message.update"
 ;;

@@ -7,6 +7,7 @@ open Lib_common
 (** Describe a message. *)
 type t = private
   { id : string
+  ; user_id : string
   ; user_name : string
   ; user_email : string
   ; creation_date : Ptime.t
@@ -20,6 +21,7 @@ type t = private
     form validation.*)
 
 type creation_form
+type update_form
 
 (** {1 Helpers} *)
 
@@ -42,11 +44,32 @@ val create
   -> Lib_db.t
   -> string Try.t Lwt.t
 
+(** Update an existing message. *)
+val update
+  :  topic_id:string
+  -> message_id:string
+  -> update_form
+  -> Lib_db.t
+  -> unit Try.t Lwt.t
+
+(** Archive a message of a topic. *)
+val archive
+  :  topic_id:string
+  -> message_id:string
+  -> Lib_db.t
+  -> unit Try.t Lwt.t
+
 (** Map a function over the message content. *)
 val map_content : (string -> string) -> t -> t
 
 (** Get a list of messages by topics ordered by creation date. *)
 val get_by_topic_id : (t -> 'a) -> string -> Lib_db.t -> 'a list Try.t Lwt.t
+
+val get_by_topic_and_message_id
+  :  topic_id:string
+  -> message_id:string
+  -> Lib_db.t
+  -> t option Try.t Lwt.t
 
 (** {1 Form validation} *)
 
@@ -54,3 +77,8 @@ val validate_creation
   :  ?content_field:string
   -> (string * string) list
   -> creation_form Try.t
+
+val validate_update
+  :  ?content_field:string
+  -> (string * string) list
+  -> update_form Try.t
