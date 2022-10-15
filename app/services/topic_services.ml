@@ -79,13 +79,13 @@ let edit =
           let*? categories = Dream.sql request @@ Models.Category.list Fun.id in
           match Preface.Nonempty_list.from_list categories with
           | None -> return Error.(to_try category_absent)
-          | Some xs -> return_ok @@ `Edited (user, xs, previous_topic)
+          | Some xs -> return_ok @@ `Editable (user, xs, previous_topic)
         else return_ok @@ `Cant_edit topic_id
       in
       promise |> Result.map_error (fun err -> topic_id, err))
     ~succeed:(fun result request ->
       match result with
-      | `Edited (user, categories, previous_topic) ->
+      | `Editable (user, categories, previous_topic) ->
         let flash_info = Flash_info.fetch request in
         let csrf_token = Dream.csrf_token request in
         let Models.Topic.Showable.{ category_id; title; content; _ } =
@@ -106,6 +106,53 @@ let edit =
       | `Cant_edit topic_id ->
         redirect_to ~:Endpoints.Topic.show topic_id request)
     ~failure:(fun (topic_id, err) request ->
+      Flash_info.error_tree request err;
+      redirect_to ~:Endpoints.Topic.show topic_id request)
+;;
+
+let edit_message =
+  Service.failable_with
+    ~:Endpoints.Topic.edit_message
+    ~attached:user_required
+    [ user_authenticated ]
+    (fun topic_id message_id user request ->
+      let open Lwt_util in
+      let+ promise =
+        let*? previous_message =
+          Dream.sql request
+          @@ Models.Message.get_by_topic_and_message_id ~topic_id ~message_id
+        in
+        let can_edit =
+          Option.fold
+            ~none:false
+            ~some:(fun m ->
+              let owner_id = m.Models.Message.user_id in
+              Models.User.can_edit user ~owner_id)
+            previous_message
+        in
+        match previous_message, can_edit with
+        | Some message, true ->
+          return_ok @@ `Editable (topic_id, message_id, user, message)
+        | _, _ -> return_ok @@ `Cant_edit (topic_id, message_id)
+      in
+      promise |> Result.map_error (fun err -> topic_id, message_id, err))
+    ~succeed:(fun result request ->
+      match result with
+      | `Editable (topic_id, _message_id, user, message) ->
+        let flash_info = Flash_info.fetch request in
+        let csrf_token = Dream.csrf_token request in
+        let view =
+          Views.Topic.edit_message
+            ?flash_info
+            ~csrf_token
+            ~user
+            topic_id
+            message
+        in
+        Dream.html @@ from_tyxml view
+      | `Cant_edit (topic_id, _) ->
+        redirect_to ~:Endpoints.Topic.show topic_id request)
+    ~failure:(fun (topic_id, _, err) request ->
       Flash_info.error_tree request err;
       redirect_to ~:Endpoints.Topic.show topic_id request)
 ;;
@@ -158,6 +205,49 @@ let save_edit =
     ~failure:(fun (topic_id, err) request ->
       Flash_info.error_tree request err;
       redirect_to ~:Endpoints.Topic.edit topic_id request)
+;;
+
+let save_edit_message =
+  Service.failable_with
+    ~:Endpoints.Topic.save_edit_message
+    ~attached:user_required
+    [ user_authenticated ]
+    (fun topic_id message_id user request ->
+      let open Lwt_util in
+      let+ promise =
+        let*? previous_message =
+          Dream.sql request
+          @@ Models.Message.get_by_topic_and_message_id ~topic_id ~message_id
+        in
+        let can_edit =
+          Option.fold
+            ~none:false
+            ~some:(fun m ->
+              let owner_id = m.Models.Message.user_id in
+              Models.User.can_edit user ~owner_id)
+            previous_message
+        in
+        if can_edit
+        then
+          let*? message = handle_form request Models.Message.validate_update in
+          let+? () =
+            Dream.sql request
+            @@ Models.Message.update ~topic_id ~message_id message
+          in
+          `Edited (topic_id, message_id)
+        else return_ok @@ `Cant_edit (topic_id, message_id)
+      in
+      promise |> Result.map_error (fun err -> topic_id, message_id, err))
+    ~succeed:(fun result request ->
+      match result with
+      | `Edited (topic_id, message_id) ->
+        Flash_info.action request "Message modifié";
+        redirect_to ~anchor:message_id ~:Endpoints.Topic.show topic_id request
+      | `Cant_edit (topic_id, message_id) ->
+        redirect_to ~anchor:message_id ~:Endpoints.Topic.show topic_id request)
+    ~failure:(fun (topic_id, message_id, err) request ->
+      Flash_info.error_tree request err;
+      redirect_to ~:Endpoints.Topic.edit_message topic_id message_id request)
 ;;
 
 let show =

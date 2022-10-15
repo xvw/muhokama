@@ -20,6 +20,15 @@ val edit
   -> Models.Category.t Preface.Nonempty_list.t
   -> Tyxml.Html.doc
 
+(** A view for editing messages. *)
+val edit_message
+  :  ?flash_info:Models.Flash_info.t
+  -> csrf_token:string
+  -> user:Models.User.t
+  -> string
+  -> Models.Message.t
+  -> Tyxml.Html.doc
+
 (** A view for listing topics. *)
 val list
   :  ?flash_info:Models.Flash_info.t

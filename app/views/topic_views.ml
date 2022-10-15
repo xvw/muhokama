@@ -186,14 +186,21 @@ module Show = struct
   let moderation_link kind current_user user_id id =
     let open Tyxml.Html in
     if Models.User.can_edit ~owner_id:user_id current_user
-    then
-      (let target =
-         match kind with
-         | `Topic -> Endpoints.Topic.edit
-         | `Message -> Endpoints.Topic.edit
-       in
-       Templates.Util.a ~:target ~a:[ a_class [ "pl-4" ] ] [ txt "Éditer" ])
-        id
+    then (
+      match kind with
+      | `Topic ->
+        Templates.Util.a
+          ~:Endpoints.Topic.edit
+          ~a:[ a_class [ "pl-4" ] ]
+          [ txt "Éditer" ]
+          id
+      | `Message t_id ->
+        Templates.Util.a
+          ~:Endpoints.Topic.edit_message
+          ~a:[ a_class [ "pl-4" ] ]
+          [ txt "Éditer" ]
+          t_id
+          id)
     else span []
   ;;
 
@@ -235,7 +242,7 @@ module Show = struct
       ]
   ;;
 
-  let message_content_input =
+  let message_content_input ?(message_content = "") () =
     let open Tyxml.Html in
     div
       ~a:[ a_class [ "field" ] ]
@@ -249,12 +256,17 @@ module Show = struct
                 ; a_name "message_content"
                 ; a_class [ "textarea"; "is-large" ]
                 ]
-              (txt "")
+              (txt message_content)
           ]
       ]
   ;;
 
-  let submit_button =
+  let submit_button kind =
+    let message =
+      match kind with
+      | `Answer -> "Répondre au fil !"
+      | `Edit -> "Éditer le message !"
+    in
     let open Tyxml.Html in
     div
       ~a:[ a_class [ "field" ] ]
@@ -263,7 +275,7 @@ module Show = struct
           [ input
               ~a:
                 [ a_input_type `Submit
-                ; a_value "Répondre au fil !"
+                ; a_value message
                 ; a_class [ "button"; "is-link" ]
                 ]
               ()
@@ -290,7 +302,7 @@ module Show = struct
               [ Templates.Util.form
                   ~:Endpoints.Topic.answer
                   ~csrf_token
-                  [ message_content_input; submit_button ]
+                  [ message_content_input (); submit_button `Answer ]
                   topic_id
               ]
           ]
@@ -351,7 +363,7 @@ module Show = struct
              ~a:[ a_id message.Models.Message.id ]
              [ hr ~a:[ a_class [ "mt-6"; "mb-6" ] ] ()
              ; show_content
-                 `Message
+                 (`Message topic.id)
                  user
                  message.user_id
                  message.user_name
@@ -362,6 +374,49 @@ module Show = struct
              ])
          messages)
     @ [ message_form csrf_token user topic ]
+  ;;
+end
+
+module Message = struct
+  let edit csrf_token user topic_id message =
+    let open Tyxml.Html in
+    let message_ctn =
+      Show.message_content_input
+        ~message_content:message.Models.Message.content
+        ()
+    in
+    [ div
+        ((if user.Models.User.id <> message.Models.Message.user_id
+         then
+           [ Templates.Component.flash_info
+               (Some
+                  (Models.Flash_info.Info
+                     "Vous allez modifier un contenu dont vous n'êtes pas le \
+                      propriétaire"))
+           ]
+         else [])
+        @ [ h2 ~a:[ a_class [ "title"; "mt-6" ] ] [ txt "Editer une réponse" ]
+          ; div
+              ~a:[ a_class [ "media" ]; a_id "answer" ]
+              [ div
+                  ~a:[ a_class [ "media-left" ] ]
+                  [ Templates.Component.avatar
+                      ~email:message.user_email
+                      ~username:message.user_name
+                      ()
+                  ]
+              ; div
+                  ~a:[ a_class [ "media-content" ] ]
+                  [ Templates.Util.form
+                      ~:Endpoints.Topic.save_edit_message
+                      ~csrf_token
+                      [ message_ctn; Show.submit_button `Edit ]
+                      topic_id
+                      message.Models.Message.id
+                  ]
+              ]
+          ])
+    ]
   ;;
 end
 
@@ -442,7 +497,12 @@ let show ?flash_info ~csrf_token ~user topic messages =
     (Show.thread csrf_token user topic messages)
 ;;
 
-(* let edit_message ?flash_info ~csrf_token ~user topic message = *)
-(*   let page_title = "Éditer " ^ topic.Models.Topic.Showable.title in *)
-(*   Templates.Layout.default ~lang:"fr" ~page_title ?flash_info ~user [] *)
-(* ;; *)
+let edit_message ?flash_info ~csrf_token ~user topic_id message =
+  let page_title = "Éditer un message" in
+  Templates.Layout.default
+    ~lang:"fr"
+    ~page_title
+    ?flash_info
+    ~user
+    (Message.edit csrf_token user topic_id message)
+;;

@@ -22,6 +22,8 @@ let choose_service next_handler request =
     ; Services.Topic.save
     ; Services.Topic.edit
     ; Services.Topic.save_edit
+    ; Services.Topic.edit_message
+    ; Services.Topic.save_edit_message
     ; Services.Topic.answer
     ; Services.Topic.list
     ; Services.Topic.list_by_category

@@ -12,5 +12,5 @@ let archive () = get (~/"topic" /: string / "archive")
 let edit_message () = get (~/"topic" /: string / "message" /: string / "edit")
 
 let save_edit_message () =
-  get (~/"topic" /: string / "message" /: string / "edit")
+  post (~/"topic" /: string / "message" /: string / "edit")
 ;;
