@@ -109,6 +109,11 @@ let connected_navbar user =
             (administrator_navbar user
             @ [ Util.a
                   ~a:[ a_class [ "navbar-item" ] ]
+                  ~:Endpoints.User.get_preference
+                  [ txt "Mes préférences" ]
+                ;
+                Util.a
+                  ~a:[ a_class [ "navbar-item" ] ]
                   ~:Endpoints.User.leave
                   [ txt "Se déconnecter" ]
               ])

@@ -333,6 +333,210 @@ let test_list_moderable_when_there_are_candidates_with_like =
       same (Testable.try_ @@ list string) ~expected ~computed)
 ;;
 
+let test_update_preference_nothing =
+  integration_test
+    ~about:"update_preferences"
+    ~desc:"If i give empty string to the update form, my infos shouldn't change"
+    (fun _env db ->
+      let open Lwt_util in
+      let*? u =
+        return
+          (user_for_registration
+             "gholad"
+             "gholad@gmail.com"
+             "1234567"
+             "1234567")
+      in
+      let*? () = Models.User.register u db in
+      let*? gholad = Models.User.get_by_email "gholad@gmail.com" db in
+      let*? obj = return @@ user_for_update_preferences "" "" gholad in
+      let*? () = Models.User.update_preferences gholad obj db in
+      Models.User.get_by_id gholad.id db)
+    (fun user ->
+      let name, email =
+        match user with
+        | Ok gholad -> gholad.name, gholad.email
+        | _ -> assert false
+      in
+      let expected = Ok ("gholad", "gholad@gmail.com") in
+      let computed = Ok (name, email) in
+      same (Testable.try_ @@ pair string string) ~expected ~computed)
+;;
+
+let test_update_preference_only_email =
+  integration_test
+    ~about:"update_preferences"
+    ~desc:
+      "If i only modify the email, it should be different and the username \
+       shouldn't change"
+    (fun _env db ->
+      let open Lwt_util in
+      let*? u =
+        return
+          (user_for_registration
+             "gholad"
+             "gholad@gmail.com"
+             "1234567"
+             "1234567")
+      in
+      let*? () = Models.User.register u db in
+      let*? gholad = Models.User.get_by_email "gholad@gmail.com" db in
+      let*? obj =
+        return @@ user_for_update_preferences "" "banane@gmail.com" gholad
+      in
+      let*? () = Models.User.update_preferences gholad obj db in
+      Models.User.get_by_id gholad.id db)
+    (fun user ->
+      let name, email =
+        match user with
+        | Ok gholad -> gholad.name, gholad.email
+        | _ -> assert false
+      in
+      let expected = Ok ("gholad", "banane@gmail.com") in
+      let computed = Ok (name, email) in
+      same (Testable.try_ @@ pair string string) ~expected ~computed)
+;;
+
+let test_update_preference_only_username =
+  integration_test
+    ~about:"update_preferences"
+    ~desc:
+      "If i only modify the username, the username should be different and the \
+       email shouldn't change"
+    (fun _env db ->
+      let open Lwt_util in
+      let*? u =
+        return
+          (user_for_registration
+             "gholad"
+             "gholad@gmail.com"
+             "1234567"
+             "1234567")
+      in
+      let*? () = Models.User.register u db in
+      let*? gholad = Models.User.get_by_email "gholad@gmail.com" db in
+      let*? obj =
+        return @@ user_for_update_preferences "larry_gholad" "" gholad
+      in
+      let*? () = Models.User.update_preferences gholad obj db in
+      Models.User.get_by_id gholad.id db)
+    (fun user ->
+      let name, email =
+        match user with
+        | Ok gholad -> gholad.name, gholad.email
+        | _ -> assert false
+      in
+      let expected = Ok ("larry_gholad", "gholad@gmail.com") in
+      let computed = Ok (name, email) in
+      same (Testable.try_ @@ pair string string) ~expected ~computed)
+;;
+
+let test_update_preference_both_email_username =
+  integration_test
+    ~about:"update_preferences"
+    ~desc:"If i only the email and username, both should change"
+    (fun _env db ->
+      let open Lwt_util in
+      let*? u =
+        return
+          (user_for_registration
+             "gholad"
+             "gholad@gmail.com"
+             "1234567"
+             "1234567")
+      in
+      let*? () = Models.User.register u db in
+      let*? gholad = Models.User.get_by_email "gholad@gmail.com" db in
+      let*? obj =
+        return
+        @@ user_for_update_preferences "larry_gholad" "banane@gmail.com" gholad
+      in
+      let*? () = Models.User.update_preferences gholad obj db in
+      Models.User.get_by_id gholad.id db)
+    (fun user ->
+      let name, email =
+        match user with
+        | Ok gholad -> gholad.name, gholad.email
+        | _ -> assert false
+      in
+      let expected = Ok ("larry_gholad", "banane@gmail.com") in
+      let computed = Ok (name, email) in
+      same (Testable.try_ @@ pair string string) ~expected ~computed)
+;;
+
+let test_update_preference_name_integrity_violation =
+  integration_test
+    ~about:"update_preferences"
+    ~desc:
+      "If i want to change my username with an already taken one, it doesn't \
+       work"
+    (fun _env db ->
+      let open Lwt_util in
+      let*? u =
+        return
+          (user_for_registration
+             "gholad"
+             "gholad@gmail.com"
+             "1234567"
+             "1234567")
+      in
+      let*? () = Models.User.register u db in
+      let*? u =
+        return
+          (user_for_registration
+             "larrygholad"
+             "larrygholad@gmail.com"
+             "7654321"
+             "7654321")
+      in
+      let*? () = Models.User.register u db in
+      let*? gholad = Models.User.get_by_email "gholad@gmail.com" db in
+      let*? obj =
+        return @@ user_for_update_preferences "larrygholad" "" gholad
+      in
+      Models.User.update_preferences gholad obj db)
+    (fun computed ->
+      let expected = Error.(to_try @@ user_name_already_taken "larrygholad") in
+      same (Testable.try_ unit) ~expected ~computed)
+;;
+
+let test_update_preference_email_integrity_violation =
+  integration_test
+    ~about:"update_preferences"
+    ~desc:
+      "If i want to change my email with an already taken one, it doesn't work"
+    (fun _env db ->
+      let open Lwt_util in
+      let*? u =
+        return
+          (user_for_registration
+             "gholad"
+             "gholad@gmail.com"
+             "1234567"
+             "1234567")
+      in
+      let*? () = Models.User.register u db in
+      let*? u =
+        return
+          (user_for_registration
+             "larrygholad"
+             "larrygholad@gmail.com"
+             "7654321"
+             "7654321")
+      in
+      let*? () = Models.User.register u db in
+      let*? gholad = Models.User.get_by_email "gholad@gmail.com" db in
+      let*? obj =
+        return @@ user_for_update_preferences "" "larrygholad@gmail.com" gholad
+      in
+      Models.User.update_preferences gholad obj db)
+    (fun computed ->
+      let expected =
+        Error.(to_try @@ user_email_already_taken "larrygholad@gmail.com")
+      in
+      same (Testable.try_ unit) ~expected ~computed)
+;;
+
 let cases =
   ( "User"
   , [ test_ensure_there_is_no_user_at_starting
@@ -353,5 +557,11 @@ let cases =
     ; test_list_moderable_when_there_are_candidates
     ; test_list_active_when_there_are_candidates_with_like
     ; test_list_moderable_when_there_are_candidates_with_like
+    ; test_update_preference_nothing
+    ; test_update_preference_only_email
+    ; test_update_preference_only_username
+    ; test_update_preference_both_email_username
+    ; test_update_preference_name_integrity_violation
+    ; test_update_preference_email_integrity_violation
     ] )
 ;;

@@ -89,3 +89,35 @@ let list_active =
       Flash_info.error_tree request err;
       redirect_to ~:Endpoints.Global.root request)
 ;;
+
+let get_preferences =
+  Service.straight_with
+    ~:Endpoints.User.get_preference
+    ~attached:user_required
+    [ user_authenticated ]
+    (fun user request ->
+      let flash_info = Flash_info.fetch request in
+      let csrf_token = Dream.csrf_token request in
+      let view = Views.User.get_preference ?flash_info ~csrf_token ~user () in
+      Dream.html @@ from_tyxml view)
+;;
+
+let set_preferences =
+  Service.failable_with
+    ~:Endpoints.User.set_preference
+    ~attached:user_required
+    [ user_authenticated ]
+    (fun user request ->
+      let open Lwt_util in
+      let open Models.User in
+      let*? user_preferences =
+        handle_form request (validate_preferences_update user)
+      in
+      Dream.sql request @@ update_preferences user user_preferences)
+    ~succeed:(fun () request ->
+      Flash_info.action request "Préférences mise a jour !";
+      redirect_to ~:Endpoints.User.get_preference request)
+    ~failure:(fun err request ->
+      Flash_info.error_tree request err;
+      redirect_to ~:Endpoints.User.get_preference request)
+;;

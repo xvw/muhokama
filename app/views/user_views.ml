@@ -1,7 +1,7 @@
 open Lib_service
 
 module Create = struct
-  let user_email_input =
+  let user_email_input ?(placeholder = "you@domain.com") () =
     let open Tyxml.Html in
     div
       ~a:[ a_class [ "field" ] ]
@@ -13,7 +13,7 @@ module Create = struct
           [ input
               ~a:
                 [ a_input_type `Email
-                ; a_placeholder "you@domain.com"
+                ; a_placeholder placeholder
                 ; a_id "register_user_email"
                 ; a_name "user_email"
                 ; a_class [ "input" ]
@@ -29,7 +29,7 @@ module Create = struct
       ]
   ;;
 
-  let user_name_input =
+  let user_name_input ?(placeholder = "J. Doe") () =
     let open Tyxml.Html in
     div
       ~a:[ a_class [ "field" ] ]
@@ -41,7 +41,7 @@ module Create = struct
           [ input
               ~a:
                 [ a_input_type `Text
-                ; a_placeholder "J. Doe"
+                ; a_placeholder placeholder
                 ; a_id "register_user_name"
                 ; a_name "user_name"
                 ; a_class [ "input" ]
@@ -134,8 +134,8 @@ module Create = struct
     Templates.Util.form
       ~:Endpoints.User.save
       ~csrf_token
-      [ user_email_input
-      ; user_name_input
+      [ user_email_input ()
+      ; user_name_input ()
       ; user_password_input
       ; confirm_user_password_input
       ; submit_button
@@ -293,3 +293,30 @@ let list_active ?flash_info ?user users () =
           ]
       ]
 ;;
+
+
+let get_preference ?flash_info ~csrf_token ~user () =
+  Templates.Layout.default
+    ~lang:"fr"
+    ~page_title:"Mes préférences"
+    ?flash_info
+    ~user
+    Tyxml.Html.
+    [ 
+      div
+        [
+          h1 ~a:[a_class ["title"]] [txt "Mes préférences"]
+        ];
+      div
+        [
+          Templates.Util.form
+            ~:Endpoints.User.set_preference
+            ~csrf_token
+            [ Create.user_name_input ~placeholder:user.name ()
+            ; Create.user_email_input ~placeholder:user.email ()
+            ; Create.submit_button
+            ]
+        ]
+    ]
+
+    

@@ -19,3 +19,9 @@ val leave : (Dream.request, Dream.response) Service.t
 
 (** Generate the page of all active users. *)
 val list_active : (Dream.request, Dream.response) Service.t
+
+(** Generate the preferences page **)
+val get_preferences : (Dream.request, Dream.response) Service.t
+
+(** Process the update of the preferences**)
+val set_preferences : (Dream.request, Dream.response) Service.t
