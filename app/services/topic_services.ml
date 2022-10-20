@@ -71,10 +71,10 @@ let edit =
     (fun topic_id user request ->
       let open Lwt_util in
       let+ promise =
-        let*? previous_topic =
-          Dream.sql request @@ Models.Topic.get_by_id topic_id
-        in
-        if Models.User.can_edit ~owner_id:previous_topic.id user
+        let open Models.Topic in
+        let*? previous_topic = Dream.sql request @@ get_by_id topic_id in
+        let owner_id = previous_topic.Showable.user_id in
+        if Models.User.can_edit ~owner_id user
         then
           let*? categories = Dream.sql request @@ Models.Category.list Fun.id in
           match Preface.Nonempty_list.from_list categories with
