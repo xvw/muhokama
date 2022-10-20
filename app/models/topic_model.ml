@@ -199,7 +199,9 @@ let count_by_categories =
         category_description,
         COUNT(*)
       FROM topics AS t
-        INNER JOIN categories AS c ON t.category_id = c.category_id
+        INNER JOIN categories AS c
+          ON t.category_id = c.category_id
+      WHERE t.topic_archived = FALSE
       GROUP BY c.category_name, c.category_description
       ORDER BY c.category_name
     |sql}
@@ -343,9 +345,10 @@ let list_by_category category_name callback =
             t.topic_title,
             t.topic_counter
           FROM topics AS t
-            INNER JOIN categories AS c ON t.category_id = c.category_id
+            INNER JOIN categories AS c
+              ON t.category_id = c.category_id
             INNER JOIN users AS u ON t.user_id = u.user_id
-          WHERE c.category_name = ?
+          WHERE c.category_name = ? AND t.topic_archived = FALSE
           ORDER BY topic_update_date DESC
       |sql}
   in
