@@ -294,7 +294,6 @@ let list_active ?flash_info ?user users () =
       ]
 ;;
 
-
 let get_preference ?flash_info ~csrf_token ~user () =
   Templates.Layout.default
     ~lang:"fr"
@@ -302,21 +301,15 @@ let get_preference ?flash_info ~csrf_token ~user () =
     ?flash_info
     ~user
     Tyxml.Html.
-    [ 
-      div
-        [
-          h1 ~a:[a_class ["title"]] [txt "Mes préférences"]
-        ];
-      div
-        [
-          Templates.Util.form
-            ~:Endpoints.User.set_preference
-            ~csrf_token
-            [ Create.user_name_input ~placeholder:user.name ()
-            ; Create.user_email_input ~placeholder:user.email ()
-            ; Create.submit_button
-            ]
-        ]
-    ]
-
-    
+      [ div [ h1 ~a:[ a_class [ "title" ] ] [ txt "Mes préférences" ] ]
+      ; div
+          [ Templates.Util.form
+              ~:Endpoints.User.set_preference
+              ~csrf_token
+              [ Create.user_name_input ~placeholder:user.name ()
+              ; Create.user_email_input ~placeholder:user.email ()
+              ; Create.submit_button
+              ]
+          ]
+      ]
+;;

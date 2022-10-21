@@ -96,10 +96,10 @@ let get_preferences =
     ~attached:user_required
     [ user_authenticated ]
     (fun user request ->
-      let flash_info = Flash_info.fetch request in
-      let csrf_token = Dream.csrf_token request in
-      let view = Views.User.get_preference ?flash_info ~csrf_token ~user () in
-      Dream.html @@ from_tyxml view)
+    let flash_info = Flash_info.fetch request in
+    let csrf_token = Dream.csrf_token request in
+    let view = Views.User.get_preference ?flash_info ~csrf_token ~user () in
+    Dream.html @@ from_tyxml view)
 ;;
 
 let set_preferences =

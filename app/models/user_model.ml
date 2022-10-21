@@ -139,6 +139,7 @@ let update_preferences user =
         (module Db)
     in
     Db.exec query (name, email, id) |> Lib_db.try_
+;;
 
 let count ?(filter = State.all) =
   let query =
@@ -352,9 +353,9 @@ let replace_if_blank replacement subject =
 ;;
 
 let validate_preferences_update
-    ?(name_field = "user_name")
-    ?(email_field = "user_email")
-    user
+  ?(name_field = "user_name")
+  ?(email_field = "user_email")
+  user
   =
   let open Lib_form in
   let formlet s =

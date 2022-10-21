@@ -59,7 +59,11 @@ val equal : t -> t -> bool
 val register : registration_form -> Lib_db.t -> unit Try.t Lwt.t
 
 (** Update the preferences. **)
-val update_preferences : t -> update_preference_form -> Lib_db.t -> unit Try.t Lwt.t
+val update_preferences
+  :  t
+  -> update_preference_form
+  -> Lib_db.t
+  -> unit Try.t Lwt.t
 
 (** Get an user from a [connection_form]. *)
 val get_for_connection : connection_form -> Lib_db.t -> t Try.t Lwt.t
@@ -115,11 +119,11 @@ val validate_connection
 
 (** Try to validate POST params for an user who update his infos. *)
 val validate_preferences_update
-  :  ?name_field:string ->
-    ?email_field:string ->
-      t ->
-    (string * string) list 
-    -> update_preference_form Lib_common.Try.t
+  :  ?name_field:string
+  -> ?email_field:string
+  -> t
+  -> (string * string) list
+  -> update_preference_form Lib_common.Try.t
 
 (** Try to validate POST params for an user's state change. *)
 val validate_state_change

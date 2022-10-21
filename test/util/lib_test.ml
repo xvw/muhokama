@@ -104,7 +104,9 @@ let user_for_connection mail pass =
 ;;
 
 let user_for_update_preferences name mail user =
-  Models.User.validate_preferences_update user ["user_name", name; "user_email", mail]
+  Models.User.validate_preferences_update
+    user
+    [ "user_name", name; "user_email", mail ]
 ;;
 
 let topic_for_creation category_id title content =
