@@ -23,6 +23,11 @@ type connection_form =
   ; connection_password : Sha256.t
   }
 
+type update_preference_form =
+  { preference_name : string
+  ; preference_email : string
+  }
+
 type state_change_form =
   { state_change_id : string
   ; state_change_action : action
@@ -61,6 +66,34 @@ let report_non_integrity_violation =
     | _, _ -> return Error.(to_try @@ user_already_taken ~username:name ~email)
 ;;
 
+let report_non_integrity_violation_for_preferences =
+  let username_query =
+    (tup2 string string ->! int)
+      {sql|
+            SELECT COUNT(*) 
+            FROM users 
+            WHERE user_name = ? AND user_id <> ?
+      |sql}
+  in
+  let email_query =
+    (tup2 string string ->! int)
+      {sql|
+            SELECT COUNT(*) 
+            FROM users 
+            WHERE user_email = ? AND user_id <> ?
+      |sql}
+  in
+  fun ~name ~email ~id (module Db : Lib_db.T) ->
+    let open Lwt_util in
+    let*? ns = Lib_db.try_ @@ Db.find username_query (name, id) in
+    let*? ms = Lib_db.try_ @@ Db.find email_query (email, id) in
+    match ns, ms with
+    | 0, 0 -> return_ok ()
+    | _, 0 -> return Error.(to_try @@ user_name_already_taken name)
+    | 0, _ -> return Error.(to_try @@ user_email_already_taken email)
+    | _, _ -> return Error.(to_try @@ user_already_taken ~username:name ~email)
+;;
+
 let register =
   let query =
     (tup3 string string string ->. unit)
@@ -84,6 +117,28 @@ let register =
     let password = Sha256.to_string password in
     Db.exec query (name, email, password) |> Lib_db.try_
 ;;
+
+let update_preferences user =
+  let query =
+    (tup3 string string string ->. unit)
+      {sql|
+          UPDATE users
+          SET user_name = ?, user_email = ?
+          WHERE user_id = ?
+      |sql}
+  in
+  fun { preference_name = name; preference_email = email }
+      (module Db : Lib_db.T) ->
+    let open Lwt_util in
+    let id = user.id in
+    let*? () =
+      report_non_integrity_violation_for_preferences
+        ~name
+        ~email
+        ~id
+        (module Db)
+    in
+    Db.exec query (name, email, id) |> Lib_db.try_
 
 let count ?(filter = State.all) =
   let query =
@@ -289,6 +344,30 @@ let validate_connection
     }
   in
   run ~name:"User.connection" formlet
+;;
+
+let replace_if_blank replacement subject =
+  let real_subject = String.trim subject in
+  if String.(equal real_subject empty) then replacement else real_subject
+;;
+
+let validate_preferences_update
+    ?(name_field = "user_name")
+    ?(email_field = "user_email")
+    user
+  =
+  let open Lib_form in
+  let formlet s =
+    let+ name = required s name_field (is_string $ replace_if_blank user.name)
+    and+ email =
+      required
+        s
+        email_field
+        (is_email <|> (is_string $ replace_if_blank user.email) $ normalize_name)
+    in
+    { preference_name = name; preference_email = email }
+  in
+  run ~name:"User.preferences" formlet
 ;;
 
 let is_action x =

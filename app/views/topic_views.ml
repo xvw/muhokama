@@ -49,7 +49,7 @@ module Create = struct
           [ input
               ~a:
                 [ a_input_type `Text
-                ; a_placeholder "Un titre compréhensif"
+                ; a_placeholder "Un titre compréhensible"
                 ; a_id "create_topic_title"
                 ; a_name "topic_title"
                 ; a_class [ "input" ]

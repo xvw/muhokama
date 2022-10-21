@@ -307,6 +307,31 @@ let get_by_id =
     |> Showable.from_tuple_with_error @@ Error.topic_id_not_found id
 ;;
 
+let list_by_author author_id callback =
+  let ( & ) = tup2 in
+  let query =
+    (string ->* (string & string & string & string & string & int))
+      {sql|
+          SELECT
+            t.topic_id,
+            c.category_name,
+            u.user_name,
+            u.user_email,
+            t.topic_title,
+            t.topic_counter
+          FROM topics AS t
+            INNER JOIN categories AS c ON t.category_id = c.category_id
+            INNER JOIN users AS u ON t.user_id = u.user_id
+          WHERE u.user_id = ?
+          ORDER BY topic_update_date DESC
+      |sql}
+  in
+  fun (module Db : Lib_db.T) ->
+    let open Lwt_util in
+    let+? list = Lib_db.try_ @@ Db.collect_list query author_id in
+    List.map Preface.Fun.(callback % Listable.from_tuple) list
+;;
+
 let list_all callback =
   let ( & ) = tup2 in
   let query =

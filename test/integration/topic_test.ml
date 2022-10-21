@@ -37,6 +37,67 @@ let test_list_by_when_there_is_no_topics =
       same (Testable.try_ @@ list string) ~expected ~computed)
 ;;
 
+let test_list_by_author_when_there_is_no_topics =
+  integration_test
+    ~about:"list_by_author"
+    ~desc:"when there is no topic, it should return an empty list"
+    (fun _env db ->
+      let open Lwt_util in
+      let*? gholad = make_user "gholad" "gholad@gmail.com" "1234567" db in
+      Models.Topic.list_by_author
+        gholad.id
+        Models.Topic.Listable.(fun x -> x.title)
+        db)
+    (fun computed ->
+      let expected = Ok [] in
+      same (Testable.try_ @@ list string) ~expected ~computed)
+;;
+
+let test_list_by_author_when_there_is_some_topics =
+  integration_test
+    ~about:"list_by_author"
+    ~desc:"when there is some topics, it should return it"
+    (fun _env db ->
+      let open Lwt_util in
+      let*? gholad = make_user "gholad" "gholad@gmail.com" "1234567" db in
+      let*? larry_gholad =
+        make_user "larry_gholad" "larry_gholad@gmail.com" "7654321" db
+      in
+      let*? general, programming, muhokama = create_categories db in
+      let*? _ =
+        create_topic
+          general.Models.Category.id
+          gholad
+          "My presentation"
+          "Hey ! My name is gholad"
+          db
+      in
+      let* () = Lwt_unix.sleep 0.1 in
+      let*? _ =
+        create_topic
+          muhokama.Models.Category.id
+          gholad
+          "A profile page"
+          "I want to add a profile page to muhokama"
+          db
+      in
+      let* () = Lwt_unix.sleep 0.1 in
+      let*? _ =
+        create_topic
+          programming.Models.Category.id
+          larry_gholad
+          "Introduction to GADT"
+          "I'm looking for a friendly introduction to GADT in OCaml"
+          db
+      in
+      Models.Topic.list_by_author
+        gholad.id
+        Models.Topic.Listable.(fun x -> x.title)
+        db)
+    (fun computed ->
+      let expected = Ok [ "A profile page"; "My presentation" ] in
+      same (Testable.try_ @@ list string) ~expected ~computed)
+;;
 let test_list_all_when_there_is_some_topics =
   integration_test
     ~about:"list_all"
@@ -315,5 +376,7 @@ let cases =
     ; test_list_by_when_there_is_some_topics
     ; test_list_all_when_there_is_some_archived_topics
     ; test_try_to_update_some_topics
+    ; test_list_by_author_when_there_is_no_topics
+    ; test_list_by_author_when_there_is_some_topics
     ] )
 ;;
