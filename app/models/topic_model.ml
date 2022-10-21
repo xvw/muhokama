@@ -194,17 +194,15 @@ let count_by_categories =
   let query =
     (unit ->* tup3 string string int)
       {sql|
-      SELECT
-        category_name,
-        category_description,
-        COUNT(*)
-      FROM topics AS t
-        INNER JOIN categories AS c
-          ON t.category_id = c.category_id
-      WHERE t.topic_archived = FALSE
-      GROUP BY c.category_name, c.category_description
-      ORDER BY c.category_name
-    |sql}
+          SELECT
+            c.category_name,
+            c.category_description,
+            (SELECT COUNT(*)
+               FROM topics AS t
+               WHERE t.category_id = c.category_id
+               AND t.topic_archived = FALSE) AS total
+          FROM categories AS c ORDER BY total DESC
+      |sql}
   in
   fun (module Db : Lib_db.T) ->
     let open Lwt_util in
