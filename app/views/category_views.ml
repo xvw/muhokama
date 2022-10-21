@@ -103,18 +103,12 @@ let by_topic_count_line (name, desc, counter) =
   let open Tyxml.Html in
   tr
     [ td
-        [ p ~a:[ a_class [ "title is-4" ] ] [ txt name ]
+        [ p
+            ~a:[ a_class [ "title is-4" ] ]
+            [ Templates.Util.a ~:Endpoints.Topic.by_category [ txt name ] name ]
         ; p ~a:[ a_class [ "subtitle" ] ] [ txt desc ]
         ]
-    ; td
-        [ (if counter > 0
-          then
-            Templates.Util.a
-              ~:Endpoints.Topic.by_category
-              [ txt (string_of_int counter) ]
-              name
-          else txt (string_of_int counter))
-        ]
+    ; td [ txt (string_of_int counter) ]
     ]
 ;;
 
