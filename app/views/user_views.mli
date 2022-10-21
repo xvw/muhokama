@@ -23,7 +23,9 @@ val list_active
   -> Tyxml.Html.doc
 
 (** A view for modifying user infos**)
-val get_preference :
-  ?flash_info:Models.Flash_info.t ->
-  csrf_token:string ->
-  user:Models.User.t -> unit -> [> Html_types.html ] Tyxml_html.elt
+val get_preference
+  :  ?flash_info:Models.Flash_info.t
+  -> csrf_token:string
+  -> user:Models.User.t
+  -> unit
+  -> [> Html_types.html ] Tyxml_html.elt

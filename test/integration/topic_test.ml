@@ -98,6 +98,7 @@ let test_list_by_author_when_there_is_some_topics =
       let expected = Ok [ "A profile page"; "My presentation" ] in
       same (Testable.try_ @@ list string) ~expected ~computed)
 ;;
+
 let test_list_all_when_there_is_some_topics =
   integration_test
     ~about:"list_all"

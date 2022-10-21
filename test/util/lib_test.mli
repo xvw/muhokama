@@ -48,7 +48,11 @@ val category_for_creation
 
 val user_for_connection : string -> string -> Models.User.connection_form Try.t
 
-val user_for_update_preferences : string -> string -> Models.User.t -> Models.User.update_preference_form Try.t
+val user_for_update_preferences
+  :  string
+  -> string
+  -> Models.User.t
+  -> Models.User.update_preference_form Try.t
 
 val make_user
   :  ?state:Models.User.State.t
