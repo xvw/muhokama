@@ -32,6 +32,9 @@ type connection_form
 (** A type that define the validation of a preference update formlet **)
 type update_preference_form
 
+(** A type that define the validation of a password update formlet **)
+type update_password_form
+
 (** A type that define the validation of an user state change formlet *)
 type state_change_form
 
@@ -62,6 +65,13 @@ val register : registration_form -> Lib_db.t -> unit Try.t Lwt.t
 val update_preferences
   :  t
   -> update_preference_form
+  -> Lib_db.t
+  -> unit Try.t Lwt.t
+
+(** Update the password. **)
+val update_password
+  :  t
+  -> update_password_form
   -> Lib_db.t
   -> unit Try.t Lwt.t
 
@@ -99,6 +109,9 @@ val get_by_email : string -> Lib_db.t -> t Try.t Lwt.t
 (** [get_by_id id] try to fetch an user by his id. *)
 val get_by_id : string -> Lib_db.t -> t Try.t Lwt.t
 
+(** [get_by_email_and_password email pwd] try to fetch an user by his email and password. *)
+val get_by_email_and_password : string -> string -> Lib_db.t -> t Try.t Lwt.t
+
 (** {1 Form validation} *)
 
 (** Try to validate POST params for an user's registration. *)
@@ -124,6 +137,14 @@ val validate_preferences_update
   -> t
   -> (string * string) list
   -> update_preference_form Lib_common.Try.t
+
+(** Try to validate POST params for an user who update his password. *)
+val validate_password_update
+  :  ?password_field:string
+  -> ?confirm_password_field:string
+  -> t
+  -> (string * string) list
+  -> update_password_form Lib_common.Try.t
 
 (** Try to validate POST params for an user's state change. *)
 val validate_state_change

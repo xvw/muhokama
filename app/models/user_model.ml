@@ -28,6 +28,10 @@ type update_preference_form =
   ; preference_email : string
   }
 
+type update_password_form =
+  { update_password : Sha256.t
+  }
+
 type state_change_form =
   { state_change_id : string
   ; state_change_action : action
@@ -139,6 +143,21 @@ let update_preferences user =
         (module Db)
     in
     Db.exec query (name, email, id) |> Lib_db.try_
+;;
+
+let update_password user =
+  let query =
+    (tup2 string string ->. unit)
+      {sql|
+          UPDATE users
+          SET user_password = ?
+          WHERE user_id = ?
+      |sql}
+  in
+  fun { update_password = password } (module Db : Lib_db.T) ->
+    let id = user.id in
+    let pwd = Sha256.to_string password in
+    Db.exec query (pwd, id) |> Lib_db.try_
 ;;
 
 let count ?(filter = State.all) =
@@ -369,6 +388,21 @@ let validate_preferences_update
     { preference_name = name; preference_email = email }
   in
   run ~name:"User.preferences" formlet
+;;
+
+let validate_password_update
+  ?(password_field = "user_password")
+  ?(confirm_password_field = "confirm_user_password")
+  user
+  =
+  let open Lib_form in
+  let formlet s =
+    let+ password = required_password ~password_field s
+    and+ () = ensure_equality s password_field confirm_password_field in
+    let email = user.email in
+    { update_password = hash_password ~email ~password }
+  in
+  run ~name:"User.update_password" formlet
 ;;
 
 let is_action x =

@@ -121,3 +121,23 @@ let set_preferences =
       Flash_info.error_tree request err;
       redirect_to ~:Endpoints.User.get_preference request)
 ;;
+
+let set_password =
+  Service.failable_with
+    ~:Endpoints.User.set_password
+    ~attached:user_required
+    [ user_authenticated ]
+    (fun user request ->
+      let open Lwt_util in
+      let open Models.User in
+      let*? user_new_pwd =
+        handle_form request (validate_password_update user)
+      in
+      Dream.sql request @@ update_password user user_new_pwd)
+    ~succeed:(fun () request ->
+      Flash_info.action request "Mot de passe mis à jour !";
+      redirect_to ~:Endpoints.User.get_preference request)
+    ~failure:(fun err request ->
+      Flash_info.error_tree request err;
+      redirect_to ~:Endpoints.User.get_preference request)
+;;

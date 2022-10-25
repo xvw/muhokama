@@ -109,6 +109,12 @@ let user_for_update_preferences name mail user =
     [ "user_name", name; "user_email", mail ]
 ;;
 
+let user_for_update_password pwd confirm user =
+  Models.User.validate_password_update
+    user
+    [ "user_password", pwd; "confirm_user_password", confirm ]
+;;
+
 let topic_for_creation category_id title content =
   Models.Topic.validate_creation
     [ "category_id", category_id
