@@ -69,11 +69,7 @@ val update_preferences
   -> unit Try.t Lwt.t
 
 (** Update the password. **)
-val update_password
-  :  t
-  -> update_password_form
-  -> Lib_db.t
-  -> unit Try.t Lwt.t
+val update_password : t -> update_password_form -> Lib_db.t -> unit Try.t Lwt.t
 
 (** Get an user from a [connection_form]. *)
 val get_for_connection : connection_form -> Lib_db.t -> t Try.t Lwt.t
@@ -109,7 +105,8 @@ val get_by_email : string -> Lib_db.t -> t Try.t Lwt.t
 (** [get_by_id id] try to fetch an user by his id. *)
 val get_by_id : string -> Lib_db.t -> t Try.t Lwt.t
 
-(** [get_by_email_and_password email pwd] try to fetch an user by his email and password. *)
+(** [get_by_email_and_password email pwd] try to fetch an user by his email and
+    password. *)
 val get_by_email_and_password : string -> string -> Lib_db.t -> t Try.t Lwt.t
 
 (** {1 Form validation} *)

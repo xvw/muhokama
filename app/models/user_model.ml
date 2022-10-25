@@ -28,9 +28,7 @@ type update_preference_form =
   ; preference_email : string
   }
 
-type update_password_form =
-  { update_password : Sha256.t
-  }
+type update_password_form = { update_password : Sha256.t }
 
 type state_change_form =
   { state_change_id : string
