@@ -1,11 +1,11 @@
-name: Muhokama unit-test
+name: Muhokama lint-check
 on:
   pull_request:
   push:
 
 jobs:
   build_opam:
-    name: Test opam build & run unit tests
+    name: Check if files are linted
     strategy:
       fail-fast: false
       matrix:
@@ -30,6 +30,6 @@ jobs:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
           opam-depext-flags: --with-test
 
-      - run: opam install . --deps-only --with-test -y
-      - run: opam exec -- dune build
-      - run: opam exec -- dune runtest test/unit
+      - run: opam install dune -y
+      - run: opam install ocamlformat -y
+      - run: opam exec -- dune build @fmt
