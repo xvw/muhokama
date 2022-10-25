@@ -53,7 +53,6 @@ jobs:
           opam-depext-flags: --with-test
 
       - run: opam install . --deps-only --with-test -y
-      - run: opam install preface -y
       - run: opam exec -- dune build
       - run: opam exec -- dune exec bin/muhokama.exe -- db.migrate
       - run: opam exec -- dune exec bin/muhokama.exe -- db.migrate --to 0

@@ -31,6 +31,5 @@ jobs:
           opam-depext-flags: --with-test
 
       - run: opam install . --deps-only --with-test -y
-      - run: opam install preface -y
       - run: opam exec -- dune build
       - run: opam exec -- dune runtest test/unit
