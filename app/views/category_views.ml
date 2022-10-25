@@ -99,13 +99,18 @@ let all categories =
   @@ List.map category_line categories
 ;;
 
+let by_topic_name name counter =
+  let open Tyxml.Html in
+  if counter > 0
+  then [ Templates.Util.a ~:Endpoints.Topic.by_category [ txt name ] name ]
+  else [ span [ txt name ] ]
+;;
+
 let by_topic_count_line (name, desc, counter) =
   let open Tyxml.Html in
   tr
     [ td
-        [ p
-            ~a:[ a_class [ "title is-4" ] ]
-            [ Templates.Util.a ~:Endpoints.Topic.by_category [ txt name ] name ]
+        [ p ~a:[ a_class [ "title is-4" ] ] (by_topic_name name counter)
         ; p ~a:[ a_class [ "subtitle" ] ] [ txt desc ]
         ]
     ; td [ txt (string_of_int counter) ]
