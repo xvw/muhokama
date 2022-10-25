@@ -141,6 +141,7 @@ val validate_preferences_update
 (** Try to validate POST params for an user who update his password. *)
 val validate_password_update
   :  ?password_field:string
+  -> ?confirm_password_field:string
   -> t
   -> (string * string) list
   -> update_password_form Lib_common.Try.t

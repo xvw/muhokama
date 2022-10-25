@@ -390,10 +390,15 @@ let validate_preferences_update
   run ~name:"User.preferences" formlet
 ;;
 
-let validate_password_update ?(password_field = "user_password") user =
+let validate_password_update
+  ?(password_field = "user_password")
+  ?(confirm_password_field = "confirm_user_password")
+  user
+  =
   let open Lib_form in
   let formlet s =
-    let+ password = required_password ~password_field s in
+    let+ password = required_password ~password_field s
+    and+ () = ensure_equality s password_field confirm_password_field in
     let email = user.email in
     { update_password = hash_password ~email ~password }
   in

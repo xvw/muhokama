@@ -56,6 +56,7 @@ val user_for_update_preferences
 
 val user_for_update_password
   :  string
+  -> string
   -> Models.User.t
   -> Models.User.update_password_form Try.t
 

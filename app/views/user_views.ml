@@ -315,7 +315,10 @@ let get_preference ?flash_info ~csrf_token ~user () =
           [ Templates.Util.form
               ~:Endpoints.User.set_password
               ~csrf_token
-              [ Create.user_password_input; Create.submit_button ]
+              [ Create.user_password_input
+              ; Create.confirm_user_password_input
+              ; Create.submit_button
+              ]
           ]
       ]
 ;;
