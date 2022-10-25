@@ -32,6 +32,8 @@ let choose_service next_handler request =
     ; Services.Topic.list_by_category
     ; Services.Topic.show
     ; Services.Topic.archive
+    ; Services.Shared_link.root
+    ; Services.Shared_link.create
     ; Services.Admin.root
     ; Services.Admin.user
     ; Services.Admin.user_state_change

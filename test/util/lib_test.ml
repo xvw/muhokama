@@ -85,6 +85,10 @@ let user_for_registration name mail pass confirm =
     ]
 ;;
 
+let shared_link_for_creation title url =
+  Models.Shared_link.validate_creation [ "link_title", title; "link_url", url ]
+;;
+
 let category_for_creation name desc =
   Models.Category.validate_creation
     [ "category_name", name; "category_description", desc ]

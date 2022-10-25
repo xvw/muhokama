@@ -208,6 +208,9 @@ val is_email : (string, string) validator
     PGSQL). *)
 val is_uuid : (string, string) validator
 
+(** Assume that a string is a valid uri if the scheme is empty or http or https. *)
+val is_potential_url : (string, Uri.t) validator
+
 (** A validator that ensure that a given int is greater than an other given int.*)
 val greater_than : int -> (int, int) validator
 

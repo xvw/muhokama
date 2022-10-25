@@ -48,6 +48,11 @@ val category_for_creation
 
 val user_for_connection : string -> string -> Models.User.connection_form Try.t
 
+val shared_link_for_creation
+  :  string
+  -> string
+  -> Models.Shared_link.creation_form Try.t
+
 val user_for_update_preferences
   :  string
   -> string

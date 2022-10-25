@@ -1,4 +1,4 @@
 (library
  (name lib_form)
  (package muhokama)
- (libraries lwt fmt preface lib_common))
+ (libraries lwt fmt uri preface lib_common))

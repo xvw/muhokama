@@ -1,0 +1,11 @@
+up:
+  - |
+      CREATE TABLE IF NOT EXISTS shared_links (
+        shared_link_id UUID DEFAULT uuid_generate_v4 () PRIMARY KEY,
+        shared_link_title TEXT NOT NULL,
+        shared_link_url TEXT NOT NULL,
+        shared_link_creation_date TIMESTAMP WITH TIME ZONE NOT NULL,
+        user_id UUID NOT NULL REFERENCES users(user_id)
+      )
+down:
+  - DROP TABLE shared_links
