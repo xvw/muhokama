@@ -135,7 +135,7 @@ let set_password =
       in
       Dream.sql request @@ update_password user user_new_pwd)
     ~succeed:(fun () request ->
-      Flash_info.action request "Préférences mise a jour !";
+      Flash_info.action request "Mot de passe mis à jour !";
       redirect_to ~:Endpoints.User.get_preference request)
     ~failure:(fun err request ->
       Flash_info.error_tree request err;
