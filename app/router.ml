@@ -20,6 +20,7 @@ let choose_service next_handler request =
     ; Services.User.list_active
     ; Services.User.get_preferences
     ; Services.User.set_preferences
+    ; Services.User.set_password
     ; Services.Topic.create
     ; Services.Topic.save
     ; Services.Topic.edit

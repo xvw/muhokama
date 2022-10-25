@@ -537,6 +537,28 @@ let test_update_preference_email_integrity_violation =
       same (Testable.try_ unit) ~expected ~computed)
 ;;
 
+let test_update_preference_pwd =
+  integration_test
+    ~about:"update_preferences"
+    ~desc:
+      "If i modify the password, i should be able to identify the same user \
+       with the new password"
+    (fun _env db ->
+      let open Lwt_util in
+      let pwd = "1234567" in
+      let new_pwd = "7654321" in
+      let state = Models.User.State.Member in
+      let*? gholad = make_user ~state "gholad" "gholad@gmail.com" pwd db in
+      let*? obj = return @@ user_for_update_password new_pwd gholad in
+      let*? () = Models.User.update_password gholad obj db in
+      let*? obj = return @@ user_for_connection "gholad@gmail.com" new_pwd in
+      let+? computed = Models.User.get_for_connection obj db in
+      computed, gholad)
+    (function
+     | Error _ -> assert false
+     | Ok (computed, expected) -> same Testable.saved_user ~expected ~computed)
+;;
+
 let cases =
   ( "User"
   , [ test_ensure_there_is_no_user_at_starting
@@ -563,5 +585,6 @@ let cases =
     ; test_update_preference_both_email_username
     ; test_update_preference_name_integrity_violation
     ; test_update_preference_email_integrity_violation
+    ; test_update_preference_pwd
     ] )
 ;;
