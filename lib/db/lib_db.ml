@@ -10,8 +10,9 @@ let try_ request_expr =
   >>= function
   | Ok result -> return_ok result
   | Error err ->
-    let message = Caqti_error.show err in
-    return Error.(to_try @@ Database message)
+    let message = Caqti_error.show err |> String.replace ~pattern:"\n" ~by:"|" in
+    Dream.error (fun log -> log "%s" message);
+    return Error.(to_try @@ Database "A database error has occurred")
 ;;
 
 let make_uri_with ~user ~password ~host ~port ~database =

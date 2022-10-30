@@ -8,4 +8,5 @@
   caqti-driver-postgresql
   fmt
   lib_common
-  preface))
+  preface
+  dream))
