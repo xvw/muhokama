@@ -156,7 +156,8 @@ let update_topic topic_id category_id title content db =
 let create_message user topic_id content db =
   let open Lwt_util in
   let*? t = Lwt.return @@ message_for_creation content in
-  Models.Message.create user topic_id t db
+  let+? m, _ = Models.Message.create user topic_id t db in
+  m
 ;;
 
 let create_categories db =

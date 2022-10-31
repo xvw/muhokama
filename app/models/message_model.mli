@@ -42,7 +42,7 @@ val create
   -> string
   -> creation_form
   -> Lib_db.t
-  -> string Try.t Lwt.t
+  -> (string * Topic_model.Showable.t) Try.t Lwt.t
 
 (** Update an existing message. *)
 val update

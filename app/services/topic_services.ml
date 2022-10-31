@@ -166,7 +166,12 @@ let save =
       let open Lwt_util in
       let open Models.Topic in
       let*? topic = handle_form request validate_creation in
-      Dream.sql request @@ create user topic)
+      let topic_title, _ = extract_form topic in
+      let*? topic_id = Dream.sql request @@ create user topic in
+      let+? () =
+        Env.get request @@ Slack_services.new_topic user topic_id topic_title
+      in
+      topic_id)
     ~succeed:(fun topic_id request ->
       Flash_info.action request "Topic enregistré";
       redirect_to ~:Endpoints.Topic.show topic_id request)
@@ -289,7 +294,13 @@ let answer =
       let open Lwt_util in
       let open Models.Message in
       let*? message = handle_form request validate_creation in
-      let+? message_id = Dream.sql request @@ create user topic_id message in
+      let*? message_id, topic =
+        Dream.sql request @@ create user topic_id message
+      in
+      let+? () =
+        Env.get request
+        @@ Slack_services.new_answer user topic_id topic message_id
+      in
       topic_id, message_id)
     ~succeed:(fun (topic_id, message_id) request ->
       Flash_info.action request "Message enregistré";
