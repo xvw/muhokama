@@ -50,14 +50,14 @@ let create =
   in
   fun user topic_id { creation_content } (module Db : Lib_db.T) ->
     let open Lwt_util in
-    let*? _topic = Topic_model.get_by_id topic_id (module Db) in
+    let*? topic = Topic_model.get_by_id topic_id (module Db) in
     let user_id = user.User_model.id in
     Lib_db.transaction
       (fun () ->
         let input = topic_id, user_id, creation_content in
         let*? message_id = Db.find insert_message_query input |> Lib_db.try_ in
         let+? () = Db.exec update_topic_query topic_id |> Lib_db.try_ in
-        message_id)
+        message_id, topic)
       (module Db)
 ;;
 

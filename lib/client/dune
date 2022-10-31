@@ -1,0 +1,4 @@
+(library
+ (name lib_client)
+ (package muhokama)
+ (libraries lwt fmt preface lib_common cohttp-lwt-unix))

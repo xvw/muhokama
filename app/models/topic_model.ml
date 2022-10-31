@@ -179,6 +179,10 @@ type creation_form =
   ; creation_content : string
   }
 
+let extract_form { creation_title; creation_content; _ } =
+  creation_title, creation_content
+;;
+
 type update_form = creation_form
 
 let count =

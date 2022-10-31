@@ -20,6 +20,9 @@ module Endpoint = Endpoint
 (** Links an endpoint to a handler. *)
 module Service = Service
 
+(** Middlewares for accessing to the env. *)
+module Env = Env
+
 (** {1 Utils} *)
 
 (** [~:f] is equivalent to [f ()]. *)

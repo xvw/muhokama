@@ -8,8 +8,10 @@
   omd
   tyxml
   fmt
+  yojson
   preface
   lib_common
+  lib_client
   lib_service
   endpoints
   models

@@ -50,6 +50,9 @@ type creation_form
 (** A type that define the validation of an update formlet. *)
 type update_form
 
+(** Extract the title and the content of a creation formlet. *)
+val extract_form : creation_form -> string * string
+
 (** {1 Actions} *)
 
 (** Count the number of saved topics. *)
