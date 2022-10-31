@@ -11,6 +11,7 @@ let run ~port env =
   Dream.run ~port ~interface:"0.0.0.0"
   @@ Dream.logger
   @@ sql_pool env
+  @@ Lib_service.Env.set env
   @@ Dream.sql_sessions
   @@ Dream.flash
   @@ Router.choose_service
