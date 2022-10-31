@@ -1,4 +1,4 @@
-type t =
+type t = private
   { pgsql_host : string
   ; pgsql_port : int
   ; pgsql_db : string
@@ -6,6 +6,7 @@ type t =
   ; pgsql_pass : string
   ; pgsql_connection_pool : int
   ; log_level : Logs.level
+  ; notification_hook : string option
   }
 
 val equal : t -> t -> bool

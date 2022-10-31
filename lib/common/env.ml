@@ -6,6 +6,7 @@ type t =
   ; pgsql_pass : string
   ; pgsql_connection_pool : int
   ; log_level : Logs.level
+  ; notification_hook : string option
   }
 
 let string_to_log log =
@@ -29,6 +30,7 @@ let equal a b =
   && String.equal
        (Logs.level_to_string (Some a.log_level))
        (Logs.level_to_string (Some b.log_level))
+  && Option.equal String.equal a.notification_hook b.notification_hook
 ;;
 
 let pp_aux
@@ -41,11 +43,13 @@ let pp_aux
   ; pgsql_user
   ; pgsql_pass
   ; log_level
+  ; notification_hook
   }
   =
   Format.fprintf
     ppf
-    "{pgsql = \"postgresql://%s:%a@%s:%d/%s\"; pool = %d log_level = %a}"
+    "{pgsql = \"postgresql://%s:%a@%s:%d/%s\"; pool = %d; log_level = %a; \
+     notification_hook = %a}"
     pgsql_user
     pp_h
     pgsql_pass
@@ -55,6 +59,8 @@ let pp_aux
     pgsql_connection_pool
     Logs.pp_level
     log_level
+    (Preface.Option.pp pp_h)
+    notification_hook
 ;;
 
 let pp = pp_aux (fun ppf _ -> Format.fprintf ppf "***")
@@ -67,6 +73,7 @@ let make_environment
   pgsql_user
   pgsql_pass
   log_level
+  notification_hook
   =
   { pgsql_host
   ; pgsql_port
@@ -75,6 +82,7 @@ let make_environment
   ; pgsql_user
   ; pgsql_pass
   ; log_level
+  ; notification_hook
   }
 ;;
 
@@ -89,6 +97,7 @@ let validate =
   <*> required string "POSTGRESQL_ADDON_USER"
   <*> required string "POSTGRESQL_ADDON_PASSWORD"
   <*> (optional string_to_log "LOG_LEVEL" >? Logs.Info)
+  <*> optional string "SLACK_NOTIFICATION_WEBHOOK"
 ;;
 
 let init () =
