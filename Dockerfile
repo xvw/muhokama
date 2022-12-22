@@ -1,4 +1,4 @@
-FROM ocaml/opam:alpine-ocaml-4.14 as builder
+FROM ocaml/opam:alpine-3.16-ocaml-4.14 as builder
 
 RUN opam repo add opam git+https://github.com/ocaml/opam-repository
 RUN opam install dune
