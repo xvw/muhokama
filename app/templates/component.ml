@@ -103,10 +103,6 @@ let connected_navbar user =
                 ~a:[ a_class [ "navbar-item" ] ]
                 ~:Endpoints.Category.list
                 [ txt "Catégories" ]
-            ; Util.a
-                ~a:[ a_class [ "navbar-item" ] ]
-                ~:Endpoints.Shared_link.root
-                [ txt "Liens partagés" ]
             ]
         ; div
             ~a:[ a_class [ "navbar-end" ] ]

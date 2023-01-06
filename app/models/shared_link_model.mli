@@ -13,6 +13,20 @@ type t = private
   ; user : User_model.t
   }
 
+(** A type that describe a shared link listable. *)
+module Listable : sig
+  type t = private
+    { id : string
+    ; title : string
+    ; url : string
+    ; creation_date : Ptime.t
+    ; user_name : string
+    ; user_email : string
+    }
+
+  val pp : t Fmt.t
+end
+
 (** A formlet for creating a new shared link. *)
 type creation_form
 
@@ -21,10 +35,10 @@ type creation_form
 (** Store a new shared link. *)
 val create : creation_form -> User_model.t -> Lib_db.t -> unit Try.t Lwt.t
 
-(** {1 Helpers} *)
+(** List all links (sorted by creation_date). *)
+val list_all : (Listable.t -> 'a) -> Lib_db.t -> 'a list Try.t Lwt.t
 
-(** Equality between links. *)
-val equal : t -> t -> bool
+(** {1 Helpers} *)
 
 (** Pretty-printers for links. *)
 val pp : t Fmt.t

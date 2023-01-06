@@ -4,15 +4,24 @@ open Util
 open Middlewares
 
 let root =
-  Service.straight_with
+  Service.failable_with
     ~:Endpoints.Shared_link.root
     ~attached:user_required
     [ user_authenticated ]
     (fun user request ->
-    let flash_info = Flash_info.fetch request in
-    let csrf_token = Dream.csrf_token request in
-    let view = Views.Shared_link.root ?flash_info ~csrf_token ~user () in
-    Dream.html @@ from_tyxml view)
+      let open Lwt_util in
+      let+? links = Dream.sql request @@ Models.Shared_link.list_all Fun.id in
+      user, links)
+    ~succeed:(fun (user, links) request ->
+      let flash_info = Flash_info.fetch request in
+      let csrf_token = Dream.csrf_token request in
+      let view =
+        Views.Shared_link.root ?flash_info ~csrf_token ~user ~links ()
+      in
+      Dream.html @@ from_tyxml view)
+    ~failure:(fun err request ->
+      Flash_info.error_tree request err;
+      redirect_to ~:Endpoints.Global.error request)
 ;;
 
 let create =
