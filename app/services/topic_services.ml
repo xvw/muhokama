@@ -363,7 +363,6 @@ let answer =
         let view =
           topic_view ~preview:preview_content ~request ~user ~topic ~messages ()
         in
-        (* TODO: highlight the preview *)
         Dream.html @@ from_tyxml view)
     ~failure:(fun err request ->
       Flash_info.error_tree request err;

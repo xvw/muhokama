@@ -374,7 +374,9 @@ module Show = struct
     :: Stdlib.List.map
          (fun message ->
            div
-             ~a:[ a_id message.Models.Message.id ]
+             ~a:
+               (a_id message.Models.Message.id
+               :: (if message.id = "" then [ a_class [ "preview" ] ] else []))
              [ hr ~a:[ a_class [ "mt-6"; "mb-6" ] ] ()
              ; show_content
                  (`Message topic.id)
