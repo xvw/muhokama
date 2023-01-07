@@ -312,6 +312,7 @@ module Show = struct
           ; div
               ~a:[ a_class [ "media-content" ] ]
               [ Templates.Util.form
+                  ~anchor:"answer"
                   ~:Endpoints.Topic.answer
                   ~csrf_token
                   [ message_content_input ~message_content:prefilled ()

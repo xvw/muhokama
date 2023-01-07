@@ -29,8 +29,8 @@ let a ?(a = []) endpoint ctn =
     a ~a:attrib ctn)
 ;;
 
-let form ?(a = []) ?csrf_token endpoint ctn =
-  Lib_service.Endpoint.handle_form endpoint (fun method_ action ->
+let form ?(a = []) ?csrf_token ?anchor endpoint ctn =
+  Lib_service.Endpoint.handle_form ?anchor endpoint (fun method_ action ->
     let a' = a in
     let open Tyxml.Html in
     let ctn =
