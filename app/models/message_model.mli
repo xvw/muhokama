@@ -31,6 +31,21 @@ val pp : t Fmt.t
 (** Equality between [t]. *)
 val equal : t -> t -> bool
 
+(** Make a [t] without committing it. *)
+val make : id:string -> content:string -> User_model.t -> Ptime.t -> t
+
+(** Message contained in [creation_form]. *)
+val created_message : creation_form -> string
+
+(** Message contained in [update_form]. *)
+val updated_message : update_form -> string
+
+(** Test if [creation_form] was posted in preview mode. *)
+val is_created_preview : creation_form -> bool
+
+(** Test if [creation_form] was posted in preview mode. *)
+val is_updated_preview : update_form -> bool
+
 (** {1 Actions} *)
 
 (** Return the number of stored messages. *)
