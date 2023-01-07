@@ -3,6 +3,32 @@ open Lib_service
 open Util
 open Middlewares
 
+(** Helpers *)
+
+let get_full_topic request topic_id =
+  let open Lwt_util in
+  let*? topic = Dream.sql request @@ Models.Topic.get_by_id topic_id in
+  let+? messages =
+    Dream.sql request @@ Models.Message.get_by_topic_id Fun.id topic_id
+  in
+  topic, messages
+;;
+
+let topic_view ?preview ~request ~user ~topic ~messages () =
+  let flash_info = Flash_info.fetch request in
+  let csrf_token = Dream.csrf_token request in
+  let html_topic = Models.Topic.Showable.map_content markdown_to_html topic in
+  let html_messages =
+    List.map (Models.Message.map_content markdown_to_html) messages
+  in
+  Views.Topic.show
+    ?flash_info
+    ?prefilled:preview
+    ~csrf_token
+    ~user
+    html_topic
+    html_messages
+;;
 let list =
   Service.failable_with
     ~:Endpoints.Topic.root
@@ -262,23 +288,10 @@ let show =
     [ user_authenticated ]
     (fun topic_id user request ->
       let open Lwt_util in
-      let*? topic = Dream.sql request @@ Models.Topic.get_by_id topic_id in
-      let+? messages =
-        Dream.sql request @@ Models.Message.get_by_topic_id Fun.id topic_id
-      in
-      user, topic, messages)
+      let*? topic, messages = get_full_topic request topic_id in
+      return_ok (user, topic, messages))
     ~succeed:(fun (user, topic, messages) request ->
-      let flash_info = Flash_info.fetch request in
-      let csrf_token = Dream.csrf_token request in
-      let html_topic =
-        Models.Topic.Showable.map_content markdown_to_html topic
-      in
-      let html_messages =
-        List.map (Models.Message.map_content markdown_to_html) messages
-      in
-      let view =
-        Views.Topic.show ?flash_info ~csrf_token ~user html_topic html_messages
-      in
+      let view = topic_view ~request ~user ~topic ~messages () in
       Dream.html @@ from_tyxml view)
     ~failure:(fun err request ->
       Flash_info.error_tree request err;
@@ -294,17 +307,40 @@ let answer =
       let open Lwt_util in
       let open Models.Message in
       let*? message = handle_form request validate_creation in
-      let*? message_id, topic =
-        Dream.sql request @@ create user topic_id message
-      in
-      let+? () =
-        Env.get request
-        @@ Slack_services.new_answer user topic_id topic message_id
-      in
-      topic_id, message_id)
-    ~succeed:(fun (topic_id, message_id) request ->
-      Flash_info.action request "Message enregistré";
-      redirect_to ~anchor:message_id ~:Endpoints.Topic.show topic_id request)
+      if is_created_preview message
+      then
+        let*? topic, messages = get_full_topic request topic_id in
+        let preview_content = created_message message in
+        let current_time = Ptime_clock.now () in
+        let message_preview =
+          Models.Message.make ~id:"" ~content:preview_content user current_time
+        in
+        let messages = messages @ [ message_preview ] in
+        (* FIXME: "" *)
+        (* FIXME? this isn't great style. A better way would be module
+         * and inner types *)
+        return_ok (topic_id, "", Some (preview_content, user, topic, messages))
+      else
+        let*? message_id, topic =
+          Dream.sql request @@ create user topic_id message
+        in
+        let+? () =
+          Env.get request
+          @@ Slack_services.new_answer user topic_id topic message_id
+        in
+        topic_id, message_id, None)
+    ~succeed:(fun (topic_id, message_id, preview) request ->
+      match preview with
+      | None ->
+        Flash_info.action request "Message enregistré";
+        redirect_to ~anchor:message_id ~:Endpoints.Topic.show topic_id request
+      | Some (preview_content, user, topic, messages) ->
+        let view =
+          topic_view ~preview:preview_content ~request ~user ~topic ~messages ()
+        in
+        (* TODO: anchor *)
+        (* TODO: highlight the preview *)
+        Dream.html @@ from_tyxml view)
     ~failure:(fun err request ->
       Flash_info.error_tree request err;
       redirect_to ~:Endpoints.Global.root request)
