@@ -3,8 +3,6 @@ open Lib_service
 open Util
 open Middlewares
 
-(** Helpers *)
-
 let get_full_topic request topic_id =
   let open Lwt_util in
   let*? topic = Dream.sql request @@ Models.Topic.get_by_id topic_id in
@@ -41,8 +39,6 @@ let edit_view ?preview ~request ~user ~topic_id ~message () =
     topic_id
     message
 ;;
-
-(** Services *)
 
 let list =
   Service.failable_with
@@ -341,10 +337,7 @@ let answer =
           Models.Message.make ~id:"" ~content:preview_content user current_time
         in
         let messages = messages @ [ message_preview ] in
-        (* FIXME: "" *)
-        (* FIXME? this isn't great style. A better way would be module
-         * and inner types *)
-        return_ok (topic_id, "", Some (preview_content, user, topic, messages))
+        return_ok @@ `Preview (preview_content, user, topic, messages)
       else
         let*? message_id, topic =
           Dream.sql request @@ create user topic_id message
@@ -353,13 +346,13 @@ let answer =
           Env.get request
           @@ Slack_services.new_answer user topic_id topic message_id
         in
-        topic_id, message_id, None)
-    ~succeed:(fun (topic_id, message_id, preview) request ->
-      match preview with
-      | None ->
+        `Posted (topic_id, message_id))
+    ~succeed:(fun result request ->
+      match result with
+      | `Posted (topic_id, message_id) ->
         Flash_info.action request "Message enregistré";
         redirect_to ~anchor:message_id ~:Endpoints.Topic.show topic_id request
-      | Some (preview_content, user, topic, messages) ->
+      | `Preview (preview_content, user, topic, messages) ->
         let view =
           topic_view ~preview:preview_content ~request ~user ~topic ~messages ()
         in

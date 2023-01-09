@@ -229,14 +229,14 @@ let updated_message { creation_content; _ } = creation_content
 let is_created_preview { is_preview; _ } = is_preview
 let is_updated_preview { is_preview; _ } = is_preview
 
-let validatation ?(content_field = "message_content") name fields =
+let validatation ?(content_field = "message_content") name =
   let open Lib_form in
   let formlet s =
-    let+ content = required s content_field not_blank in
-    let is_preview = List.exists (fun (k, _) -> k = "Preview") fields in
-    { creation_content = content; is_preview }
+    let+ content = required s content_field not_blank
+    and+ is_preview = optional s "Preview" not_blank in
+    { creation_content = content; is_preview = Option.is_some is_preview }
   in
-  run ~name formlet fields
+  run ~name formlet
 ;;
 
 let validate_creation ?content_field =
