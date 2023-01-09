@@ -11,10 +11,24 @@ type t =
   ; content : string
   }
 
-type creation_form = { creation_content : string }
+type creation_form =
+  { creation_content : string
+  ; is_preview : bool
+  }
+
 type update_form = creation_form
 
 let map_content f message = { message with content = f message.content }
+
+let make ~id ~content user creation_date =
+  { id
+  ; user_id = user.User_model.id
+  ; user_name = user.User_model.name
+  ; user_email = user.User_model.email
+  ; creation_date
+  ; content
+  }
+;;
 
 let count =
   let query =
@@ -48,7 +62,7 @@ let create =
           WHERE topic_id = ?
     |sql}
   in
-  fun user topic_id { creation_content } (module Db : Lib_db.T) ->
+  fun user topic_id { creation_content; _ } (module Db : Lib_db.T) ->
     let open Lwt_util in
     let*? topic = Topic_model.get_by_id topic_id (module Db) in
     let user_id = user.User_model.id in
@@ -70,7 +84,7 @@ let update =
         WHERE message_id = ? AND topic_id = ?
     |sql}
   in
-  fun ~topic_id ~message_id { creation_content } (module Db : Lib_db.T) ->
+  fun ~topic_id ~message_id { creation_content; _ } (module Db : Lib_db.T) ->
     let open Lwt_util in
     let*? _topic = Topic_model.get_by_id topic_id (module Db) in
     Db.exec update_message_query (creation_content, message_id, topic_id)
@@ -210,11 +224,17 @@ let pp ppf { id; user_id; user_name; user_email; creation_date; content } =
     content
 ;;
 
+let created_message { creation_content; _ } = creation_content
+let updated_message { creation_content; _ } = creation_content
+let is_created_preview { is_preview; _ } = is_preview
+let is_updated_preview { is_preview; _ } = is_preview
+
 let validatation ?(content_field = "message_content") name =
   let open Lib_form in
   let formlet s =
-    let+ content = required s content_field not_blank in
-    { creation_content = content }
+    let+ content = required s content_field not_blank
+    and+ is_preview = optional s "Preview" not_blank in
+    { creation_content = content; is_preview = Option.is_some is_preview }
   in
   run ~name formlet
 ;;

@@ -170,7 +170,8 @@ val form_method_action
   -> 'handler_function
 
 val handle_form
-  :  ('method_, 'handler_function, 'handler_return) t
+  :  ?anchor:string
+  -> ('method_, 'handler_function, 'handler_return) t
   -> ([> `Get | `Post ] -> string -> 'handler_return)
   -> 'handler_function
 

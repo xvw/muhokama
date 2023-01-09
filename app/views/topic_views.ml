@@ -183,9 +183,10 @@ module List = struct
 end
 
 module Show = struct
-  let moderation_link kind current_user user_id id =
+  let edition_link kind current_user user_id id =
     let open Tyxml.Html in
     if Models.User.can_edit ~owner_id:user_id current_user
+       && id <> "" (* Previewed messages have no edit link *)
     then (
       match kind with
       | `Topic ->
@@ -200,7 +201,8 @@ module Show = struct
           ~a:[ a_class [ "pl-4" ] ]
           [ txt "Éditer" ]
           t_id
-          id)
+          id
+      | `Preview -> span [])
     else span []
   ;;
 
@@ -233,7 +235,7 @@ module Show = struct
                     @@ "publié le "
                     ^ Templates.Util.format_date creation_date
                   ]
-              ; moderation_link kind current_user user_id id
+              ; edition_link kind current_user user_id id
               ]
           ; div
               ~a:[ a_class [ "content"; "is-medium"; "media-content" ] ]
@@ -261,7 +263,7 @@ module Show = struct
       ]
   ;;
 
-  let submit_button kind =
+  let submit_buttons kind =
     let message =
       match kind with
       | `Answer -> "Répondre au fil !"
@@ -275,6 +277,16 @@ module Show = struct
           [ input
               ~a:
                 [ a_input_type `Submit
+                ; a_name "Preview"
+                ; a_value "Prévisualiser le message !"
+                ; a_class [ "button"; "is-link" ]
+                ]
+              ()
+            (* TODO: space between buttons? *)
+          ; input
+              ~a:
+                [ a_input_type `Submit
+                ; a_name "Answer"
                 ; a_value message
                 ; a_class [ "button"; "is-link" ]
                 ]
@@ -283,7 +295,7 @@ module Show = struct
       ]
   ;;
 
-  let message_form csrf_token user topic =
+  let message_form ?(prefilled = "") csrf_token user topic =
     let open Tyxml.Html in
     let topic_id = topic.Models.Topic.Showable.id in
     div
@@ -300,9 +312,12 @@ module Show = struct
           ; div
               ~a:[ a_class [ "media-content" ] ]
               [ Templates.Util.form
+                  ~anchor:"answer"
                   ~:Endpoints.Topic.answer
                   ~csrf_token
-                  [ message_content_input (); submit_button `Answer ]
+                  [ message_content_input ~message_content:prefilled ()
+                  ; submit_buttons `Answer
+                  ]
                   topic_id
               ]
           ]
@@ -326,6 +341,11 @@ module Show = struct
   let topic_content user topic =
     let open Tyxml.Html in
     let open Models.Topic.Showable in
+    let answer_button =
+      a
+        ~a:[ a_href "#answer"; a_class [ "button"; "is-success"; "is-medium" ] ]
+        [ txt "Répondre au fil" ]
+    in
     div
       [ div
           ~a:[ a_class [ "columns" ] ]
@@ -334,13 +354,7 @@ module Show = struct
               [ h1 ~a:[ a_class [ "title" ] ] [ txt topic.title ] ]
           ; div
               ~a:[ a_class [ "column"; "is-narrow"; "is-hidden-mobile" ] ]
-              (a
-                 ~a:
-                   [ a_href "#answer"
-                   ; a_class [ "button"; "is-success"; "is-medium" ]
-                   ]
-                 [ txt "Répondre au fil" ]
-              :: archive_button user topic)
+              (answer_button :: archive_button user topic)
           ]
       ; show_content
           `Topic
@@ -354,13 +368,15 @@ module Show = struct
       ]
   ;;
 
-  let thread csrf_token user topic messages =
+  let thread ?prefilled csrf_token user topic messages =
     let open Tyxml.Html in
     (topic_content user topic
     :: Stdlib.List.map
          (fun message ->
            div
-             ~a:[ a_id message.Models.Message.id ]
+             ~a:
+               (a_id message.Models.Message.id
+               :: (if message.id = "" then [ a_class [ "preview" ] ] else []))
              [ hr ~a:[ a_class [ "mt-6"; "mb-6" ] ] ()
              ; show_content
                  (`Message topic.id)
@@ -373,20 +389,48 @@ module Show = struct
                  message.content
              ])
          messages)
-    @ [ message_form csrf_token user topic ]
+    @ [ message_form ?prefilled csrf_token user topic ]
   ;;
 end
 
 module Message = struct
-  let edit csrf_token user topic_id message =
+  let edit ?preview csrf_token user topic_id message =
     let open Tyxml.Html in
+    let open Models.Message in
+    let avatar =
+      div
+        ~a:[ a_class [ "media-left" ] ]
+        [ Templates.Component.avatar
+            ~email:message.user_email
+            ~username:message.user_name
+            ()
+        ]
+    in
+    let preview =
+      match preview with
+      | None -> []
+      | Some raw_content ->
+        [ div
+            ~a:[ a_id message.Models.Message.id ]
+            [ hr ~a:[ a_class [ "mt-6"; "mb-6" ] ] ()
+            ; Show.show_content
+                `Preview
+                user
+                message.user_id
+                message.user_name
+                message.user_email
+                message.id
+                message.creation_date
+                raw_content
+            ; hr ~a:[ a_class [ "mt-6"; "mb-6" ] ] ()
+            ]
+        ]
+    in
     let message_ctn =
-      Show.message_content_input
-        ~message_content:message.Models.Message.content
-        ()
+      Show.message_content_input ~message_content:message.content ()
     in
     [ div
-        ((if user.Models.User.id <> message.Models.Message.user_id
+        ((if user.Models.User.id <> message.user_id
          then
            [ Templates.Component.flash_info
                (Some
@@ -395,24 +439,19 @@ module Message = struct
                       propriétaire"))
            ]
          else [])
-        @ [ h2 ~a:[ a_class [ "title"; "mt-6" ] ] [ txt "Editer une réponse" ]
+        @ preview
+        @ [ h2 ~a:[ a_class [ "title"; "mt-6" ] ] [ txt "Éditer le message" ]
           ; div
               ~a:[ a_class [ "media" ]; a_id "answer" ]
-              [ div
-                  ~a:[ a_class [ "media-left" ] ]
-                  [ Templates.Component.avatar
-                      ~email:message.user_email
-                      ~username:message.user_name
-                      ()
-                  ]
+              [ avatar
               ; div
                   ~a:[ a_class [ "media-content" ] ]
                   [ Templates.Util.form
                       ~:Endpoints.Topic.save_edit_message
                       ~csrf_token
-                      [ message_ctn; Show.submit_button `Edit ]
+                      [ message_ctn; Show.submit_buttons `Edit ]
                       topic_id
-                      message.Models.Message.id
+                      message.id
                   ]
               ]
           ])
@@ -487,22 +526,22 @@ let list ?flash_info ?user topics =
     Tyxml.Html.[ div [ List.all topics ] ]
 ;;
 
-let show ?flash_info ~csrf_token ~user topic messages =
+let show ?flash_info ?prefilled ~csrf_token ~user topic messages =
   let page_title = topic.Models.Topic.Showable.title in
   Templates.Layout.default
     ~lang:"fr"
     ~page_title
     ?flash_info
     ~user
-    (Show.thread csrf_token user topic messages)
+    (Show.thread ?prefilled csrf_token user topic messages)
 ;;
 
-let edit_message ?flash_info ~csrf_token ~user topic_id message =
+let edit_message ?flash_info ?preview ~csrf_token ~user topic_id message =
   let page_title = "Éditer un message" in
   Templates.Layout.default
     ~lang:"fr"
     ~page_title
     ?flash_info
     ~user
-    (Message.edit csrf_token user topic_id message)
+    (Message.edit ?preview csrf_token user topic_id message)
 ;;

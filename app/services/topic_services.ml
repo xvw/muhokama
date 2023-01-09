@@ -3,6 +3,43 @@ open Lib_service
 open Util
 open Middlewares
 
+let get_full_topic request topic_id =
+  let open Lwt_util in
+  let*? topic = Dream.sql request @@ Models.Topic.get_by_id topic_id in
+  let+? messages =
+    Dream.sql request @@ Models.Message.get_by_topic_id Fun.id topic_id
+  in
+  topic, messages
+;;
+
+let topic_view ?preview ~request ~user ~topic ~messages () =
+  let flash_info = Flash_info.fetch request in
+  let csrf_token = Dream.csrf_token request in
+  let html_topic = Models.Topic.Showable.map_content markdown_to_html topic in
+  let html_messages =
+    List.map (Models.Message.map_content markdown_to_html) messages
+  in
+  Views.Topic.show
+    ?flash_info
+    ?prefilled:preview
+    ~csrf_token
+    ~user
+    html_topic
+    html_messages
+;;
+
+let edit_view ?preview ~request ~user ~topic_id ~message () =
+  let flash_info = Flash_info.fetch request in
+  let csrf_token = Dream.csrf_token request in
+  Views.Topic.edit_message
+    ?flash_info
+    ?preview
+    ~csrf_token
+    ~user
+    topic_id
+    message
+;;
+
 let list =
   Service.failable_with
     ~:Endpoints.Topic.root
@@ -139,16 +176,7 @@ let edit_message =
     ~succeed:(fun result request ->
       match result with
       | `Editable (topic_id, _message_id, user, message) ->
-        let flash_info = Flash_info.fetch request in
-        let csrf_token = Dream.csrf_token request in
-        let view =
-          Views.Topic.edit_message
-            ?flash_info
-            ~csrf_token
-            ~user
-            topic_id
-            message
-        in
+        let view = edit_view ~request ~user ~topic_id ~message () in
         Dream.html @@ from_tyxml view
       | `Cant_edit (topic_id, _) ->
         redirect_to ~:Endpoints.Topic.show topic_id request)
@@ -219,32 +247,51 @@ let save_edit_message =
     [ user_authenticated ]
     (fun topic_id message_id user request ->
       let open Lwt_util in
+      let open Models.Message in
       let+ promise =
         let*? previous_message =
-          Dream.sql request
-          @@ Models.Message.get_by_topic_and_message_id ~topic_id ~message_id
+          Dream.sql request @@ get_by_topic_and_message_id ~topic_id ~message_id
         in
         let can_edit =
           Option.fold
             ~none:false
             ~some:(fun m ->
-              let owner_id = m.Models.Message.user_id in
+              let owner_id = m.user_id in
               Models.User.can_edit user ~owner_id)
             previous_message
         in
         if can_edit
         then
-          let*? message = handle_form request Models.Message.validate_update in
-          let+? () =
-            Dream.sql request
-            @@ Models.Message.update ~topic_id ~message_id message
-          in
-          `Edited (topic_id, message_id)
+          let*? message = handle_form request validate_update in
+          if is_updated_preview message
+          then (
+            let preview_content = updated_message message in
+            let current_time = Ptime_clock.now () in
+            let message =
+              Models.Message.make
+                ~id:message_id
+                ~content:preview_content
+                user
+                current_time
+            in
+            return_ok @@ `Preview (topic_id, preview_content, user, message))
+          else
+            let+? () =
+              Dream.sql request
+              @@ Models.Message.update ~topic_id ~message_id message
+            in
+            `Edited (topic_id, message_id)
         else return_ok @@ `Cant_edit (topic_id, message_id)
       in
       promise |> Result.map_error (fun err -> topic_id, message_id, err))
     ~succeed:(fun result request ->
       match result with
+      | `Preview (topic_id, raw_content, user, message) ->
+        let html_content = markdown_to_html raw_content in
+        let view =
+          edit_view ~preview:html_content ~request ~user ~topic_id ~message ()
+        in
+        Dream.html @@ from_tyxml view
       | `Edited (topic_id, message_id) ->
         Flash_info.action request "Message modifié";
         redirect_to ~anchor:message_id ~:Endpoints.Topic.show topic_id request
@@ -262,23 +309,10 @@ let show =
     [ user_authenticated ]
     (fun topic_id user request ->
       let open Lwt_util in
-      let*? topic = Dream.sql request @@ Models.Topic.get_by_id topic_id in
-      let+? messages =
-        Dream.sql request @@ Models.Message.get_by_topic_id Fun.id topic_id
-      in
-      user, topic, messages)
+      let*? topic, messages = get_full_topic request topic_id in
+      return_ok (user, topic, messages))
     ~succeed:(fun (user, topic, messages) request ->
-      let flash_info = Flash_info.fetch request in
-      let csrf_token = Dream.csrf_token request in
-      let html_topic =
-        Models.Topic.Showable.map_content markdown_to_html topic
-      in
-      let html_messages =
-        List.map (Models.Message.map_content markdown_to_html) messages
-      in
-      let view =
-        Views.Topic.show ?flash_info ~csrf_token ~user html_topic html_messages
-      in
+      let view = topic_view ~request ~user ~topic ~messages () in
       Dream.html @@ from_tyxml view)
     ~failure:(fun err request ->
       Flash_info.error_tree request err;
@@ -294,17 +328,35 @@ let answer =
       let open Lwt_util in
       let open Models.Message in
       let*? message = handle_form request validate_creation in
-      let*? message_id, topic =
-        Dream.sql request @@ create user topic_id message
-      in
-      let+? () =
-        Env.get request
-        @@ Slack_services.new_answer user topic_id topic message_id
-      in
-      topic_id, message_id)
-    ~succeed:(fun (topic_id, message_id) request ->
-      Flash_info.action request "Message enregistré";
-      redirect_to ~anchor:message_id ~:Endpoints.Topic.show topic_id request)
+      if is_created_preview message
+      then
+        let*? topic, messages = get_full_topic request topic_id in
+        let preview_content = created_message message in
+        let current_time = Ptime_clock.now () in
+        let message_preview =
+          Models.Message.make ~id:"" ~content:preview_content user current_time
+        in
+        let messages = messages @ [ message_preview ] in
+        return_ok @@ `Preview (preview_content, user, topic, messages)
+      else
+        let*? message_id, topic =
+          Dream.sql request @@ create user topic_id message
+        in
+        let+? () =
+          Env.get request
+          @@ Slack_services.new_answer user topic_id topic message_id
+        in
+        `Posted (topic_id, message_id))
+    ~succeed:(fun result request ->
+      match result with
+      | `Posted (topic_id, message_id) ->
+        Flash_info.action request "Message enregistré";
+        redirect_to ~anchor:message_id ~:Endpoints.Topic.show topic_id request
+      | `Preview (preview_content, user, topic, messages) ->
+        let view =
+          topic_view ~preview:preview_content ~request ~user ~topic ~messages ()
+        in
+        Dream.html @@ from_tyxml view)
     ~failure:(fun err request ->
       Flash_info.error_tree request err;
       redirect_to ~:Endpoints.Global.root request)

@@ -23,6 +23,7 @@ val edit
 (** A view for editing messages. *)
 val edit_message
   :  ?flash_info:Models.Flash_info.t
+  -> ?preview:string
   -> csrf_token:string
   -> user:Models.User.t
   -> string
@@ -39,6 +40,7 @@ val list
 (** A view for showing one topic. *)
 val show
   :  ?flash_info:Models.Flash_info.t
+  -> ?prefilled:string
   -> csrf_token:string
   -> user:Models.User.t
   -> Models.Topic.Showable.t

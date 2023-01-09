@@ -13,6 +13,7 @@ val a
 val form
   :  ?a:[< Html_types.form_attrib > `Action `Method ] Tyxml_html.attrib list
   -> ?csrf_token:string
+  -> ?anchor:string
   -> ('a, 'b, [> Html_types.form ] Tyxml_html.elt) Lib_service.Endpoint.t
   -> [< Html_types.form_content_fun > `Input ] Tyxml_html.elt list
   -> 'b

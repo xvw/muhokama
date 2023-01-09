@@ -147,10 +147,13 @@ let form_method_action endpoint =
   handle_link endpoint (fun link -> form_method endpoint, link)
 ;;
 
-let handle_form endpoint f =
+let handle_form ?anchor endpoint f =
   handle_link endpoint (fun link ->
     let meth = form_method endpoint in
-    f meth link)
+    let target =
+      Option.fold ~none:link ~some:(fun x -> link ^ "#" ^ x) anchor
+    in
+    f meth target)
 ;;
 
 let handle endpoint given_method given_uri handler =
