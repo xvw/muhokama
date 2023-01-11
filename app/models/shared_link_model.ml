@@ -67,6 +67,15 @@ type creation_form =
   ; creation_url : Uri.t
   }
 
+let count =
+  let query =
+    (unit ->! int) {sql|
+      SELECT COUNT(*) FROM shared_links
+    |sql}
+  in
+  fun (module Db : Lib_db.T) -> Lib_db.try_ @@ Db.find query ()
+;;
+
 let create =
   let query =
     (tup3 string string string ->. unit)

@@ -163,6 +163,12 @@ let create_message user topic_id content db =
   Models.Message.create user topic_id t db
 ;;
 
+let create_shared_link user title url db =
+  let open Lwt_util in
+  let*? t = Lwt.return @@ shared_link_for_creation title url in
+  Models.Shared_link.create user t db
+;;
+
 let create_categories db =
   let open Lwt_util in
   let*? () = create_category "general" "general purpose" db in

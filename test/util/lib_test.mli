@@ -110,6 +110,13 @@ val create_message
   -> Caqti_lwt.connection
   -> string Try.t Lwt.t
 
+val create_shared_link
+  :  Models.User.t
+  -> string
+  -> string
+  -> Caqti_lwt.connection
+  -> unit Try.t Lwt.t
+
 (** {1 Some data} *)
 
 module Individual : sig

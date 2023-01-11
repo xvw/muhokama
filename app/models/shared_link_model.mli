@@ -32,6 +32,9 @@ type creation_form
 
 (** {1 Action} *)
 
+(** Count the number of saved topics. *)
+val count : Lib_db.t -> int Try.t Lwt.t
+
 (** Store a new shared link. *)
 val create : User_model.t -> creation_form -> Lib_db.t -> unit Try.t Lwt.t
 
