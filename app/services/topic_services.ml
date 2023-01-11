@@ -186,23 +186,64 @@ let edit_message =
 ;;
 
 let save =
+  let open Models.Topic in
   Service.failable_with
     ~:Endpoints.Topic.save
     ~attached:user_required
     [ user_authenticated ]
     (fun user request ->
       let open Lwt_util in
-      let open Models.Topic in
       let*? topic = handle_form request validate_creation in
-      let topic_title, _ = extract_form topic in
-      let*? topic_id = Dream.sql request @@ create user topic in
-      let+? () =
-        Env.get request @@ Slack_services.new_topic user topic_id topic_title
-      in
-      topic_id)
-    ~succeed:(fun topic_id request ->
-      Flash_info.action request "Topic enregistré";
-      redirect_to ~:Endpoints.Topic.show topic_id request)
+      let title, content = extract_form topic in
+      let category_id = created_category topic in
+      if is_created_preview topic
+      then (
+        let current_time = Ptime_clock.now () in
+        let*? categories = Dream.sql request @@ Models.Category.list Fun.id in
+        let*? categories =
+          match Preface.Nonempty_list.from_list categories with
+          | None -> return @@ Error.(to_try category_absent)
+          | Some xs -> return_ok xs
+        in
+        let topic =
+          Showable.make
+            ~id:""
+            ~category_id
+            ~category_name:""
+            ~user_id:user.Models.User.id
+            ~user_name:user.Models.User.name
+            ~user_email:user.Models.User.email
+            ~creation_date:current_time
+            ~title
+            ~content
+        in
+        return_ok @@ `Preview_topic (topic, user, categories))
+      else
+        let*? topic_id = Dream.sql request @@ create user topic in
+        let+? () =
+          Env.get request @@ Slack_services.new_topic user topic_id title
+        in
+        `Created_topic topic_id)
+    ~succeed:(fun result request ->
+      match result with
+      | `Created_topic topic_id ->
+        Flash_info.action request "Topic enregistré";
+        redirect_to ~:Endpoints.Topic.show topic_id request
+      | `Preview_topic (topic, user, categories) ->
+        let flash_info = Flash_info.fetch request in
+        let csrf_token = Dream.csrf_token request in
+        let html_topic =
+          Models.Topic.Showable.map_content markdown_to_html topic
+        in
+        let view =
+          Views.Topic.create
+            ?flash_info
+            ~preview:(topic, html_topic)
+            ~csrf_token
+            ~user
+            categories
+        in
+        Dream.html @@ from_tyxml view)
     ~failure:(fun err request ->
       Flash_info.error_tree request err;
       redirect_to ~:Endpoints.Topic.create request)
