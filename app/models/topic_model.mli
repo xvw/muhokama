@@ -33,6 +33,18 @@ module Showable : sig
     ; content : string
     }
 
+  val make
+    :  id:string
+    -> category_id:string
+    -> category_name:string
+    -> user_id:string
+    -> user_name:string
+    -> user_email:string
+    -> creation_date:Ptime.t
+    -> title:string
+    -> content:string
+    -> t
+
   val pp : t Fmt.t
   val equal : t -> t -> bool
   val map_content : (string -> string) -> t -> t
@@ -52,6 +64,21 @@ type update_form
 
 (** Extract the title and the content of a creation formlet. *)
 val extract_form : creation_form -> string * string
+
+(** Extract the title and the content of an edit formlet. *)
+val updated_form : update_form -> string * string
+
+(** Extract the category id of a creation formlet. *)
+val created_category : creation_form -> string
+
+(** Extract the category id of a creation formlet. *)
+val updated_category : update_form -> string
+
+(** Test if [creation_form] was posted in preview mode. *)
+val is_created_preview : creation_form -> bool
+
+(** Test if [creation_form] was posted in preview mode. *)
+val is_updated_preview : update_form -> bool
 
 (** {1 Actions} *)
 
@@ -96,6 +123,7 @@ val validate_creation
   :  ?category_id_field:string
   -> ?title_field:string
   -> ?content_field:string
+  -> ?preview_field:string
   -> (string * string) list
   -> creation_form Try.t
 
@@ -103,5 +131,6 @@ val validate_update
   :  ?category_id_field:string
   -> ?title_field:string
   -> ?content_field:string
+  -> ?preview_field:string
   -> (string * string) list
   -> update_form Try.t

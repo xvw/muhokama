@@ -74,14 +74,16 @@ module Showable = struct
     ; content : string
     }
 
-  let map_content f topic = { topic with content = f topic.content }
-
-  let from_tuple
-    ( id
-    , ( category_id
-      , ( category_name
-        , (user_id, (user_name, (user_email, (creation_date, (title, content)))))
-        ) ) )
+  let make
+    ~id
+    ~category_id
+    ~category_name
+    ~user_id
+    ~user_name
+    ~user_email
+    ~creation_date
+    ~title
+    ~content
     =
     { id
     ; category_id
@@ -93,6 +95,27 @@ module Showable = struct
     ; title
     ; content
     }
+  ;;
+
+  let map_content f topic = { topic with content = f topic.content }
+
+  let from_tuple
+    ( id
+    , ( category_id
+      , ( category_name
+        , (user_id, (user_name, (user_email, (creation_date, (title, content)))))
+        ) ) )
+    =
+    make
+      ~id
+      ~category_id
+      ~category_name
+      ~user_id
+      ~user_name
+      ~user_email
+      ~creation_date
+      ~title
+      ~content
   ;;
 
   let from_tuple_with_error err =
@@ -177,13 +200,27 @@ type creation_form =
   { creation_category_id : string
   ; creation_title : string
   ; creation_content : string
+  ; is_preview : bool
   }
 
-let extract_form { creation_title; creation_content; _ } =
-  creation_title, creation_content
+type update_form = creation_form
+
+let extract_form, updated_form =
+  let f { creation_title; creation_content; _ } =
+    creation_title, creation_content
+  in
+  f, f
 ;;
 
-type update_form = creation_form
+let created_category, updated_category =
+  let f { creation_category_id; _ } = creation_category_id in
+  f, f
+;;
+
+let is_created_preview, is_updated_preview =
+  let f { is_preview; _ } = is_preview in
+  f, f
+;;
 
 let count =
   let query =
@@ -239,7 +276,7 @@ let create =
       |sql}
   in
   fun user
-      { creation_category_id; creation_title; creation_content }
+      { creation_category_id; creation_title; creation_content; _ }
       (module Db : Lib_db.T) ->
     let open Lwt_util in
     let*? _ = Category_model.get_by_id creation_category_id (module Db) in
@@ -262,7 +299,7 @@ let update =
       |sql}
   in
   fun topic_id
-      { creation_category_id; creation_title; creation_content }
+      { creation_category_id; creation_title; creation_content; _ }
       (module Db : Lib_db.T) ->
     let open Lwt_util in
     let*? _ = Category_model.get_by_id creation_category_id (module Db) in
@@ -389,25 +426,48 @@ let validatation
   ?(category_id_field = "category_id")
   ?(title_field = "topic_title")
   ?(content_field = "topic_content")
+  ?(preview_field = "Preview")
   name
   =
   let open Lib_form in
   let formlet s =
     let+ category_id = required s category_id_field is_uuid
     and+ title = required s title_field not_blank
-    and+ content = required s content_field not_blank in
+    and+ content = required s content_field not_blank
+    and+ is_preview = optional s preview_field not_blank in
     { creation_category_id = category_id
     ; creation_title = title
     ; creation_content = content
+    ; is_preview = Option.is_some is_preview
     }
   in
   run ~name formlet
 ;;
 
-let validate_creation ?category_id_field ?title_field ?content_field =
-  validatation ?category_id_field ?title_field ?content_field "Topic.creation"
+let validate_creation
+  ?category_id_field
+  ?title_field
+  ?content_field
+  ?preview_field
+  =
+  validatation
+    ?category_id_field
+    ?title_field
+    ?content_field
+    ?preview_field
+    "Topic.creation"
 ;;
 
-let validate_update ?category_id_field ?title_field ?content_field =
-  validatation ?category_id_field ?title_field ?content_field "Topic.update"
+let validate_update
+  ?category_id_field
+  ?title_field
+  ?content_field
+  ?preview_field
+  =
+  validatation
+    ?category_id_field
+    ?title_field
+    ?content_field
+    ?preview_field
+    "Topic.update"
 ;;
