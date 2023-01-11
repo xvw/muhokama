@@ -19,3 +19,8 @@ val form
   -> 'b
 
 val format_date : Ptime.t -> string
+
+val with_tooltip
+  :  [< Html_types.div_content_fun > `Span ] Html.elt
+  -> string
+  -> [> Html_types.div ] Html.elt

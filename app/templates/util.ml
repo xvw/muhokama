@@ -42,3 +42,10 @@ let form ?(a = []) ?csrf_token ?anchor endpoint ctn =
     let attrib = a_method method_ :: a_action action :: a' in
     form ~a:attrib ctn)
 ;;
+
+let with_tooltip ctn value =
+  Html.(
+    div
+      ~a:[ a_class [ "tooltip" ] ]
+      [ ctn; span ~a:[ a_class [ "tooltiptext" ] ] [ txt value ] ])
+;;

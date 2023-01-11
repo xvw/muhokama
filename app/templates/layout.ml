@@ -16,6 +16,7 @@ let compute_stylesheet additional_css =
   Util.stylesheet "https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css"
   :: Util.stylesheet "/css/hljs.css"
   :: Util.stylesheet "/css/style.css"
+  :: Util.stylesheet "/css/tooltip.css"
   :: List.map Util.stylesheet additional_css
 ;;
 
