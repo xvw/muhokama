@@ -33,7 +33,7 @@ type creation_form
 (** {1 Action} *)
 
 (** Store a new shared link. *)
-val create : creation_form -> User_model.t -> Lib_db.t -> unit Try.t Lwt.t
+val create : User_model.t -> creation_form -> Lib_db.t -> unit Try.t Lwt.t
 
 (** List all links (sorted by creation_date). *)
 val list_all : (Listable.t -> 'a) -> Lib_db.t -> 'a list Try.t Lwt.t

@@ -80,7 +80,7 @@ let create =
          VALUES (?, ?, NOW(), ?)
   |sql}
   in
-  fun { creation_title; creation_url } user (module Db : Lib_db.T) ->
+  fun user { creation_title; creation_url } (module Db : Lib_db.T) ->
     let user_id = user.User_model.id in
     let url = Uri.to_string creation_url in
     Db.exec query (creation_title, url, user_id) |> Lib_db.try_

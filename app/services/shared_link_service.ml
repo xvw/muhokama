@@ -33,7 +33,7 @@ let create =
       let open Lwt_util in
       let open Models.Shared_link in
       let*? creation_form = handle_form request validate_creation in
-      Dream.sql request @@ create creation_form user)
+      Dream.sql request @@ create user creation_form)
     ~succeed:(fun _ request ->
       Flash_info.action request "Lien correctement partagé";
       redirect_to ~:Endpoints.Shared_link.root request)
