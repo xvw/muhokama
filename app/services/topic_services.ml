@@ -309,17 +309,12 @@ let save_edit_message =
             let preview_content = updated_message message in
             let current_time = Ptime_clock.now () in
             let message =
-              Models.Message.make
-                ~id:message_id
-                ~content:preview_content
-                user
-                current_time
+              make ~id:message_id ~content:preview_content user current_time
             in
             return_ok @@ `Preview (topic_id, preview_content, user, message))
           else
             let+? () =
-              Dream.sql request
-              @@ Models.Message.update ~topic_id ~message_id message
+              Dream.sql request @@ update ~topic_id ~message_id message
             in
             `Edited (topic_id, message_id)
         else return_ok @@ `Cant_edit (topic_id, message_id)
@@ -375,7 +370,7 @@ let answer =
         let preview_content = created_message message in
         let current_time = Ptime_clock.now () in
         let message_preview =
-          Models.Message.make ~id:"" ~content:preview_content user current_time
+          make ~id:"" ~content:preview_content user current_time
         in
         let messages = messages @ [ message_preview ] in
         return_ok @@ `Preview (preview_content, user, topic, messages)
