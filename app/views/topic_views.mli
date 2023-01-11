@@ -12,6 +12,7 @@ val create
 (** A view for editing new topic. *)
 val edit
   :  ?flash_info:Models.Flash_info.t
+  -> ?preview:Models.Topic.Showable.t * Models.Topic.Showable.t
   -> csrf_token:string
   -> user:Models.User.t
   -> topic_id:string

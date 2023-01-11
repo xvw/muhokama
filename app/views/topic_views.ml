@@ -23,7 +23,10 @@ module Create = struct
       ~a:[ a_class [ "field" ] ]
       [ label
           ~a:[ a_class [ "label" ]; a_label_for "create_topic_category_id" ]
-          [ txt "Catégorie dans laquelle créer le fil de conversation" ]
+          [ (if Option.is_none category_id
+            then txt "Catégorie dans laquelle créer le fil de conversation"
+            else txt "Catégorie du fil de conversation")
+          ]
       ; div
           ~a:[ a_class [ "control" ] ]
           [ div
@@ -536,6 +539,7 @@ let create ?flash_info ?preview ~csrf_token ~user categories =
 
 let edit
   ?flash_info
+  ?preview
   ~csrf_token
   ~user
   ~topic_id
@@ -544,8 +548,10 @@ let edit
   ~content
   categories
   =
+  let preview = Option.map snd preview in
   topic_form
     ?flash_info
+    ?preview
     ~csrf_token
     ~user
     ~topic_id

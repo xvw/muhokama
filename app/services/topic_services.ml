@@ -101,14 +101,14 @@ let create =
 ;;
 
 let edit =
+  let open Models.Topic in
+  let open Lwt_util in
   Service.failable_with
     ~:Endpoints.Topic.edit
     ~attached:user_required
     [ user_authenticated ]
     (fun topic_id user request ->
-      let open Lwt_util in
       let+ promise =
-        let open Models.Topic in
         let*? previous_topic = Dream.sql request @@ get_by_id topic_id in
         let owner_id = previous_topic.Showable.user_id in
         if Models.User.can_edit ~owner_id user
@@ -125,9 +125,7 @@ let edit =
       | `Editable (user, categories, previous_topic) ->
         let flash_info = Flash_info.fetch request in
         let csrf_token = Dream.csrf_token request in
-        let Models.Topic.Showable.{ category_id; title; content; _ } =
-          previous_topic
-        in
+        let Showable.{ category_id; title; content; _ } = previous_topic in
         let view =
           Views.Topic.edit
             ?flash_info
@@ -195,9 +193,9 @@ let save =
       let open Lwt_util in
       let*? topic = handle_form request validate_creation in
       let title, content = extract_form topic in
-      let category_id = created_category topic in
       if is_created_preview topic
       then (
+        let category_id = created_category topic in
         let current_time = Ptime_clock.now () in
         let*? categories = Dream.sql request @@ Models.Category.list Fun.id in
         let*? categories =
@@ -232,9 +230,7 @@ let save =
       | `Preview_topic (topic, user, categories) ->
         let flash_info = Flash_info.fetch request in
         let csrf_token = Dream.csrf_token request in
-        let html_topic =
-          Models.Topic.Showable.map_content markdown_to_html topic
-        in
+        let html_topic = Showable.map_content markdown_to_html topic in
         let view =
           Views.Topic.create
             ?flash_info
@@ -250,13 +246,13 @@ let save =
 ;;
 
 let save_edit =
+  let open Models.Topic in
   Service.failable_with
     ~:Endpoints.Topic.save_edit
     ~attached:user_required
     [ user_authenticated ]
     (fun topic_id user request ->
       let open Lwt_util in
-      let open Models.Topic in
       let+ promise =
         let*? previous_topic =
           Dream.sql request @@ Models.Topic.get_by_id topic_id
@@ -264,8 +260,34 @@ let save_edit =
         if Models.User.can_edit ~owner_id:previous_topic.user_id user
         then
           let*? topic = handle_form request validate_update in
-          let+? () = Dream.sql request @@ update topic_id topic in
-          `Edited topic_id
+          if is_updated_preview topic
+          then (
+            let title, content = updated_form topic in
+            let category_id = updated_category topic in
+            let*? categories =
+              Dream.sql request @@ Models.Category.list Fun.id
+            in
+            let*? categories =
+              match Preface.Nonempty_list.from_list categories with
+              | None -> return @@ Error.(to_try category_absent)
+              | Some xs -> return_ok xs
+            in
+            let topic =
+              Showable.make
+                ~id:previous_topic.Showable.id
+                ~category_id
+                ~category_name:""
+                ~user_id:user.Models.User.id
+                ~user_name:user.Models.User.name
+                ~user_email:user.Models.User.email
+                ~creation_date:previous_topic.Showable.creation_date
+                ~title
+                ~content
+            in
+            return_ok @@ `Preview_topic (user, categories, topic))
+          else
+            let+? () = Dream.sql request @@ update topic_id topic in
+            `Edited topic_id
         else return_ok @@ `Cant_edit topic_id
       in
       promise |> Result.map_error (fun err -> topic_id, err))
@@ -274,6 +296,25 @@ let save_edit =
       | `Edited topic_id ->
         Flash_info.action request "Topic modifié";
         redirect_to ~:Endpoints.Topic.show topic_id request
+      | `Preview_topic (user, categories, previewed_topic) ->
+        let flash_info = Flash_info.fetch request in
+        let csrf_token = Dream.csrf_token request in
+        let html_topic =
+          Showable.map_content markdown_to_html previewed_topic
+        in
+        let view =
+          Views.Topic.edit
+            ?flash_info
+            ~preview:(previewed_topic, html_topic)
+            ~csrf_token
+            ~user
+            ~topic_id:previewed_topic.Showable.id
+            ~category_id:previewed_topic.Showable.category_id
+            ~title:previewed_topic.title
+            ~content:previewed_topic.content
+            categories
+        in
+        Dream.html @@ from_tyxml view
       | `Cant_edit topic_id ->
         redirect_to ~:Endpoints.Topic.show topic_id request)
     ~failure:(fun (topic_id, err) request ->
