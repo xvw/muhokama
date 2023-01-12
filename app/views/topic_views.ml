@@ -479,9 +479,9 @@ let topic_form
   ~csrf_token
   ~user
   ?topic_id
-  ?pre_category_id
   ?pre_title
   ?pre_content
+  ?pre_category_id
   categories
   =
   let open Tyxml.Html in
@@ -513,52 +513,30 @@ let topic_form
     ]
 ;;
 
-(* FIXME: this is very complicated. The issue is twofold:
-  - the views dependencies are very ad-hoc themselves
-  - Showable.t.content can contain both markdown and the resulting HTML code *)
-let create ?flash_info ?preview ~csrf_token ~user categories =
-  let (pre_title, pre_content, pre_category_id), preview =
-    Option.fold
-      ~none:((None, None, None), None)
-      ~some:(fun (topic, html_topic) ->
-        let open Models.Topic.Showable in
-        ( (Some topic.title, Some topic.content, Some topic.category_id)
-        , Some html_topic ))
-      preview
-  in
-  topic_form
-    ?flash_info
-    ?preview
-    ?pre_title
-    ?pre_content
-    ?pre_category_id
-    ~csrf_token
-    ~user
-    categories
+let topic_form ?flash_info ?preview ?prefilled ~csrf_token ~user categories =
+  Option.fold
+    ~none:(topic_form ?flash_info ?preview ~csrf_token ~user categories)
+    ~some:(fun topic ->
+      let open Models.Topic.Showable in
+      topic_form
+        ?flash_info
+        ?preview
+        ~csrf_token
+        ~user
+        ?topic_id:(if String.length topic.id > 0 then Some topic.id else None)
+        ~pre_title:topic.title
+        ~pre_content:topic.content
+        ~pre_category_id:topic.category_id
+        categories)
+    prefilled
 ;;
 
-let edit
-  ?flash_info
-  ?preview
-  ~csrf_token
-  ~user
-  ~topic_id
-  ~category_id
-  ~title
-  ~content
-  categories
-  =
-  let preview = Option.map snd preview in
-  topic_form
-    ?flash_info
-    ?preview
-    ~csrf_token
-    ~user
-    ~topic_id
-    ~pre_category_id:category_id
-    ~pre_title:title
-    ~pre_content:content
-    categories
+let create ?flash_info ?preview ?prefilled ~csrf_token ~user categories =
+  topic_form ?flash_info ?preview ?prefilled ~csrf_token ~user categories
+;;
+
+let edit ?flash_info ?preview ~prefilled ~csrf_token ~user categories =
+  topic_form ?flash_info ?preview ~prefilled ~csrf_token ~user categories
 ;;
 
 let list ?flash_info ?user topics =

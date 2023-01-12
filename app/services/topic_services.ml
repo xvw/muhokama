@@ -125,16 +125,12 @@ let edit =
       | `Editable (user, categories, previous_topic) ->
         let flash_info = Flash_info.fetch request in
         let csrf_token = Dream.csrf_token request in
-        let Showable.{ category_id; title; content; _ } = previous_topic in
         let view =
           Views.Topic.edit
             ?flash_info
+            ~prefilled:previous_topic
             ~csrf_token
             ~user
-            ~topic_id:previous_topic.id
-            ~category_id
-            ~title
-            ~content
             categories
         in
         Dream.html @@ from_tyxml view
@@ -234,7 +230,8 @@ let save =
         let view =
           Views.Topic.create
             ?flash_info
-            ~preview:(topic, html_topic)
+            ~preview:html_topic
+            ~prefilled:topic
             ~csrf_token
             ~user
             categories
@@ -296,22 +293,17 @@ let save_edit =
       | `Edited topic_id ->
         Flash_info.action request "Topic modifié";
         redirect_to ~:Endpoints.Topic.show topic_id request
-      | `Preview_topic (user, categories, previewed_topic) ->
+      | `Preview_topic (user, categories, previous_topic) ->
         let flash_info = Flash_info.fetch request in
         let csrf_token = Dream.csrf_token request in
-        let html_topic =
-          Showable.map_content markdown_to_html previewed_topic
-        in
+        let html_topic = Showable.map_content markdown_to_html previous_topic in
         let view =
           Views.Topic.edit
             ?flash_info
-            ~preview:(previewed_topic, html_topic)
+            ~preview:html_topic
+            ~prefilled:previous_topic
             ~csrf_token
             ~user
-            ~topic_id:previewed_topic.Showable.id
-            ~category_id:previewed_topic.Showable.category_id
-            ~title:previewed_topic.title
-            ~content:previewed_topic.content
             categories
         in
         Dream.html @@ from_tyxml view
