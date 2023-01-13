@@ -491,26 +491,28 @@ let topic_form
     else "Éditer un message"
   in
   let preview =
-    match preview with
-    | None -> div []
-    | Some topic -> div [ Show.topic_content ~show_buttons:false user topic ]
+    Option.fold
+      ~some:(fun topic ->
+        [ div [ Show.topic_content ~show_buttons:false user topic ] ])
+      ~none:[ div [] ]
+      preview
   in
   Templates.Layout.default
     ~lang:"fr"
     ~page_title
     ~user
     ?flash_info
-    [ preview
-    ; div
-        [ Create.creation_form
-            ?pre_category_id
-            ?pre_title
-            ?pre_content
-            ?topic_id
-            csrf_token
-            categories
-        ]
-    ]
+    (preview
+    @ [ div
+          [ Create.creation_form
+              ?pre_category_id
+              ?pre_title
+              ?pre_content
+              ?topic_id
+              csrf_token
+              categories
+          ]
+      ])
 ;;
 
 let topic_form ?flash_info ?preview ?prefilled ~csrf_token ~user categories =
