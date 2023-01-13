@@ -56,11 +56,15 @@ end
     the database. They exist for any kind of action. A [Form] is the result of a
     form validation.*)
 
-(** A type that define the validation of a creation formlet. *)
+(** A type that defines the validation of a creation formlet. *)
 type creation_form
 
-(** A type that define the validation of an update formlet. *)
+(** A type that defines the validation of an update formlet. *)
 type update_form
+
+(** A type that helps checking a preview, where the title and category are
+    optional. *)
+type preview_form
 
 (** Extract the title and the content of a creation formlet. *)
 val extract_form : creation_form -> string * string
@@ -71,14 +75,18 @@ val updated_form : update_form -> string * string
 (** Extract the category id of a creation formlet. *)
 val created_category : creation_form -> string
 
-(** Extract the category id of a creation formlet. *)
+(** Extract the category id of a edit formlet. *)
 val updated_category : update_form -> string
 
-(** Test if [creation_form] was posted in preview mode. *)
-val is_created_preview : creation_form -> bool
+(** Test if a form was posted in preview mode. *)
+val is_preview : preview_form -> bool
 
-(** Test if [creation_form] was posted in preview mode. *)
-val is_updated_preview : update_form -> bool
+(** Extract the title and content of a preview formlet. The title is optional
+    for a preview formlet. *)
+val preview_form : preview_form -> string option * string
+
+(** Extract the category id of a preview formlet. *)
+val preview_category : preview_form -> string option
 
 (** {1 Actions} *)
 
@@ -123,7 +131,6 @@ val validate_creation
   :  ?category_id_field:string
   -> ?title_field:string
   -> ?content_field:string
-  -> ?preview_field:string
   -> (string * string) list
   -> creation_form Try.t
 
@@ -131,6 +138,13 @@ val validate_update
   :  ?category_id_field:string
   -> ?title_field:string
   -> ?content_field:string
-  -> ?preview_field:string
   -> (string * string) list
   -> update_form Try.t
+
+val validate_preview
+  :  ?category_id_field:string
+  -> ?title_field:string
+  -> ?content_field:string
+  -> ?preview_field:string
+  -> (string * string) list
+  -> preview_form Try.t

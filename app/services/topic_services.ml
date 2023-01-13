@@ -187,11 +187,12 @@ let save =
     [ user_authenticated ]
     (fun user request ->
       let open Lwt_util in
-      let*? topic = handle_form request validate_creation in
-      let title, content = extract_form topic in
-      if is_created_preview topic
+      let*? topic = handle_form request validate_preview in
+      if is_preview topic
       then (
-        let category_id = created_category topic in
+        let title, content = preview_form topic in
+        let title = Option.value ~default:"" title in
+        let category_id = preview_category topic |> Option.value ~default:"" in
         let current_time = Ptime_clock.now () in
         let*? categories = Dream.sql request @@ Models.Category.list Fun.id in
         let*? categories =
@@ -213,6 +214,8 @@ let save =
         in
         return_ok @@ `Preview_topic (topic, user, categories))
       else
+        let*? topic = handle_form request validate_creation in
+        let title, _ = extract_form topic in
         let*? topic_id = Dream.sql request @@ create user topic in
         let+? () =
           Env.get request @@ Slack_services.new_topic user topic_id title
@@ -256,11 +259,14 @@ let save_edit =
         in
         if Models.User.can_edit ~owner_id:previous_topic.user_id user
         then
-          let*? topic = handle_form request validate_update in
-          if is_updated_preview topic
+          let*? topic = handle_form request validate_preview in
+          if is_preview topic
           then (
-            let title, content = updated_form topic in
-            let category_id = updated_category topic in
+            let title, content = preview_form topic in
+            let title = Option.value ~default:"" title in
+            let category_id =
+              preview_category topic |> Option.value ~default:""
+            in
             let*? categories =
               Dream.sql request @@ Models.Category.list Fun.id
             in
@@ -283,6 +289,7 @@ let save_edit =
             in
             return_ok @@ `Preview_topic (user, categories, topic))
           else
+            let*? topic = handle_form request validate_update in
             let+? () = Dream.sql request @@ update topic_id topic in
             `Edited topic_id
         else return_ok @@ `Cant_edit topic_id
