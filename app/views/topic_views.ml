@@ -163,7 +163,10 @@ module List = struct
     tr
       [ td
           ~a:[ a_class [ "is-vcentered" ] ]
-          [ img ~a:[ a_class [ "image"; "is-48x48" ] ] ~src ~alt () ]
+          [ Templates.Util.with_tooltip
+              (img ~a:[ a_class [ "image"; "is-48x48" ] ] ~src ~alt ())
+              topic.user_name
+          ]
       ; td
           ~a:[ a_class [ "is-vcentered"; "is-fullwidth" ] ]
           [ Templates.Util.a ~:Endpoints.Topic.show [ txt topic.title ] topic.id
