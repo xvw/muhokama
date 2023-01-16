@@ -7,3 +7,4 @@ module User = User_services
 module Topic = Topic_services
 module Admin = Admin_services
 module Category = Category_services
+module Shared_link = Shared_link_service

@@ -7,3 +7,4 @@ module User = User_endpoints
 module Topic = Topic_endpoints
 module Admin = Admin_endpoints
 module Category = Category_endpoints
+module Shared_link = Shared_link_endpoints

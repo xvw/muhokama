@@ -39,3 +39,9 @@ let ptime =
   and equal = Ptime.equal in
   Alcotest.testable pp equal
 ;;
+
+let uri =
+  let pp = Uri.pp
+  and equal = Uri.equal in
+  Alcotest.testable pp equal
+;;

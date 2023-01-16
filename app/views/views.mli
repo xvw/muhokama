@@ -7,3 +7,4 @@ module User = User_views
 module Topic = Topic_views
 module Admin = Admin_views
 module Category = Category_views
+module Shared_link = Shared_link_views

@@ -18,7 +18,7 @@ let format_date date =
   let (year, month, day), ((hour, min, _), _) =
     Ptime.to_date_time ~tz_offset_s:(3600 * 2) date
   in
-  Fmt.str "%04d-%02d-%02d %02d:%02d" year month day hour min
+  Fmt.str "%04d-%02d-%02d à %02d:%02d" year month day hour min
 ;;
 
 let a ?(a = []) endpoint ctn =
