@@ -39,6 +39,13 @@ let is_uuid_char c =
   || (Char.code c >= 48 && Char.code c <= 57)
 ;;
 
+let is_potential_url value =
+  let uri = Uri.of_string value in
+  match Uri.scheme uri with
+  | Some "http" | Some "https" -> Validate.valid uri
+  | _ -> unconvertible value "url"
+;;
+
 let check_uuid_part v s =
   String.(Int.equal (length v) s && for_all is_uuid_char v)
 ;;

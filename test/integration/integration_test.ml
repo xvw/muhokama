@@ -4,6 +4,7 @@ let suites =
   ; Category_test.cases
   ; Topic_test.cases
   ; Message_test.cases
+  ; Shared_link_test.cases
   ]
 ;;
 

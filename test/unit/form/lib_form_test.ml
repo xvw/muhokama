@@ -150,6 +150,57 @@ let validator_cases =
                 })
         in
         same (Testable.try_ Individual.testable) ~expected ~computed)
+    ; test
+        ~about:"is_potential_url"
+        ~desc:"test URL validation when the URL is valid with https scheme"
+        (fun () ->
+        let open Lib_form in
+        let computed = is_potential_url "https://xvw.github.io/capsule"
+        and expected =
+          Validate.valid @@ Uri.of_string "https://xvw.github.io/capsule"
+        in
+        same Testable.(validate uri) ~expected ~computed)
+    ; test
+        ~about:"is_potential_url"
+        ~desc:"test URL validation when the URL is valid with http scheme"
+        (fun () ->
+        let open Lib_form in
+        let computed = is_potential_url "http://xvw.github.io/capsule"
+        and expected =
+          Validate.valid @@ Uri.of_string "http://xvw.github.io/capsule"
+        in
+        same Testable.(validate uri) ~expected ~computed)
+    ; test
+        ~about:"is_potential_url"
+        ~desc:
+          "test URL validation when the URL is invalid because implicit scheme"
+        (fun () ->
+        let open Lib_form in
+        let computed = is_potential_url "xvw.github.io/capsule"
+        and expected =
+          Error.(
+            to_validate
+            @@ validation_unconvertible_string
+                 ~given_value:"xvw.github.io/capsule"
+                 ~target_type:"url")
+        in
+        same Testable.(validate uri) ~expected ~computed)
+    ; test
+        ~about:"is_potential_url"
+        ~desc:
+          "test URL validation when the URL is invalid because not-allowed \
+           scheme"
+        (fun () ->
+        let open Lib_form in
+        let computed = is_potential_url "ftp://xvw.github.io/capsule"
+        and expected =
+          Error.(
+            to_validate
+            @@ validation_unconvertible_string
+                 ~given_value:"ftp://xvw.github.io/capsule"
+                 ~target_type:"url")
+        in
+        same Testable.(validate uri) ~expected ~computed)
     ] )
 ;;
 

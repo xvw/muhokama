@@ -85,6 +85,10 @@ let user_for_registration name mail pass confirm =
     ]
 ;;
 
+let shared_link_for_creation title url =
+  Models.Shared_link.validate_creation [ "link_title", title; "link_url", url ]
+;;
+
 let category_for_creation name desc =
   Models.Category.validate_creation
     [ "category_name", name; "category_description", desc ]
@@ -158,6 +162,12 @@ let create_message user topic_id content db =
   let*? t = Lwt.return @@ message_for_creation content in
   let+? m, _ = Models.Message.create user topic_id t db in
   m
+;;
+
+let create_shared_link user title url db =
+  let open Lwt_util in
+  let*? t = Lwt.return @@ shared_link_for_creation title url in
+  Models.Shared_link.create user t db
 ;;
 
 let create_categories db =

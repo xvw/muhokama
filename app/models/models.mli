@@ -8,6 +8,7 @@ module User = User_model
 module Category = Category_model
 module Topic = Topic_model
 module Message = Message_model
+module Shared_link = Shared_link_model
 
 (** {1 Non-storable models} *)
 
