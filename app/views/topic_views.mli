@@ -3,20 +3,20 @@
 (** A view for creating a new topic. *)
 val create
   :  ?flash_info:Models.Flash_info.t
+  -> ?preview:Models.Topic.Showable.t
+  -> ?prefilled:Models.Topic.Showable.t
   -> csrf_token:string
-  -> ?user:Models.User.t
+  -> user:Models.User.t
   -> Models.Category.t Preface.Nonempty_list.t
   -> Tyxml.Html.doc
 
 (** A view for editing new topic. *)
 val edit
   :  ?flash_info:Models.Flash_info.t
+  -> ?preview:Models.Topic.Showable.t
+  -> prefilled:Models.Topic.Showable.t
   -> csrf_token:string
-  -> ?user:Models.User.t
-  -> topic_id:string
-  -> category_id:string
-  -> title:string
-  -> content:string
+  -> user:Models.User.t
   -> Models.Category.t Preface.Nonempty_list.t
   -> Tyxml.Html.doc
 

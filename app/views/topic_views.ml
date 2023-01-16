@@ -23,7 +23,10 @@ module Create = struct
       ~a:[ a_class [ "field" ] ]
       [ label
           ~a:[ a_class [ "label" ]; a_label_for "create_topic_category_id" ]
-          [ txt "Catégorie dans laquelle créer le fil de conversation" ]
+          [ (if Option.is_none category_id
+            then txt "Catégorie dans laquelle créer le fil de conversation"
+            else txt "Catégorie du fil de conversation")
+          ]
       ; div
           ~a:[ a_class [ "control" ] ]
           [ div
@@ -89,7 +92,7 @@ module Create = struct
       ]
   ;;
 
-  let submit_button topic_id =
+  let submit_buttons topic_id =
     let button_msg =
       if Option.is_none topic_id then "Créer le fil" else "Modifier le message"
     in
@@ -101,6 +104,15 @@ module Create = struct
           [ input
               ~a:
                 [ a_input_type `Submit
+                ; a_name "Preview"
+                ; a_value "Prévisualiser le message"
+                ; a_class [ "button"; "is-link" ]
+                ]
+              ()
+          ; input
+              ~a:
+                [ a_input_type `Submit
+                ; a_name "Submit"
                 ; a_value button_msg
                 ; a_class [ "button"; "is-link" ]
                 ]
@@ -121,7 +133,7 @@ module Create = struct
       [ category_select categories pre_category_id
       ; topic_title_input pre_title
       ; topic_content_input pre_content
-      ; submit_button topic_id
+      ; submit_buttons topic_id
       ]
     in
     let form =
@@ -338,7 +350,7 @@ module Show = struct
     else []
   ;;
 
-  let topic_content user topic =
+  let topic_content ?(show_buttons = true) user topic =
     let open Tyxml.Html in
     let open Models.Topic.Showable in
     let answer_button =
@@ -354,7 +366,9 @@ module Show = struct
               [ h1 ~a:[ a_class [ "title" ] ] [ txt topic.title ] ]
           ; div
               ~a:[ a_class [ "column"; "is-narrow"; "is-hidden-mobile" ] ]
-              (answer_button :: archive_button user topic)
+              (if show_buttons
+              then answer_button :: archive_button user topic
+              else [])
           ]
       ; show_content
           `Topic
@@ -461,26 +475,35 @@ end
 
 let topic_form
   ?flash_info
+  ?preview
   ~csrf_token
-  ?user
+  ~user
   ?topic_id
-  ?pre_category_id
   ?pre_title
   ?pre_content
+  ?pre_category_id
   categories
   =
+  let open Tyxml.Html in
   let page_title =
     if Option.is_none topic_id
     then "Créer un nouveau topic"
     else "Éditer un message"
   in
+  let preview =
+    Option.fold
+      ~some:(fun topic ->
+        [ div [ Show.topic_content ~show_buttons:false user topic ] ])
+      ~none:[ div [] ]
+      preview
+  in
   Templates.Layout.default
     ~lang:"fr"
     ~page_title
+    ~user
     ?flash_info
-    ?user
-    Tyxml.Html.
-      [ div
+    (preview
+    @ [ div
           [ Create.creation_form
               ?pre_category_id
               ?pre_title
@@ -489,32 +512,33 @@ let topic_form
               csrf_token
               categories
           ]
-      ]
+      ])
 ;;
 
-let create ?flash_info ~csrf_token ?user categories =
-  topic_form ?flash_info ~csrf_token ?user categories
+let topic_form ?flash_info ?preview ?prefilled ~csrf_token ~user categories =
+  Option.fold
+    ~none:(topic_form ?flash_info ?preview ~csrf_token ~user categories)
+    ~some:(fun topic ->
+      let open Models.Topic.Showable in
+      topic_form
+        ?flash_info
+        ?preview
+        ~csrf_token
+        ~user
+        ?topic_id:(if String.length topic.id > 0 then Some topic.id else None)
+        ~pre_title:topic.title
+        ~pre_content:topic.content
+        ~pre_category_id:topic.category_id
+        categories)
+    prefilled
 ;;
 
-let edit
-  ?flash_info
-  ~csrf_token
-  ?user
-  ~topic_id
-  ~category_id
-  ~title
-  ~content
-  categories
-  =
-  topic_form
-    ?flash_info
-    ~csrf_token
-    ?user
-    ~topic_id
-    ~pre_category_id:category_id
-    ~pre_title:title
-    ~pre_content:content
-    categories
+let create ?flash_info ?preview ?prefilled ~csrf_token ~user categories =
+  topic_form ?flash_info ?preview ?prefilled ~csrf_token ~user categories
+;;
+
+let edit ?flash_info ?preview ~prefilled ~csrf_token ~user categories =
+  topic_form ?flash_info ?preview ~prefilled ~csrf_token ~user categories
 ;;
 
 let list ?flash_info ?user topics =

@@ -101,14 +101,14 @@ let create =
 ;;
 
 let edit =
+  let open Models.Topic in
+  let open Lwt_util in
   Service.failable_with
     ~:Endpoints.Topic.edit
     ~attached:user_required
     [ user_authenticated ]
     (fun topic_id user request ->
-      let open Lwt_util in
       let+ promise =
-        let open Models.Topic in
         let*? previous_topic = Dream.sql request @@ get_by_id topic_id in
         let owner_id = previous_topic.Showable.user_id in
         if Models.User.can_edit ~owner_id user
@@ -125,18 +125,12 @@ let edit =
       | `Editable (user, categories, previous_topic) ->
         let flash_info = Flash_info.fetch request in
         let csrf_token = Dream.csrf_token request in
-        let Models.Topic.Showable.{ category_id; title; content; _ } =
-          previous_topic
-        in
         let view =
           Views.Topic.edit
             ?flash_info
+            ~prefilled:previous_topic
             ~csrf_token
             ~user
-            ~topic_id:previous_topic.id
-            ~category_id
-            ~title
-            ~content
             categories
         in
         Dream.html @@ from_tyxml view
@@ -186,45 +180,118 @@ let edit_message =
 ;;
 
 let save =
+  let open Models.Topic in
   Service.failable_with
     ~:Endpoints.Topic.save
     ~attached:user_required
     [ user_authenticated ]
     (fun user request ->
       let open Lwt_util in
-      let open Models.Topic in
-      let*? topic = handle_form request validate_creation in
-      let topic_title, _ = extract_form topic in
-      let*? topic_id = Dream.sql request @@ create user topic in
-      let+? () =
-        Env.get request @@ Slack_services.new_topic user topic_id topic_title
-      in
-      topic_id)
-    ~succeed:(fun topic_id request ->
-      Flash_info.action request "Topic enregistré";
-      redirect_to ~:Endpoints.Topic.show topic_id request)
+      let*? topic = handle_form request validate_preview in
+      if is_preview topic
+      then (
+        let title, content = preview_form topic in
+        let title = Option.value ~default:"" title in
+        let category_id = preview_category topic |> Option.value ~default:"" in
+        let current_time = Ptime_clock.now () in
+        let*? categories = Dream.sql request @@ Models.Category.list Fun.id in
+        let*? categories =
+          match Preface.Nonempty_list.from_list categories with
+          | None -> return @@ Error.(to_try category_absent)
+          | Some xs -> return_ok xs
+        in
+        let topic =
+          Showable.make
+            ~id:""
+            ~category_id
+            ~category_name:""
+            ~user_id:user.Models.User.id
+            ~user_name:user.Models.User.name
+            ~user_email:user.Models.User.email
+            ~creation_date:current_time
+            ~title
+            ~content
+        in
+        return_ok @@ `Preview_topic (topic, user, categories))
+      else
+        let*? topic = handle_form request validate_creation in
+        let title, _ = extract_form topic in
+        let*? topic_id = Dream.sql request @@ create user topic in
+        let+? () =
+          Env.get request @@ Slack_services.new_topic user topic_id title
+        in
+        `Created_topic topic_id)
+    ~succeed:(fun result request ->
+      match result with
+      | `Created_topic topic_id ->
+        Flash_info.action request "Topic enregistré";
+        redirect_to ~:Endpoints.Topic.show topic_id request
+      | `Preview_topic (topic, user, categories) ->
+        let flash_info = Flash_info.fetch request in
+        let csrf_token = Dream.csrf_token request in
+        let html_topic = Showable.map_content markdown_to_html topic in
+        let view =
+          Views.Topic.create
+            ?flash_info
+            ~preview:html_topic
+            ~prefilled:topic
+            ~csrf_token
+            ~user
+            categories
+        in
+        Dream.html @@ from_tyxml view)
     ~failure:(fun err request ->
       Flash_info.error_tree request err;
       redirect_to ~:Endpoints.Topic.create request)
 ;;
 
 let save_edit =
+  let open Models.Topic in
   Service.failable_with
     ~:Endpoints.Topic.save_edit
     ~attached:user_required
     [ user_authenticated ]
     (fun topic_id user request ->
       let open Lwt_util in
-      let open Models.Topic in
       let+ promise =
         let*? previous_topic =
           Dream.sql request @@ Models.Topic.get_by_id topic_id
         in
         if Models.User.can_edit ~owner_id:previous_topic.user_id user
         then
-          let*? topic = handle_form request validate_update in
-          let+? () = Dream.sql request @@ update topic_id topic in
-          `Edited topic_id
+          let*? topic = handle_form request validate_preview in
+          if is_preview topic
+          then (
+            let title, content = preview_form topic in
+            let title = Option.value ~default:"" title in
+            let category_id =
+              preview_category topic |> Option.value ~default:""
+            in
+            let*? categories =
+              Dream.sql request @@ Models.Category.list Fun.id
+            in
+            let*? categories =
+              match Preface.Nonempty_list.from_list categories with
+              | None -> return @@ Error.(to_try category_absent)
+              | Some xs -> return_ok xs
+            in
+            let topic =
+              Showable.make
+                ~id:previous_topic.Showable.id
+                ~category_id
+                ~category_name:""
+                ~user_id:user.Models.User.id
+                ~user_name:user.Models.User.name
+                ~user_email:user.Models.User.email
+                ~creation_date:previous_topic.Showable.creation_date
+                ~title
+                ~content
+            in
+            return_ok @@ `Preview_topic (user, categories, topic))
+          else
+            let*? topic = handle_form request validate_update in
+            let+? () = Dream.sql request @@ update topic_id topic in
+            `Edited topic_id
         else return_ok @@ `Cant_edit topic_id
       in
       promise |> Result.map_error (fun err -> topic_id, err))
@@ -233,6 +300,20 @@ let save_edit =
       | `Edited topic_id ->
         Flash_info.action request "Topic modifié";
         redirect_to ~:Endpoints.Topic.show topic_id request
+      | `Preview_topic (user, categories, previous_topic) ->
+        let flash_info = Flash_info.fetch request in
+        let csrf_token = Dream.csrf_token request in
+        let html_topic = Showable.map_content markdown_to_html previous_topic in
+        let view =
+          Views.Topic.edit
+            ?flash_info
+            ~preview:html_topic
+            ~prefilled:previous_topic
+            ~csrf_token
+            ~user
+            categories
+        in
+        Dream.html @@ from_tyxml view
       | `Cant_edit topic_id ->
         redirect_to ~:Endpoints.Topic.show topic_id request)
     ~failure:(fun (topic_id, err) request ->
@@ -268,17 +349,12 @@ let save_edit_message =
             let preview_content = updated_message message in
             let current_time = Ptime_clock.now () in
             let message =
-              Models.Message.make
-                ~id:message_id
-                ~content:preview_content
-                user
-                current_time
+              make ~id:message_id ~content:preview_content user current_time
             in
             return_ok @@ `Preview (topic_id, preview_content, user, message))
           else
             let+? () =
-              Dream.sql request
-              @@ Models.Message.update ~topic_id ~message_id message
+              Dream.sql request @@ update ~topic_id ~message_id message
             in
             `Edited (topic_id, message_id)
         else return_ok @@ `Cant_edit (topic_id, message_id)
@@ -334,7 +410,7 @@ let answer =
         let preview_content = created_message message in
         let current_time = Ptime_clock.now () in
         let message_preview =
-          Models.Message.make ~id:"" ~content:preview_content user current_time
+          make ~id:"" ~content:preview_content user current_time
         in
         let messages = messages @ [ message_preview ] in
         return_ok @@ `Preview (preview_content, user, topic, messages)
