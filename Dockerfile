@@ -16,7 +16,7 @@ COPY --chown=opam . /build/
 
 RUN cd /build && opam exec -- dune build
 
-FROM alpine:3 as final
+FROM alpine:3.17.1 as final
 
 RUN apk add --no-cache libev-dev gmp-dev libpq-dev openssl-dev cmake
 
