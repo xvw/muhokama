@@ -24,5 +24,6 @@ let offset date =
     if Ptime.is_later ~than:s_date date && Ptime.is_earlier ~than:w_date date
     then 2
     else 1
-  in Option.value ~default:1 result
+  in
+  Option.value ~default:1 result
 ;;
