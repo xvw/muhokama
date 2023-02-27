@@ -16,7 +16,7 @@ let csrf_input value =
 
 let format_date date =
   let (year, month, day), ((hour, min, _), _) =
-    Ptime.to_date_time ~tz_offset_s:(3600 * 2) date
+    Ptime.to_date_time ~tz_offset_s:(3600 * Lib_common.Date.offset date) date
   in
   Fmt.str "%04d-%02d-%02d à %02d:%02d" year month day hour min
 ;;
